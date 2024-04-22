@@ -1,8 +1,8 @@
 # Authentication
-As described in the [concept section](concepts_and_conventions.html#dual-authentication), the KG Core API supports a dual-authentication. 
-One to authenticate the user accessing the KG and one (optional) for the client the user accesses the KG with.
+As described in the [concept section](concepts_and_conventions.html#dual-authentication), the MarmotGraph Core API supports a dual-authentication. 
+One to authenticate the user accessing the MarmotGraph and one (optional) for the client the user accesses the MarmotGraph with.
 
-Depending on what you want to do with the EBRAINS Knowledge Graph, you have different options:
+Depending on what you want to do with the MarmotGraph, you have different options:
 
 ## Single authentication
 This is the "standard" and most simple way of authenticating - as soon as you are providing a valid 
@@ -17,14 +17,14 @@ you can be authenticated. Please make sure that the token you're using is provid
 - team
 
 ### Quick start
-To easily get a valid token (with the right scopes), you can either go to the KG core swagger UI, 
-click "Authorize" and authenticate against the "KG" client (ignore the "Client-Authorization" section), 
-or you can log in to the KG QueryBuilder or KG Editor, find the "profile button" on the top right and copy your token. 
+To easily get a valid token (with the right scopes), you can either go to the MarmotGraph core swagger UI, 
+click "Authorize" and authenticate against the "MarmotGraph" client (ignore the "Client-Authorization" section), 
+or you can log in to the MarmotGraph QueryBuilder or MarmotGraph Editor, find the "profile button" on the top right and copy your token. 
 If you're using Python, we recommend to check out our Python SDK which has inbuilt support for authentication.
 
 ### Access token for non-supervised scripts / server2server communication
-If you want a non-supervised script to authenticate against the KG (e.g. to regularly fetch metadata) or you want to 
-establish user-independent server2server communication between your service and the EBRAINS Knowledge Graph, you can do 
+If you want a non-supervised script to authenticate against the MarmotGraph (e.g. to regularly fetch metadata) or you want to 
+establish user-independent server2server communication between your service and the MarmotGraph, you can do 
 so by using a "service-account" of an EBRAINS IAM client. 
 
 Please follow the instructions about **Authentication with a client** below. 
@@ -33,21 +33,21 @@ Once you have received your access token, you can make use of it the same way as
 ### About authentication and authorization
 Please note, that now that you've been authenticated, this does not necessarily mean that you have access to all the 
 metadata available in the graph! If you're looking for additional metadata, please contact [kg@ebrains.eu](mailto:kg@ebrains.eu) 
-to request additional rights with the reason and justification (ideally from the e-mail address which is assigned to your EBRAINS account).
+to request additional rights with the reason and justification (ideally from the e-mail address which is assigned to your MarmotGraph account).
 
 ## Dual authentication
 Although you could technically achieve everything with "single authentication", we highly recommend to apply 
 dual authentication in the case you're building another service acting on behalf of an EBRAINS user:
 
 Let's assume your service already authenticates the EBRAINS user (or has received the user token from an upstream service) 
-and wants to read from the EBRAINS KG with the access rights of the user. In the dual authentication approach, 
+and wants to read from the MarmotGraph with the access rights of the user. In the dual authentication approach, 
 you're sending the users token as a "Authorization" header (as in the single authentication) and additionally the 
 client-token (which can be obtained as described in **Authentication with a client**) in a 
 `Client-Authorization: Bearer YOUR_CLIENT_TOKEN` header.
 
 ### Why you should do this additional step
 
-At a first glance, the dual-authentication might look like overhead. For a proper integration of your service into KG 
+At a first glance, the dual-authentication might look like overhead. For a proper integration of your service into MarmotGraph 
 we would like to ask you to follow this pattern nevertheless to profit from the following benefits:
 
 - Possibility to store client-specific information on top of the meta-data structures and to do contextualized queries
@@ -75,17 +75,17 @@ Unless the token is provided via simple user-input / configuration, possible oAu
 
 Please note that the access token you're getting is short-lived.
 Your script/code therefore needs to be prepared to refresh the access token (by requesting a new token with the client credentials again).
-We usually achieve this by catching 401 status codes (Unauthorized) when executing a request on KG and by retrying the request again with a new token. 
+We usually achieve this by catching 401 status codes (Unauthorized) when executing a request on MarmotGraph and by retrying the request again with a new token. 
 
-Please note, that the official Python library for KG has convenience functionality to authorize with all of the above mentioned flows including an automated token refresh mechanism.
+Please note, that the official Python library for MarmotGraph has convenience functionality to authorize with all of the above mentioned flows including an automated token refresh mechanism.
 
 ### Authentication with a client
-Typical use-cases are unsupervised script or server 2 KG communications as well as the dual authentication case.
+Typical use-cases are unsupervised script or server 2 MarmotGraph communications as well as the dual authentication case.
 
 You should first create a "confidential" client as described in 
 [Registering an OIDC client](https://wiki.ebrains.eu/bin/view/Collabs/the-collaboratory/Documentation%20IAM/FAQ/OIDC%20Clients%20explained/1.%20Registering%20an%20OIDC%20client%20v2/).   
 
-Please note, that you can use an already existing client as long as it is "confidential". If your already existing client is "public", you need to register a second one. To ensure full compatibility with KG, make sure, you have the following settings to be configured:
+Please note, that you can use an already existing client as long as it is "confidential". If your already existing client is "public", you need to register a second one. To ensure full compatibility with MarmotGraph, make sure, you have the following settings to be configured:
 
 - Access type
     - confidential 

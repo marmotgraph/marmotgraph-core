@@ -1,12 +1,12 @@
 # The API
 
-The EBRAINS KG Core API allows to programmatically interact with the EBRAINS Knowledge Graph and is therefore the most
+The MarmotGraph Core API allows to programmatically interact with the MarmotGraph and is therefore the most
 important interface of the ecosystem. 
 
 ### Versioning
-The EBRAINS API is versioned to be able to ensure backwards compatibility. However, for practical reasons, only **two** stable versions
+The MarmotGraph API is versioned to be able to ensure backwards compatibility. However, for practical reasons, only **two** stable versions
 will be maintained at the same time: The **current** as well as the **previous** version which will be maintained for those clients
-that haven't been able to migrate yet. Additionally, the KG Core can provide a **development** version of the API which allows early and prototypical integration. 
+that haven't been able to migrate yet. Additionally, the MarmotGraph Core can provide a **development** version of the API which allows early and prototypical integration. 
 However, this version is not intended for productive use and is therefore not regarded to be *stable*.
 
 Accordingly, actions have to be taken that before a version is bumped (and therefore the **previous** version is going to be removed), that all clients have been migrated 

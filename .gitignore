@@ -38,4 +38,4 @@ build/
 ### VS Code ###
 .vscode/
 
-/services/kg-graphdb-commons/src/test/java/eu/hbp/kg/graphdb/consistency/ConsistencyTest.java
+/services/marmotgraph-graphdb-commons/src/test/java/eu/hbp/marmotgraph/graphdb/consistency/ConsistencyTest.java

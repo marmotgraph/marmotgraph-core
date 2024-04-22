@@ -1,14 +1,14 @@
 # Permissions
 
-The EBRAINS Knowledge Graph allows a very fine-granular way of managing permissions. To organize the various access 
-permission aspects, the KG knows the following concepts:
+The MarmotGraph allows a very fine-granular way of managing permissions. To organize the various access 
+permission aspects, the MarmotGraph knows the following concepts:
 
 
 ## Spaces
 "Spaces" are logical units which define the access rights for individuals or groups of users. 
 
 By default, a space is a configurable area for which the permissions have to be explicitly defined (see [authorization](authorization.html)).
-Additionally, the KG knows two special spaces:
+Additionally, the MarmotGraph knows two special spaces:
 
 ### "myspace"
 The "myspace" is the personal space of an authenticated user. It means that any user who is logged is an administrator 
@@ -23,10 +23,10 @@ are located in different spaces in reality.
 ## Invitations
 Users can be invited to individual instances. This means, that although they are not having any permissions on the 
 space of the given instance at all, an invitation allows them to access it. Because usually, giving access to a single instance
-is not sufficient in a graph database, the EBRAINS Knowledge Graph invitations are valid for the so-called "scope" of an instance
+is not sufficient in a graph database, the MarmotGraph invitations are valid for the so-called "scope" of an instance
 
 ### (Invitation)scope
 The scope of an instance describes the instance itself as well as its directly related resources. The 
 scope is calculated based on a specific set of "queries" which describe the dependencies between the entities based
-on specific use-cases (such as the combination for producing the aggregation result of the KG Search).
+on specific use-cases (such as the combination for producing the aggregation result of the MarmotGraph Search).
 The invitation scope is calculated at invitation time and can be updated via the corresponding API endpoint either regularly or on demand.

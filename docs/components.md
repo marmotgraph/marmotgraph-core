@@ -1,6 +1,6 @@
 # Components and dependencies
-The EBRAINS KG Core consists of a set of microservices fulfilling specific tasks within 
-the KG ecosystem.
+The MarmotGraph Core consists of a set of microservices fulfilling specific tasks within 
+the MarmotGraph ecosystem.
 
 [//TODO]: <> (Why microservices?)
 
@@ -125,7 +125,7 @@ The indexing component coordinates the indexing of individual events into the di
 **Technology:** Spring Boot
 
 ## GraphDB
-The GraphDB is the "heart" of the KG core. It translates the events and query definitions into database transactions or native db queries respectively.
+The GraphDB is the "heart" of the MarmotGraph core. It translates the events and query definitions into database transactions or native db queries respectively.
 [//TODO]: <> (Sync vs. async)
 
 **The components' main concerns**
@@ -140,7 +140,7 @@ The GraphDB is the "heart" of the KG core. It translates the events and query de
 **Technology:** Spring Boot
 
 ## Authentication
-The authentication service is an abstraction layer for the underlying auth system. It allows (if the credentials with appropriate rights are provided) to set-up clients and roles according to the conventions of the EBRAINS Knowledge Graph. It also validates the signature of the token and read user profiles.
+The authentication service is an abstraction layer for the underlying auth system. It allows (if the credentials with appropriate rights are provided) to set-up clients and roles according to the conventions of the MarmotGraph. It also validates the signature of the token and read user profiles.
 
 **The components' main concerns**   
 
@@ -153,7 +153,7 @@ The authentication service is an abstraction layer for the underlying auth syste
 **Database:** ArangoDB (kg-authentication)
 
 ## Dependencies
-KG Core has the following dependencies on external services   
+MarmotGraph Core has the following dependencies on external services   
 
 - Keycloak / iam.ebrains.eu: For authentication
 

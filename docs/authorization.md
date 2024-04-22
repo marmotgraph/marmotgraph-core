@@ -1,13 +1,13 @@
 # Authorization
-As described in the [authentication](authentication.html) section, the KG requires an authentication token of the requesting 
+As described in the [authentication](authentication.html) section, the MarmotGraph requires an authentication token of the requesting 
 user for almost all provided API endpoints. 
 
 Whilst the authentication is handled via a centralized identity management system (such as EBRAINS IAM),
-the authorization definition is specified in the EBRAINS KG itself.
+the authorization definition is specified in the MarmotGraph itself.
 
 ## Roles
 
-The EBRAINS KG knows the following roles which can be applied to different area:
+The MarmotGraph knows the following roles which can be applied to different area:
 
 #### Consumer
 A consumer is allowed to **read** the **released** resources of an instance.
@@ -28,7 +28,7 @@ An administrator has all possible functionalities at hand.
 All roles can be applied to one of the three granularity levels:
 
 #### Global
-This means that the given role applies globally for all spaces of the KG available
+This means that the given role applies globally for all spaces of the MarmotGraph available
 
 #### By space
 The applied role is available for a specific space. For spaces, it is allowed to specify a **'*'** wildcard. 
@@ -136,7 +136,7 @@ endpoint of the authentication system) to an applied role.
   }
 ]
 ```
-*The collab-roles to space mapping: Members of a collab receive the corresponding roles in the KG space named by the collab*
+*The collab-roles to space mapping: Members of a collab receive the corresponding roles in the MarmotGraph space named by the collab*
 
 
 ```json

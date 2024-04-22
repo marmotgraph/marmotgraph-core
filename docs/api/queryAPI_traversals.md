@@ -84,7 +84,7 @@ Expected: 200
 ## Reverse traversals
 
 Sometimes, it's not the root instance pointing to other linked elements but the other way around. This is what we call "reverse links". 
-It's easy to tell the KG Query API in which direction you want to walk the graph by specifying the "reverse" property (which defaults to `false` if not specified).
+It's easy to tell the MarmotGraph Query API in which direction you want to walk the graph by specifying the "reverse" property (which defaults to `false` if not specified).
 
 **Request**
 

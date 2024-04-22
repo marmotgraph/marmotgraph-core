@@ -1,6 +1,6 @@
 # The Query API
 
-The Query API is one of the most powerful components of the EBRAINS Knowledge Graph when it comes to consumption of metadata.
+The Query API is one of the most powerful components of the MarmotGraph when it comes to consumption of metadata.
 
 Whilst the [instances API](instances.html) is perfect for interacting with individual entities on the graph,
 many use-cases for consuming the metadata involves graph traversals, which means that the information of multiple linked instances 
@@ -19,7 +19,7 @@ specification for the following reasons:
   - We keep the query specification as its own, regular JSON-LD document allowing us to profit from various elements, starting from the proper support of fully qualified property names in the IRI as well as compact IRI format
   - We can easily compare the query structure against the current database structure and detect potential issues if they don't properly match
   - The query API is "yet another" JSON-LD document and can be easily persisted and linked inside the graph
-  - Thanks for easy reflection mechanism, we can provide convenient tooling such as the **KG Query Builder**
+  - Thanks for easy reflection mechanism, we can provide convenient tooling such as the **MarmotGraph QueryBuilder**
 - We want to be as descriptive and as simple as possible
   - For simplicity, we don't want to introduce too many functional aspects into the query language. The Query API aims to be a simple way of extracting metadata in a convenient format for post-processing in any technology. 
   We therefore try to keep the focus on simple accessor mechanisms.
