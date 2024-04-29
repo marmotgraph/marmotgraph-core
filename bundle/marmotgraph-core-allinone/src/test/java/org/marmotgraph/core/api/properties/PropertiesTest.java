@@ -23,6 +23,7 @@
 
 package org.marmotgraph.core.api.properties;
 
+import org.junit.jupiter.api.Assertions;
 import org.marmotgraph.commons.exception.ForbiddenException;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.Result;
@@ -70,7 +71,7 @@ class PropertiesTest extends AbstractFunctionalityTest {
             TypeInformation typeDefinition = test.assureValidPayload(result.get(test.type));
             List<NormalizedJsonLd> properties = typeDefinition.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class);
             NormalizedJsonLd propertydef = properties.stream().filter(p -> p.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class).equals(test.property)).findFirst().orElse(null);
-            assertEquals("bar", propertydef.getAs("http://foo", String.class));
+            Assertions.assertEquals("bar", propertydef.getAs("http://foo", String.class));
         });
     }
 
