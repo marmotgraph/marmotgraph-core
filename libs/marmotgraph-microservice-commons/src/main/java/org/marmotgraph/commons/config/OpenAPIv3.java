@@ -63,14 +63,14 @@ public class OpenAPIv3 {
     }
 
     @Bean
-    public OpenAPI genericOpenAPI(@Value("${org.marmotgraph.login.endpoint}") String loginEndpoint, @Value("${org.marmotgraph.login.tokenEndpoint}") String tokenEndpoint, @Value("${org.marmotgraph.commit}") String commit) {
+    public OpenAPI genericOpenAPI(@Value("${org.marmotgraph.login.endpoint}") String loginEndpoint, @Value("${org.marmotgraph.login.tokenEndpoint}") String tokenEndpoint, @Value("${org.marmotgraph.commit}") String commit, @Value("${org.marmotgraph.login.client}") String client) {
         SecurityScheme clientToken = new SecurityScheme().type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name(CLIENT_AUTHORIZATION_HEADER).description("The bearer token for the service account to contextualize the authentication to this client. If you don't know what this is about and just want to test the API, just leave it blank. :)");
 
         OAuthFlow oAuthFlow = new OAuthFlow();
         oAuthFlow.refreshUrl(tokenEndpoint);
         oAuthFlow.tokenUrl(tokenEndpoint);
         oAuthFlow.authorizationUrl(loginEndpoint);
-        oAuthFlow.addExtension("client_id", "kg");
+        oAuthFlow.addExtension("client_id", client);
         SecurityScheme userToken = new SecurityScheme().name("Authorization").type(SecurityScheme.Type.OAUTH2).flows(new OAuthFlows().authorizationCode(oAuthFlow)).description("The user authentication");
 
         SecurityRequirement userWithoutClientReq = new SecurityRequirement().addList(AUTHORIZATION_HEADER);
