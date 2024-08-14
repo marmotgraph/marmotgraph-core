@@ -433,7 +433,10 @@ public class CoreInstanceController {
                     NormalizedJsonLd doc = result.getData();
                     if (doc != null) {
                         String space = doc.getAs(EBRAINSVocabulary.META_SPACE, String.class);
-                        SpaceName sp = space != null ? new SpaceName(space) : null;
+
+                        // standard SpaceName or resolves the real one if it's a private space
+                        SpaceName sp = space != null ? authContext.resolveSpaceName(space) : null;
+
                         Set<Functionality> functionalities = permissions.stream().filter(p -> Functionality.FunctionalityGroup.INSTANCE == p.getFunctionality().getFunctionalityGroup() && stage != null && stage == p.getFunctionality().getStage()).filter(p -> p.appliesTo(sp, idUtils.getUUID(doc.id()))).map(FunctionalityInstance::getFunctionality).collect(Collectors.toSet());
                         doc.put(EBRAINSVocabulary.META_PERMISSIONS, functionalities);
                     }
