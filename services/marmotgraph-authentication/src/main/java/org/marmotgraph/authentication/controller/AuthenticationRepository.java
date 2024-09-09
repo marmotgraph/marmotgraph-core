@@ -35,6 +35,7 @@ import org.marmotgraph.authentication.model.Invitation;
 import org.marmotgraph.authentication.model.TermsOfUseAcceptance;
 import org.marmotgraph.commons.JsonAdapter;
 import org.marmotgraph.commons.SetupLogic;
+import org.marmotgraph.commons.cache.CacheConstant;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.model.TermsOfUse;
 import org.marmotgraph.commons.permission.roles.Role;
@@ -180,9 +181,13 @@ public class AuthenticationRepository implements SetupLogic {
     }
 
 
+    /**
+     * @param userInfo Map of user information
+     * @return Mutable List of strings to make the serialization work with cache mechanism (see https://github.com/spring-projects/spring-data-redis/issues/2697#issuecomment-1709664940)
+     */
     public List<String> getRolesFromUserInfo(Map<String, Object> userInfo) {
         if (userInfo == null || userInfo.isEmpty()) {
-            return Collections.emptyList();
+            return new ArrayList<>();
         }
         Object user = userInfo.get("sub");
         final List<JsonLdDoc> results = getAllRoleDefinitions();
@@ -199,7 +204,7 @@ public class AuthenticationRepository implements SetupLogic {
                         .flatMap(Collection::stream).collect(Collectors.toSet());
             }
             return null;
-        }).filter(Objects::nonNull).flatMap(Collection::stream).distinct().toList();
+        }).filter(Objects::nonNull).flatMap(Collection::stream).distinct().collect(Collectors.toList());
     }
 
 
@@ -294,7 +299,7 @@ public class AuthenticationRepository implements SetupLogic {
         return ids.stream().distinct().map(UUID::fromString).toList();
     }
 
-    @Cacheable("termsOfUseByUser")
+    @Cacheable(CacheConstant.CACHE_KEYS_TERMS_OF_USE_BY_USER)
     public TermsOfUse findTermsOfUseToAccept(String userId) {
         String userDoc = getUsersCollection().getDocument(userId, String.class);
         TermsOfUseAcceptance termsOfUse;
@@ -313,7 +318,7 @@ public class AuthenticationRepository implements SetupLogic {
         return currentTermsOfUse;
     }
 
-    @CacheEvict(value = "termsOfUseByUser", key = "#userId")
+    @CacheEvict(value = CacheConstant.CACHE_KEYS_TERMS_OF_USE_BY_USER, key = "#userId")
     public void acceptTermsOfUse(String version, String userId) {
         TermsOfUseAcceptance userAcceptance = getUsersCollection().getDocument(userId, TermsOfUseAcceptance.class);
         if (userAcceptance == null) {

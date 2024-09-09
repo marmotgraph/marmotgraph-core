@@ -30,6 +30,7 @@ import org.marmotgraph.arango.commons.model.ArangoDatabaseProxy;
 import org.marmotgraph.authentication.model.ArangoTermsOfUse;
 import org.marmotgraph.commons.JsonAdapter;
 import org.marmotgraph.commons.SetupLogic;
+import org.marmotgraph.commons.cache.CacheConstant;
 import org.marmotgraph.commons.model.TermsOfUse;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.CacheEvict;
@@ -62,12 +63,12 @@ public class TermsOfUseRepository implements SetupLogic {
         return database.collection("termsOfUse");
     }
 
-    @Cacheable("termsOfUse")
+    @Cacheable(CacheConstant.CACHE_KEYS_TERMS_OF_USE)
     public TermsOfUse getCurrentTermsOfUse() {
         return getTermsOfUseCollection().getDocument("current", TermsOfUse.class);
     }
 
-    @CacheEvict(value = "termsOfUse", allEntries = true)
+    @CacheEvict(value = CacheConstant.CACHE_KEYS_TERMS_OF_USE, allEntries = true)
     public void setCurrentTermsOfUse(TermsOfUse termsOfUse) {
         if(termsOfUse==null || termsOfUse.getData() == null || termsOfUse.getVersion() == null){
             throw new IllegalArgumentException("Was receiving an invalid terms of use specification");

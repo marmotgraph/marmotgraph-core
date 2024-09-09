@@ -27,13 +27,14 @@ import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDatabase;
 import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
 import org.marmotgraph.arango.commons.model.ArangoDatabaseProxy;
+import org.marmotgraph.commons.cache.CacheConstant;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 @Component
 public class PrimaryStoreDBUtils {
 
-    @Cacheable(value="primaryStoreCollection", key="{#db.name(), #c.collectionName}")
+    @Cacheable(value= CacheConstant.CACHE_KEYS_PRIMARY_STORE_COLLECTION, key="{#db.name(), #c.collectionName}", cacheManager = CacheConstant.CACHE_MANAGER_IN_MEMORY)
     public ArangoCollection getOrCreateArangoCollection(ArangoDatabase db, ArangoCollectionReference c) {
         return ArangoDatabaseProxy.getOrCreateArangoCollection(db, c);
     }

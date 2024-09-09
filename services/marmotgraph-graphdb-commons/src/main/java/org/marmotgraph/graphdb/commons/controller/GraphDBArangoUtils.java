@@ -31,6 +31,7 @@ import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
 import org.marmotgraph.arango.commons.model.ArangoDatabaseProxy;
 import org.marmotgraph.arango.commons.model.InternalSpace;
 import org.marmotgraph.commons.IdUtils;
+import org.marmotgraph.commons.cache.CacheConstant;
 import org.marmotgraph.commons.jsonld.IndexedJsonLdDoc;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.SpaceName;
@@ -50,7 +51,7 @@ public class GraphDBArangoUtils {
 
 
     @PostConstruct
-    public void setup(){
+    public void setup() {
         arangoDatabases.setup();
     }
 
@@ -59,7 +60,7 @@ public class GraphDBArangoUtils {
         this.idUtils = idUtils;
     }
 
-    @Cacheable(value="arangoCollection", key="{#db.name(), #c.collectionName}")
+    @Cacheable(value = CacheConstant.CACHE_KEYS_ARANGO_COLLECTION, key = "{#db.name(), #c.collectionName}", cacheManager = CacheConstant.CACHE_MANAGER_IN_MEMORY)
     public ArangoCollection getOrCreateArangoCollection(ArangoDatabase db, ArangoCollectionReference c) {
         return ArangoDatabaseProxy.getOrCreateArangoCollection(db, c);
     }
