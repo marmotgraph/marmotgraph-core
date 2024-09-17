@@ -449,12 +449,12 @@ public class MetaDataController {
         final List<Space> spaceSpecifications = this.structureRepository.getSpaces();
         final Set<SpaceName> spacesWithSpecifications = spaceSpecifications.stream().map(Space::getName).collect(Collectors.toSet());
         final Stream<Space> allSpaces = Stream.concat(spaceSpecifications.stream().map(s -> new Space(s.getName(), s.isAutoRelease(), s.isClientSpace(), s.isDeferCache())), reflectedSpaces.stream().filter(s -> !spacesWithSpecifications.contains(s))
-                //These are the types without specification so they fall back to default settings.
-                .map(s -> {
-                    final Space space = new Space(s, false, false, false);
-                    space.setReflected(true);
-                    return space;
-                }))
+                        //These are the types without specification so they fall back to default settings.
+                        .map(s -> {
+                            final Space space = new Space(s, false, false, false);
+                            space.setReflected(true);
+                            return space;
+                        }))
                 .peek(s -> {
                     if (reflectedSpaces.contains(s.getName())) {
                         s.setExistsInDB(true);
@@ -469,6 +469,10 @@ public class MetaDataController {
             spaceDefinitions = allSpaces.collect(Collectors.toList());
         }
         return spaceDefinitions;
+    }
+
+    public boolean checkTypeToSpace(SpaceName spaceName, String typeName) {
+        return  structureRepository.getTypesInSpaceBySpecification(spaceName).contains(typeName);
     }
 
     public SpaceSpecification getSpaceSpecification(SpaceName spaceName) {

@@ -23,12 +23,17 @@
 
 package org.marmotgraph.core.api.v3;
 
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.config.openApiGroups.Admin;
 import org.marmotgraph.commons.config.openApiGroups.Advanced;
 import org.marmotgraph.commons.exception.InstanceNotFoundException;
 import org.marmotgraph.commons.exception.InvalidRequestException;
+import org.marmotgraph.commons.exception.NoContentException;
 import org.marmotgraph.commons.markers.ExposesInputWithoutEnrichedSensitiveData;
 import org.marmotgraph.commons.markers.ExposesSpace;
 import org.marmotgraph.commons.markers.WritesData;
@@ -36,6 +41,7 @@ import org.marmotgraph.commons.model.PaginatedResult;
 import org.marmotgraph.commons.model.PaginationParam;
 import org.marmotgraph.commons.model.Result;
 import org.marmotgraph.commons.model.SpaceName;
+import org.marmotgraph.commons.model.external.types.TypeInSpace;
 import org.marmotgraph.commons.model.external.spaces.SpaceInformation;
 import org.marmotgraph.commons.model.external.spaces.SpaceSpecification;
 import org.marmotgraph.core.controller.CoreInferenceController;
@@ -66,7 +72,7 @@ public class SpacesV3 {
     @Advanced
     public Result<SpaceInformation> getSpace(@PathVariable("space") @Parameter(description = "The space to be read or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space") String space, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
         SpaceInformation s = spaceController.getSpace(SpaceName.fromString(space), permissions);
-        if(s != null){
+        if (s != null) {
             return Result.ok(s);
         }
         throw new InstanceNotFoundException(String.format("Space %s was not found", space));
@@ -79,6 +85,32 @@ public class SpacesV3 {
         return PaginatedResult.ok(spaceController.listSpaces(paginationParam, permissions));
     }
 
+    @Operation(summary = "Check type for a specific space")
+    @GetMapping("{space}/types")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Relation between space and type", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = TypeInSpace.class)) }),
+            @ApiResponse(responseCode = "404", description = "Space not found", content = @Content),
+            @ApiResponse(responseCode = "204", description = "No relation", content = @Content)})
+    @ExposesSpace
+    @Admin
+    public TypeInSpace typeInSpace(
+            @PathVariable("space") @Parameter(description = "The space be linked to or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space") String space,
+            @RequestParam(value = "type") String type
+    ) {
+
+        // check space exists
+        SpaceSpecification spaceSpecifications = this.spaceController.getSpaceSpecification(space);
+        if (spaceSpecifications == null) {
+            throw new InstanceNotFoundException(String.format("Space %s was not found", space));
+        }
+
+        // retrieve relation from space and type
+        if (spaceController.checkTypeInSpace(SpaceName.fromString(space), type)) {
+            return new TypeInSpace(space, type);
+        } else {
+            throw new NoContentException("No Content");
+        }
+    }
 
     @Operation(summary = "Assign a type to a space")
     @PutMapping("{space}/types")
