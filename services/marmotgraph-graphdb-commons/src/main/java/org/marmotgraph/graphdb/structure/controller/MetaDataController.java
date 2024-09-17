@@ -25,12 +25,14 @@ package org.marmotgraph.graphdb.structure.controller;
 
 import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
 import org.marmotgraph.commons.Tuple;
+import org.marmotgraph.commons.exception.InstanceNotFoundException;
 import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.Result;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.Type;
+import org.marmotgraph.commons.model.external.spaces.SpaceSpecification;
 import org.marmotgraph.commons.model.external.types.*;
 import org.marmotgraph.commons.model.internal.spaces.Space;
 import org.marmotgraph.commons.models.UserWithRoles;
@@ -444,7 +446,7 @@ public class MetaDataController {
 
     public List<Space> getSpaces(DataStage stage, UserWithRoles userWithRoles) {
         final List<SpaceName> reflectedSpaces = this.structureRepository.reflectSpaces(stage);
-        final List<Space> spaceSpecifications = this.structureRepository.getSpaceSpecifications();
+        final List<Space> spaceSpecifications = this.structureRepository.getSpaces();
         final Set<SpaceName> spacesWithSpecifications = spaceSpecifications.stream().map(Space::getName).collect(Collectors.toSet());
         final Stream<Space> allSpaces = Stream.concat(spaceSpecifications.stream().map(s -> new Space(s.getName(), s.isAutoRelease(), s.isClientSpace(), s.isDeferCache())), reflectedSpaces.stream().filter(s -> !spacesWithSpecifications.contains(s))
                 //These are the types without specification so they fall back to default settings.
@@ -469,5 +471,12 @@ public class MetaDataController {
         return spaceDefinitions;
     }
 
-
+    public SpaceSpecification getSpaceSpecification(SpaceName spaceName) {
+        List<SpaceSpecification> spaceSpecifications = this.structureRepository.getSpaceSpecifications().stream().filter(
+                space -> space.getName().equals(spaceName.getName())).collect(Collectors.toList());
+        if (spaceSpecifications.size() == 1) {
+            return spaceSpecifications.get(0);
+        }
+        throw new InstanceNotFoundException(String.format("Space %s was not found", spaceName));
+    }
 }

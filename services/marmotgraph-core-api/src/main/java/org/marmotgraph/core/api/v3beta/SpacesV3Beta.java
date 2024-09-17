@@ -97,6 +97,25 @@ public class SpacesV3Beta {
         spaceController.removeTypeFromSpace(SpaceName.fromString(space), type);
     }
 
+    @Operation(summary = "Get space specification")
+    @GetMapping("{space}/specification")
+    @Admin
+    @ExposesSpace
+    public SpaceSpecification spaceSpecification(
+            @PathVariable(value = "space")
+            @Parameter(description = "The space the specification is valid for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space
+    ) {
+        if (space == null) {
+            throw new InvalidRequestException("You need to provide a space name to execute this functionality");
+        }
+
+        SpaceSpecification spaceSpecifications = this.spaceController.getSpaceSpecification(space);
+
+        if (spaceSpecifications != null) {
+            return spaceSpecifications;
+        }
+        throw new InstanceNotFoundException(String.format("Space %s was not found", space));
+    }
 
     @Operation(summary = "Explicitly specify a space")
     @PutMapping("{space}/specification")
@@ -112,7 +131,7 @@ public class SpacesV3Beta {
         spaceSpecification.setAutoRelease(autoRelease);
         spaceSpecification.setDeferCache(deferCache);
         spaceSpecification.setClientSpace(clientSpace);
-        spaceController.createSpaceDefinition(spaceSpecification);
+        spaceController.createSpaceSpecification(spaceSpecification);
     }
 
 
@@ -121,7 +140,7 @@ public class SpacesV3Beta {
     @Admin
     @ExposesInputWithoutEnrichedSensitiveData
     public void removeSpaceDefinition(@PathVariable(value = "space") @Parameter(description = "The space the definition should be removed for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space) {
-        spaceController.removeSpaceDefinition(SpaceName.fromString(space));
+        spaceController.removeSpaceSpecification(SpaceName.fromString(space));
     }
 
     @Operation(summary = "Trigger a rerun of the events of this space")

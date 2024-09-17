@@ -139,24 +139,24 @@ public class StructureRepository {
 
 
 
-    @Cacheable(value = CacheConstant.CACHE_KEYS_SPACE_SPECIFICATIONS, sync = true)
-    public List<Space> getSpaceSpecifications() {
-        logger.debug("Missing cache hit: Fetching space specifications from database");
-        return doGetSpaceSpecifications();
+    @Cacheable(value = CacheConstant.CACHE_KEYS_SPACES, sync = true)
+    public List<Space> getSpaces() {
+        logger.debug("Missing cache hit: Fetching spaces from database");
+        return doGetSpaces();
     }
 
-    @CachePut(CacheConstant.CACHE_KEYS_SPACE_SPECIFICATIONS)
+    @CachePut(CacheConstant.CACHE_KEYS_SPACES)
     public List<Space> refreshSpaceSpecificationCache(){
-        logger.debug("Change of data: Fetching space specifications from database");
-        return doGetSpaceSpecifications();
+        logger.debug("Change of data: Fetching spaces from database");
+        return doGetSpaces();
     }
 
-    @CacheEvict(CacheConstant.CACHE_KEYS_SPACE_SPECIFICATIONS)
-    public void evictSpaceSpecificationCache() {
-        logger.debug("Cache evict: clearing cache for space specifications");
+    @CacheEvict(CacheConstant.CACHE_KEYS_SPACES)
+    public void evictSpacesCache() {
+        logger.debug("Cache evict: clearing cache for spaces");
     }
 
-    private List<Space> doGetSpaceSpecifications(){
+    private List<Space> doGetSpaces(){
         AQL aql = new AQL();
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
         if(structureDB.collection(SPACES.getCollectionName()).exists()) {
@@ -166,6 +166,37 @@ public class StructureRepository {
             aql.addLine(AQL.trust(String.format("SORT d.`%s` ASC", SchemaOrgVocabulary.NAME)));
             aql.addLine(AQL.trust("RETURN KEEP(d, ATTRIBUTES(d, true))"));
             return Collections.unmodifiableList(structureDB.query(aql.build().getValue(), bindVars, Space.class).asListRemaining());
+        }
+        return Collections.emptyList();
+    }
+
+    @Cacheable(value = CacheConstant.CACHE_KEYS_SPACE_SPECIFICATIONS, sync = true)
+    public List<SpaceSpecification> getSpaceSpecifications() {
+        logger.debug("Missing cache hit: Fetching space specifications from database");
+        return doGetSpaceSpecifications();
+    }
+
+    @CachePut(CacheConstant.CACHE_KEYS_SPACE_SPECIFICATIONS)
+    public List<SpaceSpecification> refreshSpaceSpecificationsCache(){
+        logger.debug("Change of data: Fetching space specifications from database");
+        return doGetSpaceSpecifications();
+    }
+
+    @CacheEvict(CacheConstant.CACHE_KEYS_SPACE_SPECIFICATIONS)
+    public void evictSpaceSpecificationsCache() {
+        logger.debug("Cache evict: clearing cache for space specifications");
+    }
+
+    private List<SpaceSpecification> doGetSpaceSpecifications(){
+        AQL aql = new AQL();
+        final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
+        if(structureDB.collection(SPACES.getCollectionName()).exists()) {
+            Map<String, Object> bindVars = new HashMap<>();
+            aql.addLine(AQL.trust("FOR d IN @@collection"));
+            bindVars.put("@collection", SPACES.getCollectionName());
+            aql.addLine(AQL.trust(String.format("SORT d.`%s` ASC", SchemaOrgVocabulary.NAME)));
+            aql.addLine(AQL.trust("RETURN KEEP(d, ATTRIBUTES(d, true))"));
+            return Collections.unmodifiableList(structureDB.query(aql.build().getValue(), bindVars, SpaceSpecification.class).asListRemaining());
         }
         return Collections.emptyList();
     }

@@ -83,12 +83,16 @@ public class CoreSpaceController {
         return sp != null ? translateSpaceToSpaceInformation(sp, permissions) : null;
     }
 
+    public SpaceSpecification getSpaceSpecification(String space) {
+        return graphDBSpaces.getSpaceSpecification(new SpaceName(space));
+    }
 
-    public void createSpaceDefinition(SpaceSpecification spaceSpec) {
+
+    public void createSpaceSpecification(SpaceSpecification spaceSpec) {
         graphDBSpaces.specifySpace(spaceSpec);
     }
 
-    public void removeSpaceDefinition(SpaceName space) {
+    public void removeSpaceSpecification(SpaceName space) {
         graphDBSpaces.removeSpaceSpecification(space);
     }
 

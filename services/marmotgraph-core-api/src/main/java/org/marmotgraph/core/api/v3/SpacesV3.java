@@ -96,13 +96,32 @@ public class SpacesV3 {
         spaceController.removeTypeFromSpace(SpaceName.fromString(space), type);
     }
 
+    @Operation(summary = "Get space specification")
+    @GetMapping("{space}/specification")
+    @Admin
+    @ExposesSpace
+    public SpaceSpecification spaceSpecification(
+            @PathVariable(value = "space")
+            @Parameter(description = "The space the specification is valid for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space
+    ) {
+        if (space == null) {
+            throw new InvalidRequestException("You need to provide a space name to execute this functionality");
+        }
+
+        SpaceSpecification spaceSpecifications = this.spaceController.getSpaceSpecification(space);
+
+        if (spaceSpecifications != null) {
+            return spaceSpecifications;
+        }
+        throw new InstanceNotFoundException(String.format("Space %s was not found", space));
+    }
 
     @Operation(summary = "Explicitly specify a space")
     @PutMapping("{space}/specification")
     @Admin
     @ExposesInputWithoutEnrichedSensitiveData
-    public void createSpaceDefinition(@PathVariable(value = "space") @Parameter(description = "The space the definition is valid for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space, @RequestParam(value = "autorelease", required = false, defaultValue = "false") boolean autoRelease, @RequestParam(value = "clientSpace", required = false, defaultValue = "false") boolean clientSpace, @RequestParam(value = "deferCache", required = false, defaultValue = "false") boolean deferCache, @RequestParam(value = "scopeRelevant", required = false, defaultValue = "false") boolean scopeRelevant) {
-        if(space == null){
+    public void createSpaceSpecification(@PathVariable(value = "space") @Parameter(description = "The space the definition is valid for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space, @RequestParam(value = "autorelease", required = false, defaultValue = "false") boolean autoRelease, @RequestParam(value = "clientSpace", required = false, defaultValue = "false") boolean clientSpace, @RequestParam(value = "deferCache", required = false, defaultValue = "false") boolean deferCache, @RequestParam(value = "scopeRelevant", required = false, defaultValue = "false") boolean scopeRelevant) {
+        if (space == null) {
             throw new InvalidRequestException("You need to provide a space name to execute this functionality");
         }
         SpaceSpecification spaceSpecification = new SpaceSpecification();
@@ -112,16 +131,16 @@ public class SpacesV3 {
         spaceSpecification.setDeferCache(deferCache);
         spaceSpecification.setClientSpace(clientSpace);
         spaceSpecification.setScopeRelevant(scopeRelevant);
-        spaceController.createSpaceDefinition(spaceSpecification);
+        spaceController.createSpaceSpecification(spaceSpecification);
     }
 
 
-    @Operation(summary = "Remove a space definition")
+    @Operation(summary = "Remove a space specification")
     @DeleteMapping("{space}/specification")
     @Admin
     @ExposesInputWithoutEnrichedSensitiveData
-    public void removeSpaceDefinition(@PathVariable(value = "space") @Parameter(description = "The space the definition should be removed for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space) {
-        spaceController.removeSpaceDefinition(SpaceName.fromString(space));
+    public void removeSpaceSpecification(@PathVariable(value = "space") @Parameter(description = "The space the definition should be removed for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space) {
+        spaceController.removeSpaceSpecification(SpaceName.fromString(space));
     }
 
     @Operation(summary = "Trigger a rerun of the events of this space")

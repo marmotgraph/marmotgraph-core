@@ -93,6 +93,19 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
     }
 
     @Override
+    public SpaceSpecification getSpaceSpecification(SpaceName spaceName) {
+        SpaceSpecification spaceSpecification = this.metaDataController.getSpaceSpecification(spaceName);
+        try {
+            this.checkOnSpaceSpecificationAdminOperations(spaceSpecification);
+        } catch (InvalidRequestException e) {
+            throw new InvalidRequestException("You can't provide a specification for your private space");
+        } catch (Exception e) {
+            throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
+        }
+        return spaceSpecification;
+    }
+
+    @Override
     public void specifySpace(SpaceSpecification spaceSpecification) {
         if (spaceSpecification.getScopeRelevant() != null && spaceSpecification.getScopeRelevant() && !permissionsController.canDefineScopeSpace(authContext.getUserWithRoles())) {
             throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
@@ -107,7 +120,8 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
                     break;
             }
             structureRepository.createOrUpdateSpaceDocument(spaceSpecification);
-            structureRepository.evictSpaceSpecificationCache();
+            structureRepository.evictSpacesCache();
+            structureRepository.evictSpaceSpecificationsCache();
         }
         else{
             throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
@@ -126,7 +140,8 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
                     break;
             }
             structureRepository.removeSpaceDocument(spaceName);
-            structureRepository.evictSpaceSpecificationCache();
+            structureRepository.evictSpacesCache();
+            structureRepository.evictSpaceSpecificationsCache();
         }
         else{
             throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
@@ -146,12 +161,25 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
 
     @Override
     public void removeTypeFromSpace(SpaceName spaceName, String typeName) {
-        if(permissionsController.canManageSpaces(authContext.getUserWithRoles(), spaceName)) {
+        if (permissionsController.canManageSpaces(authContext.getUserWithRoles(), spaceName)) {
             structureRepository.removeLinkBetweenSpaceAndType(spaceName, typeName);
             structureRepository.evictTypesInSpaceBySpecification(spaceName);
-        }
-        else{
+        } else {
             throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
+        }
+    }
+
+    private void checkOnSpaceSpecificationAdminOperations(SpaceSpecification spaceSpecification) {
+
+        if (!permissionsController.canManageSpaces(authContext.getUserWithRoles(), SpaceName.fromString(spaceSpecification.getName()))) {
+            throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
+        }
+        switch (spaceSpecification.getName()) {
+            case SpaceName.PRIVATE_SPACE:
+            case SpaceName.REVIEW_SPACE:
+                throw new InvalidRequestException();
+            default:
+                break;
         }
     }
 }

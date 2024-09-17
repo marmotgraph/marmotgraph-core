@@ -37,6 +37,8 @@ public interface GraphDBSpaces {
 
     Paginated<Space> listSpaces(PaginationParam paginationParam);
 
+    SpaceSpecification getSpaceSpecification(SpaceName space);
+
     void specifySpace(SpaceSpecification spaceSpecification);
 
     void removeSpaceSpecification(SpaceName spaceName);
