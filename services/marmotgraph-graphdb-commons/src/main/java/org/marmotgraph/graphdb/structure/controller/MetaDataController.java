@@ -477,7 +477,7 @@ public class MetaDataController {
 
     public SpaceSpecification getSpaceSpecification(SpaceName spaceName) {
         List<SpaceSpecification> spaceSpecifications = this.structureRepository.getSpaceSpecifications().stream().filter(
-                space -> space.getName().equals(spaceName.getName())).collect(Collectors.toList());
+                space -> space.getName().equals(spaceName.getName())).toList();
         if (spaceSpecifications.size() == 1) {
             return spaceSpecifications.get(0);
         }

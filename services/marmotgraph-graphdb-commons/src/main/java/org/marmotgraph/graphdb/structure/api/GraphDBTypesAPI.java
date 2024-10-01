@@ -26,10 +26,12 @@ package org.marmotgraph.graphdb.structure.api;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.api.GraphDBTypes;
 import org.marmotgraph.commons.exception.ForbiddenException;
+import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.*;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
+import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import org.marmotgraph.graphdb.commons.controller.PermissionsController;
 import org.marmotgraph.graphdb.instances.controller.DocumentsRepository;
 import org.marmotgraph.graphdb.structure.controller.MetaDataController;
@@ -67,6 +69,22 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
     public Map<String, Result<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space,
                                                                boolean withProperties, boolean withIncomingLinks) {
         return metaDataController.getTypesByName(types, stage, space, withProperties, withIncomingLinks, authContext.getUserWithRoles(), authContext.getClientSpace()!=null ? authContext.getClientSpace().getName() : null, documents.getInvitationDocuments());
+    }
+
+    @Override
+    public DynamicJson getSpecifyType(String type, boolean global) {
+        if (permissionsController.canManageTypesAndProperties(authContext.getUserWithRoles())) {
+
+            if(global) {
+                return structureRepository.getTypeSpecification(type);
+            } else {
+                final SpaceName clientSpace = getClientSpaceOrThrowException();
+                return structureRepository.getClientSpecificTypeSpecification(type, clientSpace);
+            }
+
+        } else {
+            throw new ForbiddenException(NO_RIGHTS_TO_DEFINE_TYPES);
+        }
     }
 
     @Override
@@ -112,6 +130,21 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
         return clientSpace;
     }
 
+    @Override
+    public DynamicJson getSpecifyProperty(String propertyName, boolean global) {
+        if (permissionsController.canManageTypesAndProperties(authContext.getUserWithRoles())) {
+
+            if(global) {
+                return structureRepository.getPropertyBySpecification(propertyName);
+            } else {
+                final SpaceName clientSpace = getClientSpaceOrThrowException();
+                return structureRepository.getClientSpecificPropertyBySpecification(propertyName, clientSpace);
+            }
+
+        } else {
+            throw new ForbiddenException(NO_RIGHTS_TO_DEFINE_TYPES);
+        }
+    }
 
     @Override
     public void specifyProperty(JsonLdId propertyName, NormalizedJsonLd normalizedJsonLd, boolean global) {
@@ -142,6 +175,30 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
                 structureRepository.removePropertyDocument(propertyName, clientSpace);
                 structureRepository.evictClientSpecificPropertySpecificationCache(propertyName.getId(), clientSpace);
             }
+        } else {
+            throw new ForbiddenException(NO_RIGHTS_TO_DEFINE_TYPES);
+        }
+    }
+
+    @Override
+    public boolean checkPropertyToType(String typeName, String propertyName, boolean global) {
+        if (permissionsController.canManageTypesAndProperties(authContext.getUserWithRoles())) {
+
+            List<DynamicJson> properties;
+
+            if(global) {
+                properties = structureRepository.getPropertiesOfTypeBySpecification(typeName);
+            } else {
+                final SpaceName clientSpace = getClientSpaceOrThrowException();
+                properties = structureRepository.getClientSpecificPropertiesOfTypeBySpecification(typeName, clientSpace);
+            }
+
+            if(properties.stream().filter(p -> p.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class).equals(propertyName)).findFirst().orElse(null) == null) {
+                return false;
+            };
+
+            return true;
+
         } else {
             throw new ForbiddenException(NO_RIGHTS_TO_DEFINE_TYPES);
         }

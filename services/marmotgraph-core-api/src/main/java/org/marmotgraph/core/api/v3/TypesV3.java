@@ -28,14 +28,13 @@ import org.marmotgraph.commons.api.GraphDBTypes;
 import org.marmotgraph.commons.config.openApiGroups.Admin;
 import org.marmotgraph.commons.config.openApiGroups.Advanced;
 import org.marmotgraph.commons.config.openApiGroups.Simple;
+import org.marmotgraph.commons.exception.InstanceNotFoundException;
+import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.markers.ExposesType;
 import org.marmotgraph.commons.markers.WritesData;
-import org.marmotgraph.commons.model.PaginatedResult;
-import org.marmotgraph.commons.model.PaginationParam;
-import org.marmotgraph.commons.model.Result;
-import org.marmotgraph.commons.model.SpaceName;
+import org.marmotgraph.commons.model.*;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.core.model.ExposedStage;
@@ -78,6 +77,23 @@ public class TypesV3 {
     }
 
     @Operation(summary = "Specify a type")
+    @GetMapping("/types/specification")
+    @ExposesType
+    @Admin
+    public DynamicJson getTypeSpecification(
+            @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")
+            @RequestParam(value = "global", required = false) boolean global,
+            @RequestParam("type") String type
+    ) {
+        DynamicJson informations = graphDBTypes.getSpecifyType(type, global);
+
+        if (informations != null) {
+            return informations;
+        }
+        throw new InstanceNotFoundException(String.format("Type %s was not found", type));
+    }
+
+    @Operation(summary = "Specify a type")
     //In theory, this could also go into /types only. But since Swagger doesn't allow the discrimination of groups with the same path (there is already the same path registered as GET for simple), we want to discriminate it properly
     @PutMapping("/types/specification")
     @WritesData
@@ -85,7 +101,7 @@ public class TypesV3 {
     public void createTypeDefinition(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)") @RequestParam(value = "global", required = false) boolean global, @RequestParam("type") String type) {
         JsonLdId typeFromPayload = payload.getAs(EBRAINSVocabulary.META_TYPE, JsonLdId.class);
         String decodedType = URLDecoder.decode(type, StandardCharsets.UTF_8);
-        if(typeFromPayload!=null){
+        if (typeFromPayload != null) {
             throw new IllegalArgumentException("You are not supposed to provide a @type in the payload of the type specifications to avoid ambiguity");
         }
         graphDBTypes.specifyType(new JsonLdId(decodedType), payload, global);
@@ -96,7 +112,7 @@ public class TypesV3 {
     @DeleteMapping("/types/specification")
     @WritesData
     @Admin
-    public void removeTypeDefinition(@RequestParam(value = "type", required = false) String type,  @RequestParam(value = "global", required = false) boolean global) {
+    public void removeTypeDefinition(@RequestParam(value = "type", required = false) String type, @RequestParam(value = "global", required = false) boolean global) {
         String decodedType = URLDecoder.decode(type, StandardCharsets.UTF_8);
         graphDBTypes.removeTypeSpecification(new JsonLdId(decodedType), global);
     }
