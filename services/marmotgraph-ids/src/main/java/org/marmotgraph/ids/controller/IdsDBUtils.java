@@ -29,11 +29,12 @@ import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
 import org.marmotgraph.arango.commons.model.ArangoDatabaseProxy;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
+import org.marmotgraph.commons.cache.CacheConstant;
 
 @Component
 public class IdsDBUtils {
 
-    @Cacheable(value="idsCollection", key="{#db.name(), #c.collectionName}")
+    @Cacheable(value = CacheConstant.CACHE_KEYS_IDS_COLLECTIONS, key="{#db.name(), #c.collectionName}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
     public ArangoCollection getOrCreateArangoCollection(ArangoDatabase db, ArangoCollectionReference c) {
         return ArangoDatabaseProxy.getOrCreateArangoCollection(db, c);
     }
