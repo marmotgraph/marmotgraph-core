@@ -368,15 +368,15 @@ public class StructureRepository {
 
 
     @Cacheable(value = CacheConstant.CACHE_KEYS_PROPERTIES_IN_TYPE_SPECIFICATION, sync = true)
-    public List<DynamicJson> getPropertiesOfTypeBySpecification(String type) {
+    public List<DynamicJson> getPropertiesInTypeBySpecification(String type) {
         logger.debug(String.format("Missing cache hit: Reflecting properties for type %s", type));
-        return doGetPropertiesOfTypeBySpecification(type, PROPERTY_IN_TYPE);
+        return doGetPropertiesInTypeBySpecification(type, PROPERTY_IN_TYPE);
     }
 
     @CachePut(CacheConstant.CACHE_KEYS_PROPERTIES_IN_TYPE_SPECIFICATION)
     public List<DynamicJson> refreshPropertiesInTypeBySpecificationCache(String type) {
         logger.debug(String.format("Change of data: Reflecting properties for type %s", type));
-        return doGetPropertiesOfTypeBySpecification(type, PROPERTY_IN_TYPE);
+        return doGetPropertiesInTypeBySpecification(type, PROPERTY_IN_TYPE);
     }
 
     @CacheEvict(CacheConstant.CACHE_KEYS_PROPERTIES_IN_TYPE_SPECIFICATION)
@@ -385,15 +385,15 @@ public class StructureRepository {
     }
 
     @Cacheable(value = CacheConstant.CACHE_KEYS_CLIENT_SPECIFIC_PROPERTIES_IN_TYPE_SPECIFICATION, sync = true)
-    public List<DynamicJson> getClientSpecificPropertiesOfTypeBySpecification(String type, SpaceName clientSpaceName) {
+    public List<DynamicJson> getClientSpecificPropertiesInTypeBySpecification(String type, SpaceName clientSpaceName) {
         logger.debug(String.format("Missing cache hit: Reflecting properties for type %s (client: %s)", type, clientSpaceName.getName()));
-        return doGetPropertiesOfTypeBySpecification(type, clientPropertyInTypeCollection(clientSpaceName.getName()));
+        return doGetPropertiesInTypeBySpecification(type, clientPropertyInTypeCollection(clientSpaceName.getName()));
     }
 
     @CachePut(CacheConstant.CACHE_KEYS_CLIENT_SPECIFIC_PROPERTIES_IN_TYPE_SPECIFICATION)
     public List<DynamicJson> refreshClientSpecificPropertiesInTypeBySpecificationCache(String type, SpaceName clientSpaceName) {
         logger.debug(String.format("Change of data: Reflecting properties for type %s (client: %s)", type, clientSpaceName.getName()));
-        return doGetPropertiesOfTypeBySpecification(type, clientPropertyInTypeCollection(clientSpaceName.getName()));
+        return doGetPropertiesInTypeBySpecification(type, clientPropertyInTypeCollection(clientSpaceName.getName()));
     }
 
     @CacheEvict(CacheConstant.CACHE_KEYS_CLIENT_SPECIFIC_PROPERTIES_IN_TYPE_SPECIFICATION)
@@ -401,7 +401,7 @@ public class StructureRepository {
         logger.debug(String.format("Cache evict: clearing cache for properties in type %s (client: %s)", type, clientSpaceName.getName()));
     }
 
-    private List<DynamicJson> doGetPropertiesOfTypeBySpecification(String type, ArangoCollectionReference collectionReference) {
+    private List<DynamicJson> doGetPropertiesInTypeBySpecification(String type, ArangoCollectionReference collectionReference) {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
         if (structureDB.collection(collectionReference.getCollectionName()).exists()) {
             final UUID typeUUID = typeSpecificationRef(type);

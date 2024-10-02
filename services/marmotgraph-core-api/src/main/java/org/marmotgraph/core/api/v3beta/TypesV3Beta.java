@@ -28,6 +28,8 @@ import org.marmotgraph.commons.api.GraphDBTypes;
 import org.marmotgraph.commons.config.openApiGroups.Admin;
 import org.marmotgraph.commons.config.openApiGroups.Advanced;
 import org.marmotgraph.commons.config.openApiGroups.Simple;
+import org.marmotgraph.commons.exception.InstanceNotFoundException;
+import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.markers.ExposesType;
@@ -76,6 +78,23 @@ public class TypesV3Beta {
     @Advanced
     public Result<Map<String, Result<TypeInformation>>> getTypesByName(@RequestBody List<String> typeNames, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space) {
         return Result.ok(graphDBTypes.getTypesByName(typeNames, stage.getStage(), space, withProperties, withIncomingLinks));
+    }
+
+    @Operation(summary = "Specify a type")
+    @GetMapping("/types/specification")
+    @ExposesType
+    @Admin
+    public DynamicJson getTypeSpecification(
+            @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")
+            @RequestParam(value = "global", required = false) boolean global,
+            @RequestParam("type") String type
+    ) {
+        DynamicJson informations = graphDBTypes.getSpecifyType(type, global);
+
+        if (informations != null) {
+            return informations;
+        }
+        throw new InstanceNotFoundException(String.format("Type %s was not found", type));
     }
 
     @Operation(summary = "Specify a type")

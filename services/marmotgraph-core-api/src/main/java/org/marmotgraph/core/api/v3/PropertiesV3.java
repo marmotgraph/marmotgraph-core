@@ -101,7 +101,7 @@ public class PropertiesV3 {
             @RequestParam("property") String property,
             @RequestParam("type") String type) {
 
-        if (graphDBTypes.checkPropertyToType(type, property, global)) {
+        if (graphDBTypes.checkPropertyInType(type, property, global)) {
             return new PropertyInType(property, type);
         } else {
             throw new NoContentException("No Content");

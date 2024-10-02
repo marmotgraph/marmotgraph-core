@@ -52,7 +52,7 @@ public interface GraphDBTypes {
 
     void removePropertySpecification(JsonLdId propertyName, boolean global);
 
-    boolean checkPropertyToType(String typeName, String propertyName, boolean global);
+    boolean checkPropertyInType(String typeName, String propertyName, boolean global);
 
     void addOrUpdatePropertyToType(String typeName, String propertyName, NormalizedJsonLd payload, boolean global);
 

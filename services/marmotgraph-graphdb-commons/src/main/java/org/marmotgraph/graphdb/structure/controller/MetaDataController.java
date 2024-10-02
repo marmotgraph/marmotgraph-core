@@ -350,8 +350,8 @@ public class MetaDataController {
     }
 
     private void handleProperties(DataStage stage, List<String> allRelevantEdges, Space space, SpaceName clientSpace, SpaceName privateUserSpace, String typeName, SpaceTypeInformation spaceTypeInformation, List<PropertyOfTypeInSpaceReflection> reflectedProperties, Set<String> reflectedPropertyNames) {
-        final Map<String, DynamicJson> propertiesOfTypeBySpecification = structureRepository.getPropertiesOfTypeBySpecification(typeName).stream().collect(Collectors.toMap(k -> k.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class), v -> v));
-        final Map<String, DynamicJson> clientSpecificPropertiesOfTypeBySpecification = clientSpace == null ? Collections.emptyMap() : structureRepository.getClientSpecificPropertiesOfTypeBySpecification(typeName, clientSpace).stream().collect(Collectors.toMap(k -> k.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class), v -> v));
+        final Map<String, DynamicJson> propertiesOfTypeBySpecification = structureRepository.getPropertiesInTypeBySpecification(typeName).stream().collect(Collectors.toMap(k -> k.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class), v -> v));
+        final Map<String, DynamicJson> clientSpecificPropertiesOfTypeBySpecification = clientSpace == null ? Collections.emptyMap() : structureRepository.getClientSpecificPropertiesInTypeBySpecification(typeName, clientSpace).stream().collect(Collectors.toMap(k -> k.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class), v -> v));
         Stream.concat(reflectedProperties.stream(), propertiesOfTypeBySpecification.keySet().stream().filter(k -> !reflectedPropertyNames.contains(k)).map(k -> {
             //Create placeholders for those properties that are only existing in the specification
             PropertyOfTypeInSpaceReflection p = new PropertyOfTypeInSpaceReflection();

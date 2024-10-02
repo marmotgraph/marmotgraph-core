@@ -181,16 +181,16 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
     }
 
     @Override
-    public boolean checkPropertyToType(String typeName, String propertyName, boolean global) {
+    public boolean checkPropertyInType(String typeName, String propertyName, boolean global) {
         if (permissionsController.canManageTypesAndProperties(authContext.getUserWithRoles())) {
 
             List<DynamicJson> properties;
 
             if(global) {
-                properties = structureRepository.getPropertiesOfTypeBySpecification(typeName);
+                properties = structureRepository.getPropertiesInTypeBySpecification(typeName);
             } else {
                 final SpaceName clientSpace = getClientSpaceOrThrowException();
-                properties = structureRepository.getClientSpecificPropertiesOfTypeBySpecification(typeName, clientSpace);
+                properties = structureRepository.getClientSpecificPropertiesInTypeBySpecification(typeName, clientSpace);
             }
 
             if(properties.stream().filter(p -> p.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class).equals(propertyName)).findFirst().orElse(null) == null) {
