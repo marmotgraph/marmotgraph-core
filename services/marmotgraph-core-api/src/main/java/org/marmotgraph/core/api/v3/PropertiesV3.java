@@ -86,7 +86,7 @@ public class PropertiesV3 {
         graphDBTypes.removePropertySpecification(new JsonLdId(decodedProperty), global);
     }
 
-    @Operation(summary = "Define a property specification either globally for the requesting client")
+    @Operation(summary = "Check type for a specific property either globally for the requesting client")
     @GetMapping("/propertiesForType")
     @ExposesProperty
     @ApiResponses(value = {

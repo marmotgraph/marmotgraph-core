@@ -34,7 +34,10 @@ import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.markers.ExposesType;
 import org.marmotgraph.commons.markers.WritesData;
-import org.marmotgraph.commons.model.*;
+import org.marmotgraph.commons.model.PaginatedResult;
+import org.marmotgraph.commons.model.PaginationParam;
+import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.core.model.ExposedStage;
@@ -76,7 +79,7 @@ public class TypesV3 {
         return Result.ok(graphDBTypes.getTypesByName(typeNames, stage.getStage(), space, withProperties, withIncomingLinks));
     }
 
-    @Operation(summary = "Specify a type")
+    @Operation(summary = "Get type specification")
     @GetMapping("/types/specification")
     @ExposesType
     @Admin

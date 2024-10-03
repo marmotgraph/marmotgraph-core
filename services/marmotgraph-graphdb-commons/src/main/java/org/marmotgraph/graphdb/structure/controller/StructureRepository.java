@@ -146,7 +146,7 @@ public class StructureRepository {
     }
 
     @CachePut(CacheConstant.CACHE_KEYS_SPACES)
-    public List<Space> refreshSpaceSpecificationCache(){
+    public List<Space> refreshSpacesCache(){
         logger.debug("Change of data: Fetching spaces from database");
         return doGetSpaces();
     }

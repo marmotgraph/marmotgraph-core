@@ -80,7 +80,7 @@ public class TypesV3Beta {
         return Result.ok(graphDBTypes.getTypesByName(typeNames, stage.getStage(), space, withProperties, withIncomingLinks));
     }
 
-    @Operation(summary = "Specify a type")
+    @Operation(summary = "Get type specification")
     @GetMapping("/types/specification")
     @ExposesType
     @Admin

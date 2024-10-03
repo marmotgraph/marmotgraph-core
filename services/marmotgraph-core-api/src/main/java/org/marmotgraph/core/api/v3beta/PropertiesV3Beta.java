@@ -85,15 +85,13 @@ public class PropertiesV3Beta {
         graphDBTypes.removePropertySpecification(new JsonLdId(decodedProperty), global);
     }
 
-    @Operation(summary = "Define a property specification either globally for the requesting client")
+    @Operation(summary = "Check type for a specific property either globally for the requesting client")
     @GetMapping("/propertiesForType")
     @ExposesProperty
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Relation between type and property", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = PropertyInType.class)) }),
             @ApiResponse(responseCode = "404", description = "Type not found", content = @Content),
             @ApiResponse(responseCode = "204", description = "No relation", content = @Content)})
-
-    @Admin
     public PropertyInType getPropertyForType(
             @Parameter(description = "")
             @RequestParam(value = "global", required = false) boolean global,

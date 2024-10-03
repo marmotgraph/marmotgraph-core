@@ -26,7 +26,10 @@ package org.marmotgraph.commons.api;
 import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.model.*;
+import org.marmotgraph.commons.model.DataStage;
+import org.marmotgraph.commons.model.Paginated;
+import org.marmotgraph.commons.model.PaginationParam;
+import org.marmotgraph.commons.model.Result;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
 
 import java.util.List;
