@@ -21,32 +21,25 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.commons.api;
+package org.marmotgraph.commons.model.external.types;
 
-import org.marmotgraph.commons.model.Paginated;
-import org.marmotgraph.commons.model.PaginationParam;
-import org.marmotgraph.commons.model.SpaceName;
-import org.marmotgraph.commons.model.external.spaces.SpaceSpecification;
-import org.marmotgraph.commons.model.internal.spaces.Space;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.Setter;
+import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 
-public interface GraphDBSpaces {
+@Setter
+@Getter
+public class TypeInSpace {
+    @JsonProperty(EBRAINSVocabulary.META_SPACE)
+    private String space;
 
-    interface Client extends GraphDBSpaces {}
+    @JsonProperty(EBRAINSVocabulary.META_TYPE)
+    private String type;
 
-    Space getSpace(SpaceName space);
-
-    Paginated<Space> listSpaces(PaginationParam paginationParam);
-
-    SpaceSpecification getSpaceSpecification(SpaceName space);
-
-    void specifySpace(SpaceSpecification spaceSpecification);
-
-    void removeSpaceSpecification(SpaceName spaceName);
-
-    boolean checkTypeInSpace(SpaceName spaceName, String typeName);
-
-    void addTypeToSpace(SpaceName spaceName, String typeName);
-
-    void removeTypeFromSpace(SpaceName spaceName, String typeName);
+    public TypeInSpace(String space, String type) {
+        this.space = space;
+        this.type = type;
+    }
 
 }

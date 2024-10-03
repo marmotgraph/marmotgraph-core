@@ -23,12 +23,17 @@
 
 package org.marmotgraph.core.api.v3;
 
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.config.openApiGroups.Admin;
 import org.marmotgraph.commons.config.openApiGroups.Advanced;
 import org.marmotgraph.commons.exception.InstanceNotFoundException;
 import org.marmotgraph.commons.exception.InvalidRequestException;
+import org.marmotgraph.commons.exception.NoContentException;
 import org.marmotgraph.commons.markers.ExposesInputWithoutEnrichedSensitiveData;
 import org.marmotgraph.commons.markers.ExposesSpace;
 import org.marmotgraph.commons.markers.WritesData;
@@ -36,6 +41,7 @@ import org.marmotgraph.commons.model.PaginatedResult;
 import org.marmotgraph.commons.model.PaginationParam;
 import org.marmotgraph.commons.model.Result;
 import org.marmotgraph.commons.model.SpaceName;
+import org.marmotgraph.commons.model.external.types.TypeInSpace;
 import org.marmotgraph.commons.model.external.spaces.SpaceInformation;
 import org.marmotgraph.commons.model.external.spaces.SpaceSpecification;
 import org.marmotgraph.core.controller.CoreInferenceController;
@@ -66,7 +72,7 @@ public class SpacesV3 {
     @Advanced
     public Result<SpaceInformation> getSpace(@PathVariable("space") @Parameter(description = "The space to be read or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space") String space, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
         SpaceInformation s = spaceController.getSpace(SpaceName.fromString(space), permissions);
-        if(s != null){
+        if (s != null) {
             return Result.ok(s);
         }
         throw new InstanceNotFoundException(String.format("Space %s was not found", space));
@@ -79,6 +85,32 @@ public class SpacesV3 {
         return PaginatedResult.ok(spaceController.listSpaces(paginationParam, permissions));
     }
 
+    @Operation(summary = "Check type for a specific space")
+    @GetMapping("{space}/types")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Relation between space and type", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = TypeInSpace.class)) }),
+            @ApiResponse(responseCode = "404", description = "Space not found", content = @Content),
+            @ApiResponse(responseCode = "204", description = "No relation", content = @Content)})
+    @ExposesSpace
+    @Admin
+    public TypeInSpace typeInSpace(
+            @PathVariable("space") @Parameter(description = "The space be linked to or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space") String space,
+            @RequestParam(value = "type") String type
+    ) {
+
+        // check space exists
+        SpaceSpecification spaceSpecifications = this.spaceController.getSpaceSpecification(space);
+        if (spaceSpecifications == null) {
+            throw new InstanceNotFoundException(String.format("Space %s was not found", space));
+        }
+
+        // retrieve relation from space and type
+        if (spaceController.checkTypeInSpace(SpaceName.fromString(space), type)) {
+            return new TypeInSpace(space, type);
+        } else {
+            throw new NoContentException("No Content");
+        }
+    }
 
     @Operation(summary = "Assign a type to a space")
     @PutMapping("{space}/types")
@@ -96,13 +128,32 @@ public class SpacesV3 {
         spaceController.removeTypeFromSpace(SpaceName.fromString(space), type);
     }
 
+    @Operation(summary = "Get space specification")
+    @GetMapping("{space}/specification")
+    @Admin
+    @ExposesSpace
+    public SpaceSpecification spaceSpecification(
+            @PathVariable(value = "space")
+            @Parameter(description = "The space the specification is valid for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space
+    ) {
+        if (space == null) {
+            throw new InvalidRequestException("You need to provide a space name to execute this functionality");
+        }
+
+        SpaceSpecification spaceSpecifications = this.spaceController.getSpaceSpecification(space);
+
+        if (spaceSpecifications != null) {
+            return spaceSpecifications;
+        }
+        throw new InstanceNotFoundException(String.format("Space %s was not found", space));
+    }
 
     @Operation(summary = "Explicitly specify a space")
     @PutMapping("{space}/specification")
     @Admin
     @ExposesInputWithoutEnrichedSensitiveData
-    public void createSpaceDefinition(@PathVariable(value = "space") @Parameter(description = "The space the definition is valid for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space, @RequestParam(value = "autorelease", required = false, defaultValue = "false") boolean autoRelease, @RequestParam(value = "clientSpace", required = false, defaultValue = "false") boolean clientSpace, @RequestParam(value = "deferCache", required = false, defaultValue = "false") boolean deferCache, @RequestParam(value = "scopeRelevant", required = false, defaultValue = "false") boolean scopeRelevant) {
-        if(space == null){
+    public void createSpaceSpecification(@PathVariable(value = "space") @Parameter(description = "The space the definition is valid for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space, @RequestParam(value = "autorelease", required = false, defaultValue = "false") boolean autoRelease, @RequestParam(value = "clientSpace", required = false, defaultValue = "false") boolean clientSpace, @RequestParam(value = "deferCache", required = false, defaultValue = "false") boolean deferCache, @RequestParam(value = "scopeRelevant", required = false, defaultValue = "false") boolean scopeRelevant) {
+        if (space == null) {
             throw new InvalidRequestException("You need to provide a space name to execute this functionality");
         }
         SpaceSpecification spaceSpecification = new SpaceSpecification();
@@ -112,16 +163,16 @@ public class SpacesV3 {
         spaceSpecification.setDeferCache(deferCache);
         spaceSpecification.setClientSpace(clientSpace);
         spaceSpecification.setScopeRelevant(scopeRelevant);
-        spaceController.createSpaceDefinition(spaceSpecification);
+        spaceController.createSpaceSpecification(spaceSpecification);
     }
 
 
-    @Operation(summary = "Remove a space definition")
+    @Operation(summary = "Remove a space specification")
     @DeleteMapping("{space}/specification")
     @Admin
     @ExposesInputWithoutEnrichedSensitiveData
-    public void removeSpaceDefinition(@PathVariable(value = "space") @Parameter(description = "The space the definition should be removed for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space) {
-        spaceController.removeSpaceDefinition(SpaceName.fromString(space));
+    public void removeSpaceSpecification(@PathVariable(value = "space") @Parameter(description = "The space the definition should be removed for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space) {
+        spaceController.removeSpaceSpecification(SpaceName.fromString(space));
     }
 
     @Operation(summary = "Trigger a rerun of the events of this space")

@@ -74,7 +74,7 @@ public class ScopeRepository {
         //get scope relevant queries
         //TODO as a performance optimization, we could try to apply the restrictions already to the queries instead of excluding the instances in a post processing step.
         Stream<NormalizedJsonLd> typeQueries = instance.types().stream().map(type -> queries.getQueriesByRootType(stage, null, null, false, false, type).getData()).flatMap(Collection::stream);
-        Set<String> relevantSpaces = structureRepository.getSpaceSpecifications().stream().filter(Space::isScopeRelevant).map(s -> s.getName().getName()).collect(Collectors.toSet());
+        Set<String> relevantSpaces = structureRepository.getSpaces().stream().filter(Space::isScopeRelevant).map(s -> s.getName().getName()).collect(Collectors.toSet());
         List<NormalizedJsonLd> results = typeQueries.filter(q -> relevantSpaces.contains(q.getAs(EBRAINSVocabulary.META_SPACE, String.class))).map(q -> {
             QueryResult queryResult = queryController.query(authContext.getUserWithRoles(),
                     new KgQuery(q, stage).setIdRestriction(new InstanceId(id, space)), null, null, true);

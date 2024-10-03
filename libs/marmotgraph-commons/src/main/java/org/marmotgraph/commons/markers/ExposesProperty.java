@@ -21,32 +21,7 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.commons.api;
+package org.marmotgraph.commons.markers;
 
-import org.marmotgraph.commons.model.Paginated;
-import org.marmotgraph.commons.model.PaginationParam;
-import org.marmotgraph.commons.model.SpaceName;
-import org.marmotgraph.commons.model.external.spaces.SpaceSpecification;
-import org.marmotgraph.commons.model.internal.spaces.Space;
-
-public interface GraphDBSpaces {
-
-    interface Client extends GraphDBSpaces {}
-
-    Space getSpace(SpaceName space);
-
-    Paginated<Space> listSpaces(PaginationParam paginationParam);
-
-    SpaceSpecification getSpaceSpecification(SpaceName space);
-
-    void specifySpace(SpaceSpecification spaceSpecification);
-
-    void removeSpaceSpecification(SpaceName spaceName);
-
-    boolean checkTypeInSpace(SpaceName spaceName, String typeName);
-
-    void addTypeToSpace(SpaceName spaceName, String typeName);
-
-    void removeTypeFromSpace(SpaceName spaceName, String typeName);
-
+public @interface ExposesProperty {
 }

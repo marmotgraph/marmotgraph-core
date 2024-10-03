@@ -23,12 +23,20 @@
 
 package org.marmotgraph.core.api.v3beta;
 
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.api.GraphDBTypes;
 import org.marmotgraph.commons.config.openApiGroups.Admin;
+import org.marmotgraph.commons.exception.NoContentException;
+import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
+import org.marmotgraph.commons.markers.ExposesProperty;
 import org.marmotgraph.commons.markers.WritesData;
+import org.marmotgraph.commons.model.external.types.PropertyInType;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -50,6 +58,17 @@ public class PropertiesV3Beta {
         this.graphDBTypes = graphDBTypes;
     }
 
+    @Operation(summary = "Get a property specification")
+    @GetMapping("/properties")
+    @Admin
+    @ExposesProperty
+    public DynamicJson properties(
+            @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global,
+            @RequestParam(value = "property", required = false) String property) {
+
+        return graphDBTypes.getSpecifyProperty(property, global);
+    }
+
     @Operation(summary = "Upload a property specification either globally or for the requesting client")
     @PutMapping("/properties")
     @WritesData
@@ -66,6 +85,25 @@ public class PropertiesV3Beta {
         graphDBTypes.removePropertySpecification(new JsonLdId(decodedProperty), global);
     }
 
+    @Operation(summary = "Check type for a specific property either globally for the requesting client")
+    @GetMapping("/propertiesForType")
+    @ExposesProperty
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Relation between type and property", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = PropertyInType.class)) }),
+            @ApiResponse(responseCode = "404", description = "Type not found", content = @Content),
+            @ApiResponse(responseCode = "204", description = "No relation", content = @Content)})
+    public PropertyInType getPropertyForType(
+            @Parameter(description = "")
+            @RequestParam(value = "global", required = false) boolean global,
+            @RequestParam("property") String property,
+            @RequestParam("type") String type) {
+
+        if (graphDBTypes.checkPropertyInType(type, property, global)) {
+            return new PropertyInType(property, type);
+        } else {
+            throw new NoContentException("No Content");
+        }
+    }
 
     @Operation(summary = "Define a property specification either globally for the requesting client")
     @PutMapping("/propertiesForType")

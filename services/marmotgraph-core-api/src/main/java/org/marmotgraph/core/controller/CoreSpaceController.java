@@ -83,24 +83,32 @@ public class CoreSpaceController {
         return sp != null ? translateSpaceToSpaceInformation(sp, permissions) : null;
     }
 
+    public SpaceSpecification getSpaceSpecification(String space) {
+        return graphDBSpaces.getSpaceSpecification(new SpaceName(space));
+    }
 
-    public void createSpaceDefinition(SpaceSpecification spaceSpec) {
+
+    public void createSpaceSpecification(SpaceSpecification spaceSpec) {
         graphDBSpaces.specifySpace(spaceSpec);
     }
 
-    public void removeSpaceDefinition(SpaceName space) {
+    public void removeSpaceSpecification(SpaceName space) {
         graphDBSpaces.removeSpaceSpecification(space);
     }
 
-    public void addTypeToSpace(SpaceName space, String type){
+    public boolean checkTypeInSpace(SpaceName space, String type) {
+        return graphDBSpaces.checkTypeInSpace(space, type);
+    }
+
+    public void addTypeToSpace(SpaceName space, String type) {
         graphDBSpaces.addTypeToSpace(space, type);
     }
 
-    public void removeTypeFromSpace(SpaceName space, String type){
+    public void removeTypeFromSpace(SpaceName space, String type) {
         graphDBSpaces.removeTypeFromSpace(space, type);
     }
 
-    public void rerunEvents(SpaceName space){
+    public void rerunEvents(SpaceName space) {
         primaryStoreEvents.rerunEvents(space.getName());
     }
 

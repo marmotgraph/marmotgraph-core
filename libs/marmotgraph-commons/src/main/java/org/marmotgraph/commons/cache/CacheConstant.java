@@ -44,6 +44,7 @@ public class CacheConstant {
     public static final String CACHE_KEYS_TARGET_TYPES = "targetTypes";
 
     public static final String CACHE_KEYS_TYPES_IN_SPACE = "typesInSpace";
+    public static final String CACHE_KEYS_SPACES = "spaces";
     public static final String CACHE_KEYS_SPACE_SPECIFICATIONS = "spaceSpecifications";
     public static final String CACHE_KEYS_TYPES_IN_SPACE_BY_SPEC = "typesInSpaceBySpec";
     public static final String CACHE_KEYS_PROPERTIES_OF_TYPE_IN_SPACE = "propertiesOfTypeInSpace";
@@ -72,6 +73,7 @@ public class CacheConstant {
             CACHE_KEYS_USER_ROLE_MAPPINGS,
             CACHE_KEYS_TARGET_TYPES,
             CACHE_KEYS_TYPES_IN_SPACE,
+            CACHE_KEYS_SPACES,
             CACHE_KEYS_SPACE_SPECIFICATIONS,
             CACHE_KEYS_TYPES_IN_SPACE_BY_SPEC,
             CACHE_KEYS_PROPERTIES_OF_TYPE_IN_SPACE,

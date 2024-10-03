@@ -23,6 +23,7 @@
 
 package org.marmotgraph.commons.api;
 
+import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
@@ -42,13 +43,19 @@ public interface GraphDBTypes {
 
     Map<String, Result<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space, boolean withProperties, boolean withIncomingLinks);
 
+    DynamicJson getSpecifyType(String type, boolean global);
+
     void specifyType(JsonLdId typeName, NormalizedJsonLd normalizedJsonLd, boolean global);
 
     void removeTypeSpecification(JsonLdId typeName, boolean global);
 
+    DynamicJson getSpecifyProperty(String property, boolean global);
+
     void specifyProperty(JsonLdId propertyName, NormalizedJsonLd normalizedJsonLd, boolean global);
 
     void removePropertySpecification(JsonLdId propertyName, boolean global);
+
+    boolean checkPropertyInType(String typeName, String propertyName, boolean global);
 
     void addOrUpdatePropertyToType(String typeName, String propertyName, NormalizedJsonLd payload, boolean global);
 

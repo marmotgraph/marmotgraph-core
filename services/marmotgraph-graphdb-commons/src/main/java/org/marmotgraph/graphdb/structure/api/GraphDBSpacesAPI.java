@@ -59,10 +59,11 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
         this.authContext = authContext;
     }
 
-    private static Space createSpaceRepresentation(String name){
+    private static Space createSpaceRepresentation(String name) {
         return new Space(new SpaceName(name), false, false, false);
     }
-    private List<Space> getSpaces(){
+
+    private List<Space> getSpaces() {
         List<Space> spaces = this.metaDataController.getSpaces(DataStage.IN_PROGRESS, authContext.getUserWithRoles());
         final SpaceName privateSpace = authContext.getUserWithRoles().getPrivateSpace();
         final Optional<Space> existingPrivateSpace = spaces.stream().filter(s -> s.getName().equals(privateSpace)).findAny();
@@ -70,12 +71,11 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
             //Rename the existing private space
             existingPrivateSpace.get().setName(SpaceName.fromString(SpaceName.PRIVATE_SPACE));
             existingPrivateSpace.get().setIdentifier(SpaceName.PRIVATE_SPACE);
-        }
-        else {
+        } else {
             //The private space doesn't exist yet -> we create it virtually.
             spaces.add(createSpaceRepresentation(SpaceName.PRIVATE_SPACE));
         }
-        if(authContext.getUserWithRoles().hasInvitations()){
+        if (authContext.getUserWithRoles().hasInvitations()) {
             spaces.add(createSpaceRepresentation(SpaceName.REVIEW_SPACE));
         }
         spaces.sort(Comparator.comparing(s -> s.getName().getName()));
@@ -93,6 +93,19 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
     }
 
     @Override
+    public SpaceSpecification getSpaceSpecification(SpaceName spaceName) {
+        SpaceSpecification spaceSpecification = this.metaDataController.getSpaceSpecification(spaceName);
+        try {
+            this.checkOnSpaceSpecificationAdminOperations(spaceSpecification);
+        } catch (InvalidRequestException e) {
+            throw new InvalidRequestException("You can't provide a specification for your private space");
+        } catch (Exception e) {
+            throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
+        }
+        return spaceSpecification;
+    }
+
+    @Override
     public void specifySpace(SpaceSpecification spaceSpecification) {
         if (spaceSpecification.getScopeRelevant() != null && spaceSpecification.getScopeRelevant() && !permissionsController.canDefineScopeSpace(authContext.getUserWithRoles())) {
             throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
@@ -107,7 +120,8 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
                     break;
             }
             structureRepository.createOrUpdateSpaceDocument(spaceSpecification);
-            structureRepository.evictSpaceSpecificationCache();
+            structureRepository.evictSpacesCache();
+            structureRepository.evictSpaceSpecificationsCache();
         }
         else{
             throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
@@ -126,32 +140,54 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
                     break;
             }
             structureRepository.removeSpaceDocument(spaceName);
-            structureRepository.evictSpaceSpecificationCache();
+            structureRepository.evictSpacesCache();
+            structureRepository.evictSpaceSpecificationsCache();
         }
         else{
+            throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
+        }
+    }
+
+    @Override
+    public boolean checkTypeInSpace(SpaceName spaceName, String typeName) {
+        if (permissionsController.canManageSpaces(authContext.getUserWithRoles(), spaceName)) {
+            return this.metaDataController.checkTypeToSpace(spaceName, typeName);
+        } else {
             throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
         }
     }
 
     @Override
     public void addTypeToSpace(SpaceName spaceName, String typeName) {
-        if(permissionsController.canManageSpaces(authContext.getUserWithRoles(), spaceName)) {
+        if (permissionsController.canManageSpaces(authContext.getUserWithRoles(), spaceName)) {
             structureRepository.addLinkBetweenSpaceAndType(spaceName, typeName);
             structureRepository.evictTypesInSpaceBySpecification(spaceName);
-        }
-        else{
+        } else {
             throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
         }
     }
 
     @Override
     public void removeTypeFromSpace(SpaceName spaceName, String typeName) {
-        if(permissionsController.canManageSpaces(authContext.getUserWithRoles(), spaceName)) {
+        if (permissionsController.canManageSpaces(authContext.getUserWithRoles(), spaceName)) {
             structureRepository.removeLinkBetweenSpaceAndType(spaceName, typeName);
             structureRepository.evictTypesInSpaceBySpecification(spaceName);
-        }
-        else{
+        } else {
             throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
+        }
+    }
+
+    private void checkOnSpaceSpecificationAdminOperations(SpaceSpecification spaceSpecification) {
+
+        if (!permissionsController.canManageSpaces(authContext.getUserWithRoles(), SpaceName.fromString(spaceSpecification.getName()))) {
+            throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
+        }
+        switch (spaceSpecification.getName()) {
+            case SpaceName.PRIVATE_SPACE:
+            case SpaceName.REVIEW_SPACE:
+                throw new InvalidRequestException();
+            default:
+                break;
         }
     }
 }
