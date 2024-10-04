@@ -66,7 +66,7 @@ public class CacheConfiguration {
         RedisCacheConfiguration redisCacheConfiguration = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(ttlInMinutes))
                 .computePrefixWith(cacheName -> applicationName.concat(SEPARATOR)
-                        .concat(cacheName).concat(SEPARATOR)) // cache key prefix with the environment
+                        .concat(cacheName).concat(SEPARATOR))
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(RedisSerializer.json()));
         redisCacheConfiguration.usePrefix();
 

@@ -70,7 +70,6 @@ public enum Functionality {
     CREATE_CLIENT_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.CLIENT, null, null, null),
     DELETE_CLIENT_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.CLIENT, null, null, null),
 
-
     //Permission management
     READ_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
     CREATE_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
@@ -80,8 +79,9 @@ public enum Functionality {
     DEFINE_PUBLIC_SPACE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null),
     DEFINE_SCOPE_RELEVANT_SPACE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null),
 
-    CHECK_HEALTH_STATUS(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null);
+    CHECK_HEALTH_STATUS(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null),
 
+    CACHE_FLUSH(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null);
 
     private final List<Permission.Level> allowedPermissionLevels;
     private final FunctionalityGroup functionalityGroup;
