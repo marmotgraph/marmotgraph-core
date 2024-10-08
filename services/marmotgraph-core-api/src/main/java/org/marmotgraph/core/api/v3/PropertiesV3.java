@@ -30,6 +30,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.api.GraphDBTypes;
 import org.marmotgraph.commons.config.openApiGroups.Admin;
+import org.marmotgraph.commons.exception.InstanceNotFoundException;
 import org.marmotgraph.commons.exception.NoContentException;
 import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.jsonld.JsonLdId;
@@ -62,17 +63,23 @@ public class PropertiesV3 {
     @Admin
     @ExposesProperty
     public DynamicJson properties(
-            @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global,
+            @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)") @RequestParam(value = "global", required = false) boolean global,
             @RequestParam(value = "property", required = false) String property) {
 
-        return graphDBTypes.getSpecifyProperty(property, global);
+        DynamicJson propertySpecification = graphDBTypes.getSpecifyProperty(property, global);
+
+        if (propertySpecification != null) {
+            return propertySpecification;
+        }
+        throw new InstanceNotFoundException(String.format("Property %s was not found", property));
+
     }
 
     @Operation(summary = "Upload a property specification either globally or for the requesting client")
     @PutMapping("/properties")
     @WritesData
     @Admin
-    public void defineProperty(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property) {
+    public void defineProperty(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)") @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property) {
         String decodedProperty = URLDecoder.decode(property, StandardCharsets.UTF_8);
         graphDBTypes.specifyProperty(new JsonLdId(decodedProperty), payload, global);
     }
@@ -81,7 +88,7 @@ public class PropertiesV3 {
     @DeleteMapping("/properties")
     @WritesData
     @Admin
-    public void deprecateProperty(@Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property) {
+    public void deprecateProperty(@Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)") @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property) {
         String decodedProperty = URLDecoder.decode(property, StandardCharsets.UTF_8);
         graphDBTypes.removePropertySpecification(new JsonLdId(decodedProperty), global);
     }
@@ -90,7 +97,7 @@ public class PropertiesV3 {
     @GetMapping("/propertiesForType")
     @ExposesProperty
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Relation between type and property", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = PropertyInType.class)) }),
+            @ApiResponse(responseCode = "200", description = "Relation between type and property", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = PropertyInType.class))}),
             @ApiResponse(responseCode = "404", description = "Type not found", content = @Content),
             @ApiResponse(responseCode = "204", description = "No relation", content = @Content)})
 
@@ -112,11 +119,11 @@ public class PropertiesV3 {
     @PutMapping("/propertiesForType")
     @WritesData
     @Admin
-    public void definePropertyForType(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property, @RequestParam("type") String type) {
+    public void definePropertyForType(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)") @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property, @RequestParam("type") String type) {
         String decodedProperty = URLDecoder.decode(property, StandardCharsets.UTF_8);
         String decodedType = URLDecoder.decode(type, StandardCharsets.UTF_8);
         JsonLdId typeFromPayload = payload.getAs(EBRAINSVocabulary.META_TYPE, JsonLdId.class);
-        if(typeFromPayload!=null){
+        if (typeFromPayload != null) {
             throw new IllegalArgumentException("You are not supposed to provide a @type in the payload of the type specifications to avoid ambiguity");
         }
         graphDBTypes.addOrUpdatePropertyToType(decodedType, decodedProperty, payload, global);
@@ -126,7 +133,7 @@ public class PropertiesV3 {
     @DeleteMapping("/propertiesForType")
     @WritesData
     @Admin
-    public void deprecatePropertyForType(@Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property, @RequestParam("type") String type) {
+    public void deprecatePropertyForType(@Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)") @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property, @RequestParam("type") String type) {
         String decodedProperty = URLDecoder.decode(property, StandardCharsets.UTF_8);
         String decodedType = URLDecoder.decode(type, StandardCharsets.UTF_8);
         graphDBTypes.removePropertyFromType(decodedType, decodedProperty, global);

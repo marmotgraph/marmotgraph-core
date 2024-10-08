@@ -30,6 +30,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.api.GraphDBTypes;
 import org.marmotgraph.commons.config.openApiGroups.Admin;
+import org.marmotgraph.commons.exception.InstanceNotFoundException;
 import org.marmotgraph.commons.exception.NoContentException;
 import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.jsonld.JsonLdId;
@@ -63,10 +64,16 @@ public class PropertiesV3Beta {
     @Admin
     @ExposesProperty
     public DynamicJson properties(
-            @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global,
+            @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)") @RequestParam(value = "global", required = false) boolean global,
             @RequestParam(value = "property", required = false) String property) {
 
-        return graphDBTypes.getSpecifyProperty(property, global);
+        DynamicJson propertySpecification = graphDBTypes.getSpecifyProperty(property, global);
+
+        if (propertySpecification != null) {
+            return propertySpecification;
+        }
+        throw new InstanceNotFoundException(String.format("Property %s was not found", property));
+
     }
 
     @Operation(summary = "Upload a property specification either globally or for the requesting client")
