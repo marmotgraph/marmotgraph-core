@@ -33,11 +33,13 @@ public class APINaming {
     public static final String BASIC = "1 Basic";
     public static final String ADVANCED = "2 Advanced";
     public static final String ADMIN = "3 Admin";
+    public static final String TENANTS = "4 Tenants";
 
 
     public static List<Tag> orderedTags(){
         return Arrays.asList(new Tag().name(APINaming.BASIC).description("The most used end-points to interact with the MarmotGraph"),
                 new Tag().name(APINaming.ADVANCED).description("Some advanced endpoints allowing you e.g. to apply bulk manipulations and run operations which are going beyond standard meta-data management"),
-                new Tag().name(APINaming.ADMIN).description("Endpoints for the administration of the MarmotGraph. Please note, that you won't be able to invoke those endpoints unless you are a global administrator."));
+                new Tag().name(APINaming.ADMIN).description("Endpoints for the administration of the MarmotGraph. Please note, that you won't be able to invoke those endpoints unless you are a global administrator."),
+                new Tag().name(APINaming.TENANTS).description("Endpoints for managing tenants on the application"));
     }
 }

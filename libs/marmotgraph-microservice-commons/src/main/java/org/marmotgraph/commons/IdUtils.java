@@ -45,7 +45,7 @@ public class IdUtils {
         return UUID.nameUUIDFromBytes(("metaRepresentation" + name).getBytes(StandardCharsets.UTF_8));
     }
 
-    public IdUtils(@Value("${org.marmotgraph.namespace}") String namespace) {
+        public IdUtils(@Value("${org.marmotgraph.namespace}") String namespace) {
         this.namespace = namespace != null ? namespace.toLowerCase() : null;
     }
 

@@ -43,6 +43,7 @@
         <module>services/marmotgraph-ids</module>
         <module>services/marmotgraph-authentication</module>
         <module>services/marmotgraph-core-api</module>
+        <module>services/marmotgraph-config</module>
         <module>services/marmotgraph-graphdb-commons</module>
         <module>services/marmotgraph-graphdb-sync</module>
         <module>services/marmotgraph-indexing</module>
