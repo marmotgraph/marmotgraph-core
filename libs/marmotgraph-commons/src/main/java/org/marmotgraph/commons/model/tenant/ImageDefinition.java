@@ -9,8 +9,8 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
-public class ImageResource {
+public class ImageDefinition {
     private String fileName;
-    private String bright;
-    private String dark;
+    private String mimeType;
+    private String base64;
 }

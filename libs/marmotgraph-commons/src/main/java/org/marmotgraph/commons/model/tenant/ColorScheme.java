@@ -117,32 +117,32 @@ public class ColorScheme {
     public String toCSS(){
         return String.format("""
                 :root {
-                  --brand-primary: %s;
-                  --brand-seconday: %s;
-                  --brand-tertiary: %s;
+                  --brand-primary: "%s";
+                  --brand-seconday: "%s";
+                  --brand-tertiary: "%s";
                 
-                  --grey-200: %s;
-                  --grey-300: %s;
-                  --grey-400: %s;
-                  --grey-500: %s;
-                  --grey-600: %s;
-                  --grey-700: %s;
-                  --grey-800: %s;
-                  --grey-900: %s;
+                  --grey-200: "%s";
+                  --grey-300: "%s";
+                  --grey-400: "%s";
+                  --grey-500: "%s";
+                  --grey-600: "%s";
+                  --grey-700: "%s";
+                  --grey-800: "%s";
+                  --grey-900: "%s";
                 
-                  --black-05: %s;
-                  --black-09: %s;
+                  --black-05: "%s";
+                  --black-09: "%s";
                 
-                  --state-warning: %s;
-                  --state-info: %s;
-                  --state-success: %s;
-                  --state-error: %s;
+                  --state-warning: "%s";
+                  --state-info: "%s";
+                  --state-success: "%s";
+                  --state-error: "%s";
                 
-                  --link-default: %s;
-                  --link-active: %s;
-                  --link-visited: %s;
-                  --link-disabled: %s;
-                  --link-hover: %s;
+                  --link-default: "%s";
+                  --link-active: "%s";
+                  --link-visited: "%s";
+                  --link-disabled: "%s";
+                  --link-hover: "%s";
                 }
                 """,
                 brandColors.primary, brandColors.secondary, brandColors.tertiary,

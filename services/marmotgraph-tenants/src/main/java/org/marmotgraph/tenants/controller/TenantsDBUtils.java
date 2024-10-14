@@ -21,20 +21,22 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph;
+package org.marmotgraph.tenants.controller;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableAsync;
+import com.arangodb.ArangoCollection;
+import com.arangodb.ArangoDatabase;
+import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
+import org.marmotgraph.arango.commons.model.ArangoDatabaseProxy;
+import org.marmotgraph.commons.cache.CacheConstant;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Component;
 
-@EnableAsync
-@SpringBootApplication
-@Configuration
-public class MarmotGraphConfigApplication {
+@Component
+public class TenantsDBUtils {
 
-	public static void main(String[] args) {
-		SpringApplication.run(MarmotGraphConfigApplication.class, args);
-	}
+    @Cacheable(value = CacheConstant.CACHE_KEYS_IDS_COLLECTIONS, key="{#db.name(), #c.collectionName}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    public ArangoCollection getOrCreateArangoCollection(ArangoDatabase db, ArangoCollectionReference c) {
+        return ArangoDatabaseProxy.getOrCreateArangoCollection(db, c);
+    }
 
 }

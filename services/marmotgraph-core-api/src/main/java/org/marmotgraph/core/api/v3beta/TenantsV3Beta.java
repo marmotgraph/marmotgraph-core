@@ -21,7 +21,7 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.core.api.v3;
+package org.marmotgraph.core.api.v3beta;
 
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.config.openApiGroups.Tenants;
@@ -39,15 +39,14 @@ import java.util.List;
 
 
 @RestController
-@RequestMapping(Version.V3 +"/tenants")
-public class TenantsV3 {
+@RequestMapping(Version.V3_BETA +"/tenants")
+public class TenantsV3Beta {
 
     private final TenantsController controller;
 
-    public TenantsV3(TenantsController controller) {
+    public TenantsV3Beta(TenantsController controller) {
         this.controller = controller;
     }
-
     @Tenants
     @PutMapping("{name}")
     public void createTenant(@PathVariable String name, @RequestBody TenantDefinition tenantDefinition){
@@ -91,7 +90,7 @@ public class TenantsV3 {
     @Tenants
     @GetMapping("{name}/theme/css")
     public String getCSS(@PathVariable String name){
-       return this.controller.getCSS(name);
+        return this.controller.getCSS(name);
     }
 
 
@@ -99,7 +98,7 @@ public class TenantsV3 {
     @GetMapping("{name}/theme/favicon")
     @ResponseBody
     public ResponseEntity<Resource> getFavicon(@PathVariable String name){
-       return this.controller.getFavicon(name);
+        return this.controller.getFavicon(name);
     }
 
 
@@ -129,7 +128,7 @@ public class TenantsV3 {
     @GetMapping("{name}/theme/logo")
     @ResponseBody
     public ResponseEntity<Resource> getLogo(@PathVariable String name, @RequestParam(required = false) boolean darkMode){
-       return this.controller.getLogo(name, darkMode);
+        return this.controller.getLogo(name, darkMode);
     }
 
 

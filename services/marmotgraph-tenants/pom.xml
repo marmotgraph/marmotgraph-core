@@ -32,7 +32,7 @@
         <version>3.0-SNAPSHOT</version>
         <relativePath>../../config/marmotgraph-microservice</relativePath>
     </parent>
-    <artifactId>marmotgraph-config</artifactId>
+    <artifactId>marmotgraph-tenants</artifactId>
     <version>3.0-SNAPSHOT</version>
     <dependencies>
         <dependency>
