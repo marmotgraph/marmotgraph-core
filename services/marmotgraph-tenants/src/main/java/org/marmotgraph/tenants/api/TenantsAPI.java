@@ -154,13 +154,27 @@ public class TenantsAPI implements Tenants.Client {
         if (name.equals("default")) {
             return getDefaultImage("background.jpg", "image/jpeg");
         }
-        return null;
+        else{
+            ImageResult backgroundImage = tenantsRepository.getBackgroundImage(name, darkMode);
+            if(backgroundImage == null){
+                //If there is no background image in this color mode, we fall back to the other
+                backgroundImage = tenantsRepository.getBackgroundImage(name, !darkMode);
+            }
+            return backgroundImage != null ? backgroundImage : getDefaultImage("background.jpg", "image/jpeg");
+        }
     }
 
     @Override
     public void setBackgroundImage(String name, MultipartFile file, boolean darkMode) {
         if (name.equals("default")) {
             throw new IllegalArgumentException("You are not allowed to update the \"default\" tenant");
+        }
+        try {
+            byte[] base64bytes = Base64.encodeBase64(file.getBytes());
+            tenantsRepository.upsertBackgroundImage(name, new ImageDefinition(file.getOriginalFilename(), file.getContentType(), new String(base64bytes)), darkMode);
+        }
+        catch (IOException e) {
+            throw new IllegalArgumentException("Was not able to upload the background image", e);
         }
     }
 

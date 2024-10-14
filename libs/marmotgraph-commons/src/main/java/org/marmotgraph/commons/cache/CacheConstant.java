@@ -36,6 +36,15 @@ public class CacheConstant {
     public static final String CACHE_KEYS_PRIMARY_STORE_COLLECTION = "primaryStoreCollection";
     public static final String CACHE_KEYS_ARANGO_COLLECTION = "arangoCollection";
 
+    public static final String CACHE_KEYS_BACKGROUND_IMAGES = "backgroundImages";
+    public static final String CACHE_KEYS_LOGOS = "logos";
+    public static final String CACHE_KEYS_FAVICONS = "favicons";
+    public static final String CACHE_KEYS_CUSTOM_CSS = "customCSS";
+    public static final String CACHE_KEYS_COLOR_SCHEME = "colorScheme";
+    public static final String CACHE_KEYS_FONT = "font";
+    public static final String CACHE_KEYS_TENANTDEFINITION = "tenantDefinition";
+
+
     public static final String CACHE_KEYS_REFLECTED_SPACES = "reflectedSpaces";
     public static final String CACHE_KEYS_TERMS_OF_USE = "termsOfUse";
     public static final String CACHE_KEYS_TERMS_OF_USE_BY_USER= "termsOfUseByUser";
@@ -60,7 +69,14 @@ public class CacheConstant {
     public static final String[] CACHE_KEYS_IN_MEMORY = {
             CACHE_KEYS_IDS_COLLECTIONS,
             CACHE_KEYS_PRIMARY_STORE_COLLECTION,
-            CACHE_KEYS_ARANGO_COLLECTION
+            CACHE_KEYS_ARANGO_COLLECTION,
+            CACHE_KEYS_LOGOS,
+            CACHE_KEYS_FAVICONS,
+            CACHE_KEYS_CUSTOM_CSS,
+            CACHE_KEYS_COLOR_SCHEME,
+            CACHE_KEYS_FONT,
+            CACHE_KEYS_TENANTDEFINITION,
+            CACHE_KEYS_BACKGROUND_IMAGES
     };
 
     public static final String[] CACHE_KEYS_ALL = {
@@ -82,7 +98,14 @@ public class CacheConstant {
             CACHE_KEYS_PROPERTIES_IN_TYPE_SPECIFICATION,
             CACHE_KEYS_CLIENT_SPECIFIC_TYPE_SPECIFICATION,
             CACHE_KEYS_CLIENT_SPECIFIC_PROPERTY_SPECIFICATION,
-            CACHE_KEYS_CLIENT_SPECIFIC_PROPERTIES_IN_TYPE_SPECIFICATION
+            CACHE_KEYS_CLIENT_SPECIFIC_PROPERTIES_IN_TYPE_SPECIFICATION,
+            CACHE_KEYS_LOGOS,
+            CACHE_KEYS_FAVICONS,
+            CACHE_KEYS_CUSTOM_CSS,
+            CACHE_KEYS_COLOR_SCHEME,
+            CACHE_KEYS_FONT,
+            CACHE_KEYS_TENANTDEFINITION,
+            CACHE_KEYS_BACKGROUND_IMAGES
     };
 
 }

@@ -33,10 +33,11 @@ import org.marmotgraph.arango.commons.aqlbuilder.AQL;
 import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
 import org.marmotgraph.arango.commons.model.ArangoDatabaseProxy;
-import org.marmotgraph.commons.IdUtils;
-import org.marmotgraph.commons.JsonAdapter;
+import org.marmotgraph.commons.cache.CacheConstant;
 import org.marmotgraph.commons.model.tenant.*;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -53,6 +54,7 @@ public class TenantsRepository {
     private static final String FONT = "font";
     private static final String FAVICON = "favicon";
     private static final String LOGO = "logo";
+    private static final String BACKGROUND_IMAGE = "backgroundImage";
 
     @PostConstruct
     public void setup() {
@@ -63,6 +65,7 @@ public class TenantsRepository {
         arangoDatabase.createCollectionIfItDoesntExist(FONT);
         arangoDatabase.createCollectionIfItDoesntExist(FAVICON);
         arangoDatabase.createCollectionIfItDoesntExist(LOGO);
+        arangoDatabase.createCollectionIfItDoesntExist(BACKGROUND_IMAGE);
     }
 
     public TenantsRepository(@Qualifier("tenantsDB") ArangoDatabaseProxy arangoDatabase, TenantsDBUtils tenantsDBUtils) {
@@ -113,12 +116,14 @@ public class TenantsRepository {
         }
 
     }
+    @CacheEvict(value = {CacheConstant.CACHE_KEYS_TENANTDEFINITION}, key="{name}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
 
     public void upsertTenant(String name, TenantDefinition tenantDefinition){
         ArangoCollection tenantDefinitions = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(TENANTS, false));
         tenantDefinitions.insertDocument(new ArangoWrapper<>(name, tenantDefinition), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
     }
 
+    @Cacheable(value = CacheConstant.CACHE_KEYS_TENANTDEFINITION, key="{name}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
     public TenantDefinition getTenantDefinition(String name){
         ArangoCollection tenantDefinitions = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(TENANTS, false));
         return tenantDefinitions.getDocument(name, TenantDefinition.class);
@@ -130,45 +135,53 @@ public class TenantsRepository {
         return arangoDatabase.get().query(aql.build().getValue(), String.class).asListRemaining();
     }
 
+    @CacheEvict(value = CacheConstant.CACHE_KEYS_FONT, key="{name}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
     public void upsertFont(String name, Font font){
         ArangoCollection colorSchemes = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(FONT, false));
         colorSchemes.insertDocument(new ArangoWrapper<>(name, font), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
     }
 
+    @Cacheable(value = CacheConstant.CACHE_KEYS_FONT, key="{name}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
     public Font getFont(String name){
         ArangoCollection fonts = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(FONT, false));
         return fonts.getDocument(name, Font.class);
     }
 
+    @CacheEvict(value = CacheConstant.CACHE_KEYS_COLOR_SCHEME, key="{name}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
     public void upsertColorScheme(String name, ColorScheme colorScheme){
         ArangoCollection colorSchemes = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(COLOR_SCHEMES, false));
         colorSchemes.insertDocument(new ArangoWrapper<>(name, colorScheme), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
     }
 
+    @Cacheable(value = CacheConstant.CACHE_KEYS_COLOR_SCHEME, key="{name}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
     public ColorScheme getColorScheme(String name){
         ArangoCollection colorSchemes = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(COLOR_SCHEMES, false));
         return colorSchemes.getDocument(name, ColorScheme.class);
     }
 
+    @CacheEvict(value = CacheConstant.CACHE_KEYS_CUSTOM_CSS, key="{name}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
     public void upsertCustomCSS(String name, String css){
         ArangoCollection customCSS = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(CUSTOM_CSS, false));
         customCSS.insertDocument(new CustomCSS(name, css), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
     }
 
+    @Cacheable(value = CacheConstant.CACHE_KEYS_CUSTOM_CSS, key="{name}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
     public String getCustomCSS(String name){
         ArangoCollection customCSS = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(CUSTOM_CSS, false));
         CustomCSS document = customCSS.getDocument(name, CustomCSS.class);
         return document!=null ? document.getCss() : null;
     }
 
+    @CacheEvict(value = CacheConstant.CACHE_KEYS_FAVICONS, key="{name}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
     public void upsertFavicon(String name, ImageDefinition image){
         ArangoCollection favicons = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(FAVICON, false));
         favicons.insertDocument(new ArangoWrapper<>(name, image), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
     }
 
+    @Cacheable(value = CacheConstant.CACHE_KEYS_FAVICONS, key="{name}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
     public ImageResult getFavicon(String name){
-        ArangoCollection customCSS = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(FAVICON, false));
-        ImageDefinition definition = customCSS.getDocument(name, ImageDefinition.class);
+        ArangoCollection favicons = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(FAVICON, false));
+        ImageDefinition definition = favicons.getDocument(name, ImageDefinition.class);
         return definition != null ? new ImageResult(Base64.decodeBase64(definition.getBase64()), definition.getMimeType()) : null;
     }
 
@@ -177,14 +190,29 @@ public class TenantsRepository {
         return darkMode ? "_dark" : "_bright";
     }
 
+    @CacheEvict(value = CacheConstant.CACHE_KEYS_LOGOS, key="{name, darkMode}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
     public void upsertLogo(String name, ImageDefinition image, boolean darkMode){
-        ArangoCollection favicons = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(LOGO, false));
-        favicons.insertDocument(new ArangoWrapper<>(name+postfix(darkMode), image), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
+        ArangoCollection logos = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(LOGO, false));
+        logos.insertDocument(new ArangoWrapper<>(name+postfix(darkMode), image), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
     }
 
+    @Cacheable(value = CacheConstant.CACHE_KEYS_LOGOS, key="{name, darkMode}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
     public ImageResult getLogo(String name, boolean darkMode){
-        ArangoCollection customCSS = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(LOGO, false));
-        ImageDefinition definition = customCSS.getDocument(name+postfix(darkMode), ImageDefinition.class);
+        ArangoCollection logos = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(LOGO, false));
+        ImageDefinition definition = logos.getDocument(name+postfix(darkMode), ImageDefinition.class);
+        return definition != null ? new ImageResult(Base64.decodeBase64(definition.getBase64()), definition.getMimeType()) : null;
+    }
+
+    @CacheEvict(value = CacheConstant.CACHE_KEYS_BACKGROUND_IMAGES, key="{name, darkMode}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    public void upsertBackgroundImage(String name, ImageDefinition image, boolean darkMode){
+        ArangoCollection backgroundImages = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(BACKGROUND_IMAGE, false));
+        backgroundImages.insertDocument(new ArangoWrapper<>(name+postfix(darkMode), image), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
+    }
+
+    @Cacheable(value = CacheConstant.CACHE_KEYS_BACKGROUND_IMAGES, key="{name, darkMode}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    public ImageResult getBackgroundImage(String name, boolean darkMode){
+        ArangoCollection backgroundImages = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(BACKGROUND_IMAGE, false));
+        ImageDefinition definition = backgroundImages.getDocument(name+postfix(darkMode), ImageDefinition.class);
         return definition != null ? new ImageResult(Base64.decodeBase64(definition.getBase64()), definition.getMimeType()) : null;
     }
 
