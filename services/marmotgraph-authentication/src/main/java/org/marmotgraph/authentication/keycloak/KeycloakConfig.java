@@ -32,8 +32,14 @@ public class KeycloakConfig {
     @Value("${org.marmotgraph.authentication.keycloak.configUrl}")
     String configUrl;
 
+    @Value("${org.marmotgraph.login.client}")
+    String loginClientId;
+
     public String getConfigUrl() {
         return configUrl;
     }
 
+    public String getLoginClientId() {
+        return loginClientId;
+    }
 }

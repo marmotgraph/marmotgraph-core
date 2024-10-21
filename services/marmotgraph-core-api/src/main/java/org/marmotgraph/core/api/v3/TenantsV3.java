@@ -23,6 +23,7 @@
 
 package org.marmotgraph.core.api.v3;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.config.openApiGroups.Tenants;
 import org.marmotgraph.commons.model.tenant.ColorScheme;
@@ -57,6 +58,7 @@ public class TenantsV3 {
 
     @Tenants
     @GetMapping("{name}")
+    @SecurityRequirements
     public TenantDefinition getTenant(@PathVariable String name){
         return this.controller.getTenant(name);
     }
@@ -64,6 +66,7 @@ public class TenantsV3 {
 
     @Tenants
     @GetMapping
+    @SecurityRequirements
     public List<String> listTenants(){
         return this.controller.listTenants();
     }
@@ -90,6 +93,7 @@ public class TenantsV3 {
 
     @Tenants
     @GetMapping("{name}/theme/css")
+    @SecurityRequirements
     public String getCSS(@PathVariable String name){
        return this.controller.getCSS(name);
     }
@@ -98,6 +102,7 @@ public class TenantsV3 {
     @Tenants
     @GetMapping("{name}/theme/favicon")
     @ResponseBody
+    @SecurityRequirements
     public ResponseEntity<Resource> getFavicon(@PathVariable String name){
        return this.controller.getFavicon(name);
     }
@@ -113,6 +118,7 @@ public class TenantsV3 {
     @Tenants
     @GetMapping("{name}/theme/background")
     @ResponseBody
+    @SecurityRequirements
     public ResponseEntity<Resource> getBackgroundImage(@PathVariable String name, @RequestParam(required = false) boolean darkMode){
         return this.controller.getBackgroundImage(name, darkMode);
     }
@@ -128,6 +134,7 @@ public class TenantsV3 {
     @Tenants
     @GetMapping("{name}/theme/logo")
     @ResponseBody
+    @SecurityRequirements
     public ResponseEntity<Resource> getLogo(@PathVariable String name, @RequestParam(required = false) boolean darkMode){
        return this.controller.getLogo(name, darkMode);
     }

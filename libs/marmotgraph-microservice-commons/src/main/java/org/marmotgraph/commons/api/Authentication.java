@@ -28,7 +28,6 @@ import org.marmotgraph.commons.model.TermsOfUse;
 import org.marmotgraph.commons.model.TermsOfUseResult;
 import org.marmotgraph.commons.model.User;
 import org.marmotgraph.commons.models.UserWithRoles;
-import org.marmotgraph.commons.permission.ClientAuthToken;
 import org.marmotgraph.commons.permission.roles.RoleMapping;
 
 import java.util.List;
@@ -39,6 +38,8 @@ public interface Authentication {
     interface Client extends Authentication {}
 
     String openIdConfigUrl();
+
+    String loginClientId();
 
     String authEndpoint();
 

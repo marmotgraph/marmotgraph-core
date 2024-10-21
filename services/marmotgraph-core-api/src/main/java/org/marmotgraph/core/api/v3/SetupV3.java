@@ -75,6 +75,7 @@ public class SetupV3 {
     public Result<JsonLdDoc> getOpenIdConfigUrl() {
         JsonLdDoc ld = new JsonLdDoc();
         ld.addProperty("endpoint", authentication.openIdConfigUrl());
+        ld.addProperty("loginClientId", authentication.loginClientId());
         return Result.ok(ld);
     }
 
