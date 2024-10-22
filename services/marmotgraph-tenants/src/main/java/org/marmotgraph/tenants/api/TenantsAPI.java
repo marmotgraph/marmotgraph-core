@@ -29,6 +29,7 @@ import org.marmotgraph.commons.model.tenant.*;
 import org.marmotgraph.tenants.controller.TenantsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,11 +43,13 @@ import java.util.List;
 public class TenantsAPI implements Tenants.Client {
 
     private final TenantsRepository tenantsRepository;
+    private final String namespace;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public TenantsAPI(TenantsRepository tenantsRepository) {
+    public TenantsAPI(@Value("${org.marmotgraph.namespace}") String namespace, TenantsRepository tenantsRepository) {
         this.tenantsRepository = tenantsRepository;
+        this.namespace = namespace;
     }
 
     @Override
@@ -58,13 +61,15 @@ public class TenantsAPI implements Tenants.Client {
     }
 
     @Override
-    public TenantDefinition getTenant(String name) {
+    public TenantDefinitionWithIdNamespace getTenant(String name) {
+        TenantDefinition tenantDefinition;
         if (name.equals("default")) {
-            return TenantDefinition.defaultDefinition;
+            tenantDefinition = TenantDefinition.defaultDefinition;
         } else {
-            TenantDefinition tenantDefinition = tenantsRepository.getTenantDefinition(name);
-            return tenantDefinition == null ? TenantDefinition.defaultDefinition : tenantDefinition;
+            tenantDefinition = tenantsRepository.getTenantDefinition(name);
+            tenantDefinition = tenantDefinition == null ? TenantDefinition.defaultDefinition : tenantDefinition;
         }
+        return TenantDefinitionWithIdNamespace.fromTenantDefinition(tenantDefinition, namespace);
     }
 
     @Override

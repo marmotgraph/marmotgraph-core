@@ -16,13 +16,11 @@ public class TenantDefinition {
     private String title;
     private String contactEmail;
     private String copyright;
-    private String namespace;
 
     public static final TenantDefinition defaultDefinition = new TenantDefinition(
             "MarmotGraph",
             "support@marmotgraph.org",
-            "MarmotGraph",
-            "https://marmotgraph.org/"
+            "MarmotGraph"
     );
 
 }
