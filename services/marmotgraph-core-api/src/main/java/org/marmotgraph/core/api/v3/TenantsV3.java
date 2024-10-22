@@ -92,7 +92,7 @@ public class TenantsV3 {
 
 
     @Tenants
-    @GetMapping("{name}/theme/css")
+    @GetMapping(value = "{name}/theme/css", produces = "text/css")
     @SecurityRequirements
     public String getCSS(@PathVariable String name){
        return this.controller.getCSS(name);
