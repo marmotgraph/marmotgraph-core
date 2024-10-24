@@ -19,7 +19,7 @@ public class TenantDefinitionWithIdNamespace extends TenantDefinition {
         TenantDefinitionWithIdNamespace definition = new TenantDefinitionWithIdNamespace();
         if (tenantDefinition != null) {
             definition.setCopyright(tenantDefinition.getCopyright());
-            definition.setTitle(tenantDefinition.getCopyright());
+            definition.setTitle(tenantDefinition.getTitle());
             definition.setContactEmail(tenantDefinition.getContactEmail());
         }
         definition.setIdNamespace(idNamespace);
