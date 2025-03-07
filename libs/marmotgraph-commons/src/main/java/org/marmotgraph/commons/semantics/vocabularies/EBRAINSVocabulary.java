@@ -54,6 +54,7 @@ public class EBRAINSVocabulary {
     public static final String META = NAMESPACE+"meta/";
     public static final String META_SPACES = META + "spaces";
     public static final String META_USER = META+"user";
+    public static final String META_CONTRIBUTORS = META+"contributors";
     public static final String META_CAN_BE_EXCLUDED_FROM_SCOPE = META+"canBeExcludedFromScope";
     public static final String META_NAME_REVERSE_LINK = META+"nameForReverseLink";
     public static final String META_OCCURRENCES = META + "occurrences";

@@ -25,8 +25,10 @@ package org.marmotgraph.commons.jsonld;
 
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 public class InferredJsonLdDoc {
     //FOR INFERENCE
@@ -64,6 +66,10 @@ public class InferredJsonLdDoc {
 
     public void setInferenceOf(List<String> jsonLdIds){
         indexedJsonLdDoc.getDoc().addProperty(INFERENCE_OF, jsonLdIds);
+    }
+
+    public void setContributors(Set<JsonLdId> contributors){
+        indexedJsonLdDoc.getDoc().addProperty(EBRAINSVocabulary.META_CONTRIBUTORS, contributors != null && !contributors.isEmpty() ? new ArrayList<>(contributors) : null);
     }
 
     public void setAlternatives(JsonLdDoc alternatives){

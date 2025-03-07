@@ -313,6 +313,7 @@ public class Reconcile {
             Set<String> keys = originalInstances.stream().map(i -> i.getDoc().keySet()).flatMap(Set::stream).filter(k -> !DynamicJson.isInternalKey(k)).collect(Collectors.toSet());
             JsonLdDoc alternatives = new JsonLdDoc();
             inferredDocument.setAlternatives(alternatives);
+            Set<JsonLdId> contributors = new HashSet<>();
             for (String key : keys) {
                 //We don't need the property update times in inferred -> this is an information for reconciliation only and therefore should only be in NATIVE
                 if (!key.equals(EBRAINSVocabulary.META_PROPERTYUPDATES)) {
@@ -325,7 +326,9 @@ public class Reconcile {
                         if(value!=null){
                             inferredDocument.asIndexed().getDoc().addProperty(key, value);
                         }
-                        JsonLdDoc alternative = createAlternative(key, doc.get(key), true, Collections.singletonList(doc.getAs(EBRAINSVocabulary.META_USER, JsonLdId.class)));
+                        List<JsonLdId> users = Collections.singletonList(doc.getAs(EBRAINSVocabulary.META_USER, JsonLdId.class));
+                        JsonLdDoc alternative = createAlternative(key, doc.get(key), true, users);
+                        contributors.addAll(users);
                         if (alternative != null) {
                             alternatives.put(key, Collections.singletonList(alternative));
                         }
@@ -359,7 +362,9 @@ public class Reconcile {
                                 Map<Object, List<IndexedJsonLdDoc>> documentsByValue = documentsForKey.stream().collect(Collectors.groupingBy(d -> d.getDoc().getOrDefault(key, nullGroup)));
                                 final List<JsonLdDoc> alternativePayloads = documentsByValue.keySet().stream().map(value -> {
                                     List<IndexedJsonLdDoc> docs = documentsByValue.get(value);
-                                    return createAlternative(key, value == nullGroup ? null : value, docs.contains(firstDoc), docs.stream().filter(d -> d.getDoc() != null && d.getDoc().getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class) != null).map(doc -> doc.getDoc().getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class).id()).distinct().collect(Collectors.toList()));
+                                    List<JsonLdId> users = docs.stream().filter(d -> d.getDoc() != null && d.getDoc().getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class) != null).map(doc -> doc.getDoc().getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class).id()).distinct().collect(Collectors.toList());
+                                    contributors.addAll(users);
+                                    return createAlternative(key, value == nullGroup ? null : value, docs.contains(firstDoc), users);
                                 }).filter(Objects::nonNull).collect(Collectors.toList());
                                 if(!CollectionUtils.isEmpty(alternativePayloads)) {
                                     alternatives.put(key, alternativePayloads);
@@ -373,6 +378,7 @@ public class Reconcile {
                     }
                 }
             }
+            inferredDocument.setContributors(contributors);
             inferredDocument.setInferenceOf(originalInstances.stream().map(i -> idUtils.buildAbsoluteUrl(i.getDocumentId()).getId()).distinct().collect(Collectors.toList()));
             return inferredDocument;
         }
