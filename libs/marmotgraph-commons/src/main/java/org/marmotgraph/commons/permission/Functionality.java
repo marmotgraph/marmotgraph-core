@@ -75,13 +75,17 @@ public enum Functionality {
     CREATE_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
     DELETE_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
 
-    DEFINE_TERMS_OF_USE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null),
-    DEFINE_PUBLIC_SPACE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null),
-    DEFINE_SCOPE_RELEVANT_SPACE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null),
+    DEFINE_TERMS_OF_USE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.ADMIN, null, null, null),
+    DEFINE_PUBLIC_SPACE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.ADMIN, null, null, null),
+    DEFINE_SCOPE_RELEVANT_SPACE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.ADMIN, null, null, null),
 
-    CHECK_HEALTH_STATUS(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null),
+    CHECK_HEALTH_STATUS(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.ADMIN, null, null, null),
 
-    CACHE_FLUSH(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null);
+    //Cache mgmt
+    CACHE_FLUSH(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.ADMIN, null, null, null),
+
+    //Tenant mgmt
+    TENANT_MANAGEMENT(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.ADMIN, null, null, null);
 
     private final List<Permission.Level> allowedPermissionLevels;
     private final FunctionalityGroup functionalityGroup;
@@ -114,6 +118,6 @@ public enum Functionality {
     }
 
     public enum FunctionalityGroup {
-        INSTANCE, CLIENT, PERMISSIONS, SPACES, USERS, TYPES
+        INSTANCE, CLIENT, PERMISSIONS, SPACES, USERS, TYPES, ADMIN
     }
 }

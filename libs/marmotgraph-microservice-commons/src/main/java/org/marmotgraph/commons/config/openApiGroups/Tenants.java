@@ -21,25 +21,18 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.authentication.keycloak;
+package org.marmotgraph.commons.config.openApiGroups;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.marmotgraph.commons.api.APINaming;
 
-@Configuration
-public class KeycloakConfig {
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-    @Value("${org.marmotgraph.authentication.keycloak.configUrl}")
-    String configUrl;
-
-    @Value("${org.marmotgraph.login.client}")
-    String loginClientId;
-
-    public String getConfigUrl() {
-        return configUrl;
-    }
-
-    public String getLoginClientId() {
-        return loginClientId;
-    }
+@Retention(RetentionPolicy.RUNTIME)
+@Target(value={ElementType.METHOD, ElementType.TYPE})
+@Tag(name = APINaming.TENANTS)
+public @interface Tenants {
 }

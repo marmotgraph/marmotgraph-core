@@ -27,6 +27,7 @@ import org.marmotgraph.authentication.config.AuthorizationConfiguration;
 import org.marmotgraph.authentication.controller.AuthenticationRepository;
 import org.marmotgraph.authentication.controller.TermsOfUseRepository;
 import org.marmotgraph.authentication.keycloak.KeycloakClient;
+import org.marmotgraph.authentication.keycloak.KeycloakConfig;
 import org.marmotgraph.authentication.keycloak.KeycloakController;
 import org.marmotgraph.authentication.model.UserOrClientProfile;
 import org.marmotgraph.commons.api.Authentication;
@@ -55,6 +56,8 @@ public class AuthenticationAPI implements Authentication.Client {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
+    private final KeycloakConfig keycloakConfig;
+
     private final KeycloakClient keycloakClient;
 
     private final KeycloakController keycloakController;
@@ -67,9 +70,10 @@ public class AuthenticationAPI implements Authentication.Client {
 
     private final AuthorizationConfiguration authorizationConfiguration;
 
-    public AuthenticationAPI(KeycloakClient keycloakClient, KeycloakController keycloakController, AuthenticationRepository authenticationRepository, TermsOfUseRepository termsOfUseRepository, Permissions permissions, AuthorizationConfiguration authorizationConfiguration) {
+    public AuthenticationAPI(KeycloakConfig keycloakConfig, KeycloakClient keycloakClient, KeycloakController keycloakController, AuthenticationRepository authenticationRepository, TermsOfUseRepository termsOfUseRepository, Permissions permissions, AuthorizationConfiguration authorizationConfiguration) {
         this.keycloakController = keycloakController;
         this.keycloakClient = keycloakClient;
+        this.keycloakConfig = keycloakConfig;
         this.authenticationRepository = authenticationRepository;
         this.termsOfUseRepository = termsOfUseRepository;
         this.permissions = permissions;
@@ -90,7 +94,11 @@ public class AuthenticationAPI implements Authentication.Client {
 
     @Override
     public String openIdConfigUrl() {
-        return keycloakClient.getOpenIdConfigUrl();
+        return keycloakConfig.getConfigUrl();
+    }
+
+    public String loginClientId(){
+        return keycloakConfig.getLoginClientId();
     }
 
     @Override

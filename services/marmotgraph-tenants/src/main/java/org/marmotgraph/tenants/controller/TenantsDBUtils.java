@@ -21,25 +21,22 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.authentication.keycloak;
+package org.marmotgraph.tenants.controller;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
+import com.arangodb.ArangoCollection;
+import com.arangodb.ArangoDatabase;
+import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
+import org.marmotgraph.arango.commons.model.ArangoDatabaseProxy;
+import org.marmotgraph.commons.cache.CacheConstant;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Component;
 
-@Configuration
-public class KeycloakConfig {
+@Component
+public class TenantsDBUtils {
 
-    @Value("${org.marmotgraph.authentication.keycloak.configUrl}")
-    String configUrl;
-
-    @Value("${org.marmotgraph.login.client}")
-    String loginClientId;
-
-    public String getConfigUrl() {
-        return configUrl;
+    @Cacheable(value = CacheConstant.CACHE_KEYS_IDS_COLLECTIONS, key="{#db.name(), #c.collectionName}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    public ArangoCollection getOrCreateArangoCollection(ArangoDatabase db, ArangoCollectionReference c) {
+        return ArangoDatabaseProxy.getOrCreateArangoCollection(db, c);
     }
 
-    public String getLoginClientId() {
-        return loginClientId;
-    }
 }
