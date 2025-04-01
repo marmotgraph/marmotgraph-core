@@ -131,11 +131,11 @@ public class TenantsAPI implements Tenants.Client {
     @Override
     public ImageResult getFavicon(String name) {
         if (name.equals("default")) {
-            return getDefaultImage("favicon.ico", "image/x-icon");
+            return getDefaultImage("marmotgraph_favicon.png", "image/png");
         }
         else{
             ImageResult favicon = tenantsRepository.getFavicon(name);
-            return favicon != null ? favicon : getDefaultImage("favicon.ico", "image/x-icon");
+            return favicon != null ? favicon : getDefaultImage("marmotgraph_favicon.png", "image/png");
         }
     }
 
@@ -157,7 +157,7 @@ public class TenantsAPI implements Tenants.Client {
     @Override
     public ImageResult getBackgroundImage(String name, boolean darkMode) {
         if (name.equals("default")) {
-            return getDefaultImage("background.jpg", "image/jpeg");
+            return getDefaultImage(darkMode ? "background_dark.svg" : "background_bright.svg", "image/svg+xml");
         }
         else{
             ImageResult backgroundImage = tenantsRepository.getBackgroundImage(name, darkMode);
@@ -165,7 +165,7 @@ public class TenantsAPI implements Tenants.Client {
                 //If there is no background image in this color mode, we fall back to the other
                 backgroundImage = tenantsRepository.getBackgroundImage(name, !darkMode);
             }
-            return backgroundImage != null ? backgroundImage : getDefaultImage("background.jpg", "image/jpeg");
+            return backgroundImage != null ? backgroundImage : getDefaultImage(darkMode ? "background_dark.svg" : "background_bright.svg", "image/svg+xml");
         }
     }
 
@@ -186,7 +186,7 @@ public class TenantsAPI implements Tenants.Client {
     @Override
     public ImageResult getLogo(String name, boolean darkMode) {
         if (name.equals("default")) {
-            return getDefaultImage("logo.svg", "image/svg+xml");
+            return getDefaultImage(darkMode ? "marmotgraph_dark.svg" : "marmotgraph_bright.svg", "image/svg+xml");
         }
         else{
             ImageResult logo = tenantsRepository.getLogo(name, darkMode);
@@ -194,7 +194,7 @@ public class TenantsAPI implements Tenants.Client {
                 //If there is no logo in this color mode, we fall back to the other
                 logo = tenantsRepository.getLogo(name, !darkMode);
             }
-            return logo != null ? logo : getDefaultImage("logo.svg", "image/svg+xml");
+            return logo != null ? logo : getDefaultImage(darkMode ? "marmotgraph_dark.svg" : "marmotgraph_bright.svg", "image/svg+xml");
         }
     }
 
