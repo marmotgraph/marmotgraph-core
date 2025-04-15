@@ -139,7 +139,7 @@ public class IncomingLinksRepository extends AbstractRepository{
         aql.indent().addLine(AQL.trust(" [doc._key]: MERGE(groupedByInstances)"));
         aql.outdent().addLine(AQL.trust("})"));
 
-        List<NormalizedJsonLd> instances = db.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
+        List<NormalizedJsonLd> instances = db.query(aql.build().getValue(), NormalizedJsonLd.class, bindVars, new AqlQueryOptions()).asListRemaining();
         if (instances.isEmpty()) {
             return null;
         } else if (instances.size() == 1) {

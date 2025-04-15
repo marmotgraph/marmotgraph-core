@@ -99,7 +99,7 @@ public class EmbeddedAndAlternativesRepository {
         bindVars.put("idlist", ids);
         ArangoDatabase database = databases.getByStage(stage);
         graphDBArangoUtils.getOrCreateArangoCollection(database, InternalSpace.DOCUMENT_ID_EDGE_COLLECTION);
-        return database.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), NormalizedJsonLd[].class).asListRemaining();
+        return database.query(aql.build().getValue(), NormalizedJsonLd[].class, bindVars, new AqlQueryOptions()).asListRemaining();
     }
 
 

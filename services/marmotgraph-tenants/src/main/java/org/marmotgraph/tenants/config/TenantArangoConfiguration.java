@@ -24,7 +24,6 @@
 package org.marmotgraph.tenants.config;
 
 import com.arangodb.ArangoDB;
-import com.arangodb.mapping.ArangoJack;
 import org.marmotgraph.arango.commons.model.ArangoDatabaseProxy;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,7 +49,6 @@ public class TenantArangoConfiguration {
         if (maxConnections != null) {
             builder.maxConnections(maxConnections);
         }
-        builder.serializer(new ArangoJack());
         return builder;
     }
 

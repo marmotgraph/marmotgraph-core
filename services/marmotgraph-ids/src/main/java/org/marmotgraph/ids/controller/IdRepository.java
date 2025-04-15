@@ -27,7 +27,9 @@ import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.model.AqlQueryOptions;
 import com.arangodb.model.DocumentCreateOptions;
-import com.arangodb.model.SkiplistIndexOptions;
+import com.arangodb.model.OverwriteMode;
+import com.arangodb.model.PersistentIndexOptions;
+import org.apache.commons.lang3.StringUtils;
 import org.marmotgraph.arango.commons.aqlbuilder.AQL;
 import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
 import org.marmotgraph.arango.commons.model.ArangoDatabaseProxy;
@@ -43,7 +45,6 @@ import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.IdWithAlternatives;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.ids.model.PersistedId;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -101,7 +102,7 @@ public class IdRepository {
         //Add the id in its fully qualified form as an alternative
         id.setAlternativeIds(new HashSet<>(id.getAlternativeIds() != null ? id.getAlternativeIds() : Collections.emptySet()));
         id.getAlternativeIds().add(idUtils.buildAbsoluteUrl(id.getUUID()).getId());
-        coll.insertDocument(jsonAdapter.toJson(id), new DocumentCreateOptions().waitForSync(true).overwrite(true));
+        coll.insertDocument(jsonAdapter.toJson(id), new DocumentCreateOptions().waitForSync(true).overwriteMode(OverwriteMode.replace));
     }
 
     private List<PersistedId> fetchPersistedIdsByUUID(ArangoDatabase database, List<UUID> uuid, String collectionName){
@@ -113,7 +114,7 @@ public class IdRepository {
         bindVars.put("@collection", collectionName);
         aql.addLine(AQL.trust("FILTER d != NULL"));
         aql.addLine(AQL.trust("RETURN d"));
-        return database.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).asListRemaining().stream().map(s->jsonAdapter.fromJson(s, PersistedId.class)).collect(Collectors.toList());
+        return database.query(aql.build().getValue(), String.class, bindVars, new AqlQueryOptions()).asListRemaining().stream().map(s->jsonAdapter.fromJson(s, PersistedId.class)).collect(Collectors.toList());
     }
 
     private List<PersistedId> fetchPersistedIdsByAlternativeId(ArangoDatabase database, List<Tuple<String, SpaceName>> ids, String collectionName){
@@ -138,7 +139,7 @@ public class IdRepository {
             counter++;
         }
         aql.addLine(AQL.trust("RETURN doc"));
-        return database.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).asListRemaining().stream().map(s -> jsonAdapter.fromJson(s, PersistedId.class)).collect(Collectors.toList());
+        return database.query(aql.build().getValue(), String.class, bindVars, new AqlQueryOptions()).asListRemaining().stream().map(s -> jsonAdapter.fromJson(s, PersistedId.class)).collect(Collectors.toList());
     }
 
     public InstanceId findInstanceByIdentifiers(DataStage stage, UUID uuid, List<String> identifiers) throws AmbiguousException{
@@ -162,7 +163,7 @@ public class IdRepository {
             }
         }
         aql.addLine(AQL.trust("RETURN i"));
-        final List<PersistedId> persistedIds = database.query(aql.build().getValue(), bindVars, String.class).asListRemaining().stream().map(s -> jsonAdapter.fromJson(s, PersistedId.class)).collect(Collectors.toList());
+        final List<PersistedId> persistedIds = database.query(aql.build().getValue(), String.class, bindVars).asListRemaining().stream().map(s -> jsonAdapter.fromJson(s, PersistedId.class)).collect(Collectors.toList());
         switch(persistedIds.size()) {
             case 0:
                 return null;
@@ -226,8 +227,8 @@ public class IdRepository {
 
     ArangoCollection getOrCreateCollection(DataStage stage) {
         ArangoCollection ids = idsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(getCollectionName(stage), false));
-        ids.ensureSkiplistIndex(Arrays.asList("alternativeIds[*]", JsonLdConsts.ID), new SkiplistIndexOptions());
-        ids.ensureSkiplistIndex(Collections.singletonList(JsonLdConsts.ID), new SkiplistIndexOptions());
+        ids.ensurePersistentIndex(Arrays.asList("alternativeIds[*]", JsonLdConsts.ID), new PersistentIndexOptions());
+        ids.ensurePersistentIndex(Collections.singletonList(JsonLdConsts.ID), new PersistentIndexOptions());
         return ids;
     }
 

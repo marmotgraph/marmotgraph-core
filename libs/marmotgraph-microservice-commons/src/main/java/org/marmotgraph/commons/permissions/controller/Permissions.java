@@ -23,6 +23,7 @@
 
 package org.marmotgraph.commons.permissions.controller;
 
+import jakarta.validation.constraints.NotNull;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.permission.Functionality;
@@ -30,7 +31,7 @@ import org.marmotgraph.commons.permission.FunctionalityInstance;
 import org.marmotgraph.commons.permission.Permission;
 import org.springframework.stereotype.Component;
 
-import javax.validation.constraints.NotNull;
+
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;

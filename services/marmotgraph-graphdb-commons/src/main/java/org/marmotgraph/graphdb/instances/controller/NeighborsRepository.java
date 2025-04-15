@@ -86,7 +86,7 @@ public class NeighborsRepository extends AbstractRepository{
         }
         aql.addLine(AQL.trust("RETURN {\"id\": doc._key, \"name\": doc._label, \"inbound\" : inbnd, \"outbound\": outbnd, \"types\": doc.`@type`, \"space\": doc.`" + EBRAINSVocabulary.META_SPACE + "` }"));
 
-        List<GraphEntity> graphEntities = db.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), GraphEntity.class).asListRemaining();
+        List<GraphEntity> graphEntities = db.query(aql.build().getValue(), GraphEntity.class, bindVars, new AqlQueryOptions()).asListRemaining();
         if (graphEntities.isEmpty()) {
             return null;
         } else if (graphEntities.size() == 1) {

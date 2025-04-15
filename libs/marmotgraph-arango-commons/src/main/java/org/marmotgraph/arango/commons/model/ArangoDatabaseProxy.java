@@ -28,17 +28,17 @@ import com.arangodb.ArangoDB;
 import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.CollectionType;
+import com.arangodb.entity.IndexEntity;
 import com.arangodb.model.CollectionCreateOptions;
-import com.arangodb.model.HashIndexOptions;
-import com.arangodb.model.SkiplistIndexOptions;
+import com.arangodb.model.PersistentIndexOptions;
 import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.commons.jsonld.IndexedJsonLdDoc;
 import org.marmotgraph.commons.jsonld.JsonLdConsts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class ArangoDatabaseProxy {
 
@@ -154,14 +154,33 @@ public class ArangoDatabaseProxy {
         if(logger.isDebugEnabled()) {
             logger.debug("Ensuring indices properly set for collection {}", collection.name());
         }
-        collection.ensureHashIndex(Collections.singleton(ArangoVocabulary.COLLECTION), new HashIndexOptions());
-        collection.ensureSkiplistIndex(Collections.singletonList(JsonLdConsts.ID), new SkiplistIndexOptions());
+        List<Collection<String>> existingIndices = collection.getIndexes().stream().map(IndexEntity::getFields).toList();
+        Set<String> collectionIndex = Collections.singleton(ArangoVocabulary.COLLECTION);
+        if(existingIndices.stream().noneMatch(i -> i.containsAll(collectionIndex) && collectionIndex.containsAll(i))) {
+            collection.ensurePersistentIndex(collectionIndex, new PersistentIndexOptions());
+        }
+        List<String> idIndex = Collections.singletonList(JsonLdConsts.ID);
+        if(existingIndices.stream().noneMatch(i -> i.equals(idIndex) && idIndex.containsAll(i))) {
+            collection.ensurePersistentIndex(idIndex, new PersistentIndexOptions());
+        }
         if (collection.getInfo().getType() == CollectionType.EDGES) {
-            collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.ORIGINAL_TO), new SkiplistIndexOptions());
+            List<String> originalToIndex = Collections.singletonList(IndexedJsonLdDoc.ORIGINAL_TO);
+            if(existingIndices.stream().noneMatch(i -> i.equals(originalToIndex) && originalToIndex.containsAll(i))) {
+                collection.ensurePersistentIndex(originalToIndex, new PersistentIndexOptions());
+            }
         } else {
-            collection.ensureSkiplistIndex(Arrays.asList(JsonLdConsts.TYPE + "[*]", IndexedJsonLdDoc.EMBEDDED, IndexedJsonLdDoc.LABEL, ArangoVocabulary.KEY), new SkiplistIndexOptions().name(BROWSE_AND_SEARCH_INDEX));
-            collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.IDENTIFIERS + "[*]"), new SkiplistIndexOptions());
-            collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.EMBEDDED), new SkiplistIndexOptions());
+            List<String> combinedIndex = Arrays.asList(JsonLdConsts.TYPE + "[*]", IndexedJsonLdDoc.EMBEDDED, IndexedJsonLdDoc.LABEL, ArangoVocabulary.KEY);
+            if(existingIndices.stream().noneMatch(i -> i.equals(combinedIndex) && combinedIndex.containsAll(i))) {
+                collection.ensurePersistentIndex(combinedIndex, new PersistentIndexOptions().name(BROWSE_AND_SEARCH_INDEX));
+            }
+            List<String> identifiersIndex = Collections.singletonList(IndexedJsonLdDoc.IDENTIFIERS + "[*]");
+            if(existingIndices.stream().noneMatch(i -> i.equals(identifiersIndex) && identifiersIndex.containsAll(i))) {
+                collection.ensurePersistentIndex(identifiersIndex, new PersistentIndexOptions());
+            }
+            List<String> embeddedIndex = Collections.singletonList(IndexedJsonLdDoc.EMBEDDED);
+            if(existingIndices.stream().noneMatch(i -> i.equals(embeddedIndex) && embeddedIndex.containsAll(i))) {
+                collection.ensurePersistentIndex(embeddedIndex, new PersistentIndexOptions());
+            }
         }
     }
 

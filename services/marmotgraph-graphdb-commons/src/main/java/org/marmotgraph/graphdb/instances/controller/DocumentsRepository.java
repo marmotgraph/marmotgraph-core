@@ -95,7 +95,7 @@ public class DocumentsRepository extends  AbstractRepository{
         bindVars.put("@space", ArangoCollectionReference.fromSpace(space).getCollectionName());
         aql.addLine(AQL.trust("FILTER doc." + IndexedJsonLdDoc.EMBEDDED + " == NULL"));
         aql.addLine(AQL.trust("RETURN doc.`" + IndexedJsonLdDoc.DOCUMENT_ID + "`"));
-        return databases.getByStage(DataStage.NATIVE).query(aql.build().getValue(), bindVars, aql.getQueryOptions(), String.class).asListRemaining();
+        return databases.getByStage(DataStage.NATIVE).query(aql.build().getValue(), String.class, bindVars, aql.getQueryOptions()).asListRemaining();
     }
 
     @ExposesData
@@ -252,7 +252,7 @@ public class DocumentsRepository extends  AbstractRepository{
                 identifierCnt++;
             }
             aql.addLine(AQL.trust("RETURN doc"));
-            List<NormalizedJsonLd> result = db.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
+            List<NormalizedJsonLd> result = db.query(aql.build().getValue(), NormalizedJsonLd.class, bindVars, new AqlQueryOptions()).asListRemaining();
             exposeRevision(result);
             return result;
         }
@@ -288,7 +288,7 @@ public class DocumentsRepository extends  AbstractRepository{
         }
         aql.addLine(AQL.trust("}"));
         Map<UUID, Result<NormalizedJsonLd>> result = new HashMap<>();
-        List<NormalizedJsonLd> results = db.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining().stream().filter(Objects::nonNull).toList();
+        List<NormalizedJsonLd> results = db.query(aql.build().getValue(), NormalizedJsonLd.class, bindVars, new AqlQueryOptions()).asListRemaining().stream().filter(Objects::nonNull).toList();
         if (!results.isEmpty()) {
             // The response object is always just a single dictionary
             NormalizedJsonLd singleResult = results.get(0);

@@ -26,6 +26,8 @@ package org.marmotgraph.authentication.controller;
 import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.model.DocumentCreateOptions;
+import com.arangodb.model.OverwriteMode;
+import jakarta.annotation.PostConstruct;
 import org.marmotgraph.arango.commons.model.ArangoDatabaseProxy;
 import org.marmotgraph.authentication.model.ArangoTermsOfUse;
 import org.marmotgraph.commons.JsonAdapter;
@@ -37,7 +39,6 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.Arrays;
 
 @Component
@@ -75,7 +76,7 @@ public class TermsOfUseRepository implements SetupLogic {
         }
         ArangoTermsOfUse versioned = new ArangoTermsOfUse(termsOfUse.getVersion(), termsOfUse.getData(), termsOfUse.getVersion());
         ArangoTermsOfUse current = new ArangoTermsOfUse(termsOfUse.getVersion(), termsOfUse.getData(), "current");
-        getTermsOfUseCollection().insertDocuments(Arrays.asList(jsonAdapter.toJson(versioned), jsonAdapter.toJson(current)), new DocumentCreateOptions().overwrite(true).silent(true));
+        getTermsOfUseCollection().insertDocuments(Arrays.asList(jsonAdapter.toJson(versioned), jsonAdapter.toJson(current)), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace).silent(true));
     }
 
 

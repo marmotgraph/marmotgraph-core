@@ -73,7 +73,7 @@ public class RelationConsistency {
                         final String sourceDocument = String.format("%s/%s", r.collection, r.id);
                         final Map<String, Object> bindVars = Map.of("@collection", ArangoCollectionReference.fromSpace(new SpaceName(propertyRelation.getProperty()), true).getCollectionName(),
                                 "documentId", sourceDocument);
-                        try (final ArangoCursor<NormalizedJsonLd> query = database.query("FOR r IN @@collection FILTER r._from == @documentId RETURN r", bindVars, NormalizedJsonLd.class)) {
+                        try (final ArangoCursor<NormalizedJsonLd> query = database.query("FOR r IN @@collection FILTER r._from == @documentId RETURN r", NormalizedJsonLd.class, bindVars)) {
                             final List<NormalizedJsonLd> relationsFromEdge = query.asListRemaining();
                             compareRelationsFromPayloadWithThoseFromEdge(r.id, sourceDocument, propertyRelation.getProperty(), propertyRelation.getInstances(), relationsFromEdge, resultCollector);
                         } catch (ArangoDBException | IOException e) {
@@ -198,7 +198,7 @@ public class RelationConsistency {
                         "collection": d._collection,
                         "refs" : refs
                     }
-                """, currentPage * PAGE_SIZE, PAGE_SIZE), Map.of("@collection", collection), RelationFromPayload.class)) {
+                """, currentPage * PAGE_SIZE, PAGE_SIZE), RelationFromPayload.class, Map.of("@collection", collection))) {
             return cursor.asListRemaining();
         } catch (IOException e) {
             throw new RuntimeException(e);

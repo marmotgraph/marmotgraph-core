@@ -48,7 +48,7 @@ import org.marmotgraph.core.controller.CoreInferenceController;
 import org.marmotgraph.core.controller.CoreSpaceController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import org.springdoc.api.annotations.ParameterObject;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.*;
 
 /**

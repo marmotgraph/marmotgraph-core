@@ -23,6 +23,7 @@
 
 package org.marmotgraph.graphdb;
 
+import jakarta.validation.constraints.NotNull;
 import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
 import org.marmotgraph.arango.commons.model.ArangoDocumentReference;
 import org.marmotgraph.commons.JsonAdapter;
@@ -39,16 +40,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import javax.validation.constraints.NotNull;
 import java.util.UUID;
 
 @SpringBootTest
 @TestPropertySource(properties = {"KEYCLOAK_ISSUER_URI = http://invalid/", ""})
 public class AbstractGraphTest {
-    @MockBean
+
+    @MockitoBean
     protected Authentication.Client authClient;
 
     @Autowired
@@ -66,10 +67,10 @@ public class AbstractGraphTest {
         arangoDatabases.clearAll();
     }
 
-    @MockBean
+    @MockitoBean
     protected Ids.Client ids;
 
-    @MockBean
+    @MockitoBean
     protected PrimaryStoreUsers.Client primaryStoreUsers;
 
     protected ArangoDocumentReference upsert(SpaceName spaceName, NormalizedJsonLd payload, DataStage stage){

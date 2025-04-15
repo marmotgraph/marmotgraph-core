@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:24-jre-alpine
 VOLUME /tmp
 COPY target/marmotgraph-core-allinone.jar marmotgraph-core-allinone.jar
 ENV JAVA_OPTS=""

@@ -24,11 +24,14 @@
 package org.marmotgraph.graphdb.structure.controller;
 
 import com.arangodb.ArangoCollection;
+import com.arangodb.ArangoCursor;
+import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.CollectionEntity;
 import com.arangodb.entity.CollectionType;
 import com.arangodb.model.CollectionsReadOptions;
 import com.arangodb.model.DocumentCreateOptions;
+import com.arangodb.model.OverwriteMode;
 import org.marmotgraph.arango.commons.aqlbuilder.AQL;
 import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
@@ -61,6 +64,7 @@ import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -134,7 +138,12 @@ public class StructureRepository {
             query.addLine(AQL.trust(")"));
         }
         query.addLine(AQL.trust(" RETURN space"));
-        return database.query(query.build().getValue(), bindVars, String.class).asListRemaining().stream().map(SpaceName::fromString).collect(Collectors.toList());
+        try(ArangoCursor<String> result = database.query(query.build().getValue(), String.class, bindVars)){
+            return result.asListRemaining().stream().map(SpaceName::fromString).collect(Collectors.toList());
+        }
+        catch (IOException e){
+            throw new ArangoDBException(e.getMessage());
+        }
     }
 
 
@@ -165,7 +174,7 @@ public class StructureRepository {
             bindVars.put("@collection", SPACES.getCollectionName());
             aql.addLine(AQL.trust(String.format("SORT d.`%s` ASC", SchemaOrgVocabulary.NAME)));
             aql.addLine(AQL.trust("RETURN KEEP(d, ATTRIBUTES(d, true))"));
-            return Collections.unmodifiableList(structureDB.query(aql.build().getValue(), bindVars, Space.class).asListRemaining());
+            return Collections.unmodifiableList(structureDB.query(aql.build().getValue(),  Space.class, bindVars).asListRemaining());
         }
         return Collections.emptyList();
     }
@@ -196,7 +205,7 @@ public class StructureRepository {
             bindVars.put("@collection", SPACES.getCollectionName());
             aql.addLine(AQL.trust(String.format("SORT d.`%s` ASC", SchemaOrgVocabulary.NAME)));
             aql.addLine(AQL.trust("RETURN KEEP(d, ATTRIBUTES(d, true))"));
-            return Collections.unmodifiableList(structureDB.query(aql.build().getValue(), bindVars, SpaceSpecification.class).asListRemaining());
+            return Collections.unmodifiableList(structureDB.query(aql.build().getValue(), SpaceSpecification.class, bindVars).asListRemaining());
         }
         return Collections.emptyList();
     }
@@ -246,7 +255,7 @@ public class StructureRepository {
             bindVars.put("@collection", TYPE_IN_SPACE.getCollectionName());
             bindVars.put("id", String.format("%s/%s", SPACES.getCollectionName(), spaceUUID));
             query.addLine(AQL.trust(String.format("RETURN DOCUMENT(t._to).`%s`", SchemaOrgVocabulary.IDENTIFIER)));
-            return structureDB.query(query.build().getValue(), bindVars, String.class).asListRemaining();
+            return structureDB.query(query.build().getValue(), String.class, bindVars).asListRemaining();
         }
         return Collections.emptyList();
     }
@@ -280,7 +289,7 @@ public class StructureRepository {
             query.addLine(AQL.trust("FILTER result != NULL"));
             bindVars.put("clientSpace", collectionReference.getCollectionName());
             query.addLine(AQL.trust("RETURN KEEP(result, ATTRIBUTES(result, True))"));
-            return getSingleResult(structureDB.query(query.build().getValue(), bindVars, DynamicJson.class).asListRemaining(), typeUUID);
+            return getSingleResult(structureDB.query(query.build().getValue(), DynamicJson.class, bindVars).asListRemaining(), typeUUID);
         }
         return null;
     }
@@ -314,7 +323,7 @@ public class StructureRepository {
         aql.addLine(AQL.trust("FOR t IN types"));
         aql.addLine(AQL.trust("LET countsInGroup = SUM(FOR g IN typeGroups FILTER t IN g.name RETURN g.occurrences)"));
         aql.addLine(AQL.trust("RETURN { \"name\": t, \"occurrences\": countsInGroup }"));
-        return Collections.unmodifiableList(arangoDatabases.getByStage(stage).query(aql.build().getValue(), bindVars, TypeWithInstanceCountReflection.class).asListRemaining());
+        return Collections.unmodifiableList(arangoDatabases.getByStage(stage).query(aql.build().getValue(), TypeWithInstanceCountReflection.class, bindVars).asListRemaining());
     }
 
 
@@ -361,7 +370,7 @@ public class StructureRepository {
             query.addLine(AQL.trust("LET doc = DOCUMENT(@id)"));
             bindVars.put("id", String.format("%s/%s", collectionReference.getCollectionName(), propertyUUID));
             query.addLine(AQL.trust("RETURN KEEP(doc, ATTRIBUTES(doc, True))"));
-            return getSingleResult(structureDB.query(query.build().getValue(), bindVars, DynamicJson.class).asListRemaining(), propertyUUID);
+            return getSingleResult(structureDB.query(query.build().getValue(), DynamicJson.class, bindVars).asListRemaining(), propertyUUID);
         }
         return null;
     }
@@ -413,7 +422,7 @@ public class StructureRepository {
             query.addLine(AQL.trust("LET doc = DOCUMENT(t._to)"));
             query.addLine(AQL.trust("FILTER doc != NULL"));
             query.addLine(AQL.trust(String.format("RETURN MERGE(KEEP(doc, [\"%s\"]), KEEP(t, ATTRIBUTES(t, True)))", SchemaOrgVocabulary.IDENTIFIER)));
-            return structureDB.query(query.build().getValue(), bindVars, DynamicJson.class).asListRemaining();
+            return structureDB.query(query.build().getValue(), DynamicJson.class, bindVars).asListRemaining();
         }
         return Collections.emptyList();
     }
@@ -448,7 +457,7 @@ public class StructureRepository {
         aql.addLine(AQL.trust("FOR att IN attributes"));
         aql.addLine(AQL.trust("LET countsInGroup = SUM(FOR g IN attGroups FILTER att IN g.attributes RETURN g.count)"));
         aql.addLine(AQL.trust("RETURN { \"name\": att, \"occurrences\": countsInGroup }"));
-        return Collections.unmodifiableList(arangoDatabases.getByStage(stage).query(aql.build().getValue(), bindVars, PropertyOfTypeInSpaceReflection.class).asListRemaining());
+        return Collections.unmodifiableList(arangoDatabases.getByStage(stage).query(aql.build().getValue(), PropertyOfTypeInSpaceReflection.class, bindVars).asListRemaining());
     }
 
     @Cacheable(value = CacheConstant.CACHE_KEYS_TARGET_TYPES, sync = true)
@@ -496,7 +505,7 @@ public class StructureRepository {
         aql.addLine(AQL.trust("\"space\": space,"));
         aql.addLine(AQL.trust("\"occurrences\": count"));
         aql.addLine(AQL.trust("}"));
-        return Collections.unmodifiableList(arangoDatabases.getByStage(stage).query(aql.build().getValue(), bindVars, TargetTypeReflection.class).asListRemaining());
+        return Collections.unmodifiableList(arangoDatabases.getByStage(stage).query(aql.build().getValue(), TargetTypeReflection.class, bindVars).asListRemaining());
     }
 
     private final List<String> EDGE_BLACKLIST = Arrays.asList(
@@ -556,7 +565,7 @@ public class StructureRepository {
         final ArangoCollection spaces = graphDBArangoUtils.getOrCreateArangoCollection(structureDB, SPACES);
         final DynamicJson arangoDoc = jsonAdapter.fromJson(jsonAdapter.toJson(spaceSpecification), DynamicJson.class);
         arangoDoc.put(ArangoVocabulary.KEY, spaceSpecificationRef(spaceSpecification.getName()));
-        spaces.insertDocument(arangoDoc, new DocumentCreateOptions().overwrite(true));
+        spaces.insertDocument(arangoDoc, new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
     }
 
     public void removeSpaceDocument(SpaceName spaceName) {
@@ -577,7 +586,7 @@ public class StructureRepository {
         edge.setTo(new ArangoDocumentReference(TYPES, typeSpecificationRef(type)));
         edge.redefineId(new ArangoDocumentReference(TYPE_IN_SPACE, typeInSpaceSpecificationRef(spaceName.getName(), type)));
         final ArangoCollection typeInSpace = graphDBArangoUtils.getOrCreateArangoCollection(structureDB, TYPE_IN_SPACE);
-        typeInSpace.insertDocument(jsonAdapter.toJson(edge), new DocumentCreateOptions().overwrite(true));
+        typeInSpace.insertDocument(jsonAdapter.toJson(edge), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
     }
 
     public void removeLinkBetweenSpaceAndType(SpaceName spaceName, String type) {
@@ -597,7 +606,7 @@ public class StructureRepository {
         final ArangoCollection types = graphDBArangoUtils.getOrCreateArangoCollection(structureDB, collection);
         typeSpecification.put(ArangoVocabulary.KEY, typeSpecificationRef(typeName.getId()));
         typeSpecification.put(SchemaOrgVocabulary.IDENTIFIER, typeName.getId());
-        types.insertDocument(typeSpecification, new DocumentCreateOptions().overwrite(true));
+        types.insertDocument(typeSpecification,new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
     }
 
     public void removeTypeDocument(JsonLdId typeName, SpaceName clientSpace) {
@@ -619,7 +628,7 @@ public class StructureRepository {
         final ArangoCollection properties = graphDBArangoUtils.getOrCreateArangoCollection(structureDB, collection);
         propertySpecification.put(ArangoVocabulary.KEY, propertySpecificationRef(propertyName.getId()));
         propertySpecification.put(SchemaOrgVocabulary.IDENTIFIER, propertyName.getId());
-        properties.insertDocument(propertySpecification, new DocumentCreateOptions().overwrite(true));
+        properties.insertDocument(propertySpecification, new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
     }
 
     public void removePropertyDocument(JsonLdId propertyName, SpaceName clientSpace) {
@@ -643,7 +652,7 @@ public class StructureRepository {
         payload.remove(ArangoVocabulary.ID);
         ArangoCollectionReference collection = clientSpace == null ? PROPERTY_IN_TYPE : clientPropertyInTypeCollection(clientSpace.getName());
         final ArangoCollection propertyInType = graphDBArangoUtils.getOrCreateArangoCollection(structureDB, collection);
-        propertyInType.insertDocument(payload, new DocumentCreateOptions().overwrite(true));
+        propertyInType.insertDocument(payload, new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
     }
 
     public void removeLinkBetweenTypeAndProperty(String type, String property, SpaceName clientSpace) {

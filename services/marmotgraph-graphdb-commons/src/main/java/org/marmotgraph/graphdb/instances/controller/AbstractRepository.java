@@ -119,7 +119,7 @@ public abstract class AbstractRepository {
         Map<String, Object> bindVars = new HashMap<>();
         aql.addLine(AQL.trust(String.format("RETURN MERGE(FOR id IN ATTRIBUTES(@ids) RETURN { [ id ] : DOCUMENT(@ids[id]).%s })", IndexedJsonLdDoc.LABEL)));
         bindVars.put("ids", ids != null ? ids.stream().filter(Objects::nonNull).collect(Collectors.toMap(InstanceId::serialize, v -> ArangoDocumentReference.fromInstanceId(v).getId())) : null);
-        List<JsonLdDoc> results = databases.getByStage(stage).query(aql.build().getValue(), bindVars, new AqlQueryOptions(), JsonLdDoc.class).asListRemaining();
+        List<JsonLdDoc> results = databases.getByStage(stage).query(aql.build().getValue(), JsonLdDoc.class, bindVars, new AqlQueryOptions()).asListRemaining();
         if (results.size() == 1) {
             JsonLdDoc map = results.get(0);
             Map<UUID, String> result = new HashMap<>();

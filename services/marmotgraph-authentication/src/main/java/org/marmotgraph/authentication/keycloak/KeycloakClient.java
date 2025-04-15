@@ -26,6 +26,7 @@ package org.marmotgraph.authentication.keycloak;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
+import jakarta.annotation.PostConstruct;
 import org.marmotgraph.authentication.model.IssuerInfo;
 import org.marmotgraph.authentication.model.OpenIdConfig;
 import org.marmotgraph.commons.JsonAdapter;
@@ -37,7 +38,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import javax.annotation.PostConstruct;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPublicKey;

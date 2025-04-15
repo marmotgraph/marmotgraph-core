@@ -28,6 +28,7 @@ import com.arangodb.model.DocumentCreateOptions;
 import com.arangodb.model.OverwriteMode;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import jakarta.annotation.PostConstruct;
 import org.apache.commons.codec.binary.Base64;
 import org.marmotgraph.arango.commons.aqlbuilder.AQL;
 import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
@@ -42,7 +43,6 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.List;
 
 @Component

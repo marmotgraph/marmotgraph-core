@@ -24,9 +24,7 @@
 package org.marmotgraph.primaryStore.controller;
 
 import com.arangodb.ArangoCollection;
-import com.arangodb.model.HashIndexOptions;
 import com.arangodb.model.PersistentIndexOptions;
-import com.arangodb.model.SkiplistIndexOptions;
 import org.marmotgraph.arango.commons.aqlbuilder.AQL;
 import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
 import org.marmotgraph.arango.commons.model.ArangoDatabaseProxy;
@@ -93,8 +91,8 @@ public class EventRepository {
     private ArangoCollection getOrCreateCollection(ArangoCollectionReference collectionReference) {
         ArangoCollection events = primaryStoreDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), collectionReference);
         events.ensurePersistentIndex(Arrays.asList("indexedTimestamp", "eventId"), new PersistentIndexOptions());
-        events.ensureHashIndex(Collections.singleton("eventId"), new HashIndexOptions());
-        events.ensureSkiplistIndex(Arrays.asList("documentId", "type", "indexedTimestamp"), new SkiplistIndexOptions());
+        events.ensurePersistentIndex(Collections.singleton("eventId"), new PersistentIndexOptions());
+        events.ensurePersistentIndex(Arrays.asList("documentId", "type", "indexedTimestamp"), new PersistentIndexOptions());
         return events;
     }
 
@@ -107,7 +105,7 @@ public class EventRepository {
         bindVars.put("documentId", documentId);
         aql.addLine(AQL.trust("SORT r.indexedTimestamp ASC"));
         aql.addLine(AQL.trust("RETURN r.indexedTimestamp)"));
-        final List<Long> timestamps = arangoDatabase.getOrCreate().query(aql.build().getValue(), bindVars, Long.class).asListRemaining();
+        final List<Long> timestamps = arangoDatabase.getOrCreate().query(aql.build().getValue(), Long.class, bindVars).asListRemaining();
         if(timestamps.isEmpty()){
             return null;
         }
@@ -134,7 +132,7 @@ public class EventRepository {
         }
         aql.addLine(AQL.trust(" SORT doc.`indexedTimestamp` ASC"));
         aql.addLine(AQL.trust("RETURN doc"));
-        return arangoDatabase.get().query(aql.build().getValue(), bindVars, PersistedEvent.class).asListRemaining();
+        return arangoDatabase.get().query(aql.build().getValue(), PersistedEvent.class, bindVars).asListRemaining();
     }
     private String getCollectionName(DataStage stage) {
         return stage.name().toLowerCase() + "_events";

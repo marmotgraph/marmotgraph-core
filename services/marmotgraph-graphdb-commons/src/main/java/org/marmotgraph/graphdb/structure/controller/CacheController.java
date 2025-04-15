@@ -23,6 +23,7 @@
 
 package org.marmotgraph.graphdb.structure.controller;
 
+import jakarta.annotation.PostConstruct;
 import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
 import org.marmotgraph.arango.commons.model.InternalSpace;
 import org.marmotgraph.commons.AuthContext;
@@ -39,7 +40,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import javax.annotation.PostConstruct;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;

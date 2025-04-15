@@ -23,6 +23,7 @@
 
 package org.marmotgraph.graphdb.ingestion.controller;
 
+import jakarta.validation.constraints.NotNull;
 import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
 import org.marmotgraph.arango.commons.model.ArangoDocumentReference;
 import org.marmotgraph.commons.IdUtils;
@@ -42,8 +43,6 @@ import org.marmotgraph.graphdb.ingestion.model.RemoveReleaseStateOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-
-import javax.validation.constraints.NotNull;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;

@@ -25,6 +25,8 @@ package org.marmotgraph.graphdb.health.controller;
 
 
 import com.arangodb.ArangoCollection;
+import com.arangodb.ArangoCursor;
+import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.CollectionEntity;
 import com.arangodb.entity.CollectionType;
@@ -35,6 +37,7 @@ import org.marmotgraph.arango.commons.aqlbuilder.AQL;
 import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
 import org.marmotgraph.commons.jsonld.DynamicJson;
+import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.graphdb.commons.controller.ArangoDatabases;
@@ -44,6 +47,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -129,7 +133,12 @@ public class HealthController {
                 FOR d IN @@collection
                 FILTER d.data != {}
                 RETURN d"""));
-        return arangoDatabases.getConsistencyChecksDB().query(aql.build().getValue(), Map.of("@collection", String.format("%s_%s", name, stage.name()).toLowerCase()), DynamicJson.class).asListRemaining();
+        try(ArangoCursor<DynamicJson> result = arangoDatabases.getConsistencyChecksDB().query(aql.build().getValue(),  DynamicJson.class, Map.of("@collection", String.format("%s_%s", name, stage.name()).toLowerCase()))){
+            return result.asListRemaining();
+        }
+        catch (IOException e){
+            throw new ArangoDBException(e.getMessage());
+        }
     }
 
 

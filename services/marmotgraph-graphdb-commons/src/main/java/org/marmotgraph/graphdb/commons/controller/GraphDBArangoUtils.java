@@ -24,8 +24,11 @@
 package org.marmotgraph.graphdb.commons.controller;
 
 import com.arangodb.ArangoCollection;
+import com.arangodb.ArangoCursor;
+import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.model.AqlQueryOptions;
+import jakarta.annotation.PostConstruct;
 import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
 import org.marmotgraph.arango.commons.model.ArangoDatabaseProxy;
@@ -39,7 +42,7 @@ import org.marmotgraph.graphdb.instances.model.ArangoRelation;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
+import java.io.IOException;
 import java.util.*;
 
 @Component
@@ -90,7 +93,12 @@ public class GraphDBArangoUtils {
             bindVars.put("@relation", relationColl.getCollectionName());
             bindVars.put("@space", documentSpace.getCollectionName());
             bindVars.put("id", useOriginalTo ? idUtils.buildAbsoluteUrl(id).getId() : space.getName() + "/" + id);
-            return db.query(aql, bindVars, new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
+            try(ArangoCursor<NormalizedJsonLd> result = db.query(aql, NormalizedJsonLd.class, bindVars, new AqlQueryOptions())){
+                return result.asListRemaining();
+            }
+            catch (IOException e){
+                throw new ArangoDBException(e.getMessage());
+            }
         }
         return Collections.emptyList();
     }

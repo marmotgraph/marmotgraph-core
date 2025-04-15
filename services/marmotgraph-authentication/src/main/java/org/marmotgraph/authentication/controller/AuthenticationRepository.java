@@ -26,6 +26,9 @@ package org.marmotgraph.authentication.controller;
 import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.model.DocumentCreateOptions;
+import com.arangodb.model.OverwriteMode;
+import jakarta.annotation.PostConstruct;
+import jakarta.validation.constraints.NotNull;
 import org.marmotgraph.arango.commons.aqlbuilder.AQL;
 import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.arango.commons.model.ArangoDatabaseProxy;
@@ -44,8 +47,6 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.validation.constraints.NotNull;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -131,7 +132,7 @@ public class AuthenticationRepository implements SetupLogic {
         aql.addLine(AQL.trust("FILTER i.`instanceId` == @instanceId"));
         bindVars.put("instanceId", instanceId);
         aql.addLine(AQL.trust("RETURN i"));
-        return arangoDatabase.get().query(aql.build().getValue(), bindVars, Invitation.class).asListRemaining();
+        return arangoDatabase.get().query(aql.build().getValue(), Invitation.class, bindVars).asListRemaining();
     }
 
     public List<UUID> getAllInstancesWithInvitation(){
@@ -148,7 +149,7 @@ public class AuthenticationRepository implements SetupLogic {
         aql.addLine(AQL.trust("LET scope = APPEND([i.`instanceId`], DOCUMENT(\"instanceScopes\", i.`instanceId`).relatedIds)"));
         aql.addLine(AQL.trust("RETURN scope) RETURN id"));
         bindVars.put("userId", userId);
-        return arangoDatabase.get().query(aql.build().getValue(), bindVars, String.class).asListRemaining();
+        return arangoDatabase.get().query(aql.build().getValue(), String.class, bindVars).asListRemaining();
     }
 
     public List<Invitation> get(String userId){
@@ -158,15 +159,15 @@ public class AuthenticationRepository implements SetupLogic {
         aql.addLine(AQL.trust("FILTER i.`userId` == @userId"));
         bindVars.put("userId", userId);
         aql.addLine(AQL.trust("RETURN i"));
-        return arangoDatabase.get().query(aql.build().getValue(), bindVars, Invitation.class).asListRemaining();
+        return arangoDatabase.get().query(aql.build().getValue(), Invitation.class, bindVars).asListRemaining();
     }
 
     public void createInvitation(Invitation invitation){
-        getInvitationsCollection().insertDocument(jsonAdapter.toJson(invitation), new DocumentCreateOptions().overwrite(true).silent(true));
+        getInvitationsCollection().insertDocument(jsonAdapter.toJson(invitation), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace).silent(true));
     }
 
     public void createOrUpdateInstanceScope(InstanceScope instanceScope){
-        getInstanceScopesCollection().insertDocument(jsonAdapter.toJson(instanceScope), new DocumentCreateOptions().overwrite(true).silent(true));
+        getInstanceScopesCollection().insertDocument(jsonAdapter.toJson(instanceScope), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace).silent(true));
     }
 
     public void deleteInvitation(Invitation invitation){
@@ -224,7 +225,7 @@ public class AuthenticationRepository implements SetupLogic {
             getPermissionsCollection().deleteDocument(role.getName());
             return null;
         } else {
-            getPermissionsCollection().insertDocument(document, new DocumentCreateOptions().overwrite(true));
+            getPermissionsCollection().insertDocument(document, new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
             return document;
         }
     }
@@ -241,7 +242,7 @@ public class AuthenticationRepository implements SetupLogic {
             getPermissionsCollection().deleteDocument(role.getName());
             return null;
         } else {
-            getPermissionsCollection().insertDocument(document, new DocumentCreateOptions().overwrite(true));
+            getPermissionsCollection().insertDocument(document, new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
             return document;
         }
     }
@@ -325,7 +326,7 @@ public class AuthenticationRepository implements SetupLogic {
             userAcceptance = new TermsOfUseAcceptance(userId, userId, new ArrayList<>());
         }
         userAcceptance.getAcceptedTermsOfUse().add(new AcceptedTermsOfUse(version, new Date()));
-        getUsersCollection().insertDocument(jsonAdapter.toJson(userAcceptance), new DocumentCreateOptions().overwrite(true).silent(true));
+        getUsersCollection().insertDocument(jsonAdapter.toJson(userAcceptance), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace).silent(true));
     }
 
 }

@@ -25,6 +25,10 @@ package org.marmotgraph.primaryStore.controller;
 
 import com.arangodb.ArangoCollection;
 import com.arangodb.model.DocumentCreateOptions;
+import com.arangodb.model.OverwriteMode;
+import jakarta.annotation.PostConstruct;
+import jakarta.validation.constraints.NotNull;
+import org.apache.commons.lang3.StringUtils;
 import org.marmotgraph.arango.commons.ArangoQueries;
 import org.marmotgraph.arango.commons.aqlbuilder.AQL;
 import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
@@ -46,14 +50,11 @@ import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permissions.controller.Permissions;
 import org.marmotgraph.commons.semantics.vocabularies.HBPVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.validation.constraints.NotNull;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -109,7 +110,7 @@ public class UsersRepository implements SetupLogic {
         }
         aql.addLine(AQL.trust("}"));
 
-        final List<ReducedUserInformationLookup> reducedUserInformationLookups = arangoDatabase.getOrCreate().query(aql.build().getValue(), bindVars, ReducedUserInformationLookup.class).asListRemaining();
+        final List<ReducedUserInformationLookup> reducedUserInformationLookups = arangoDatabase.getOrCreate().query(aql.build().getValue(), ReducedUserInformationLookup.class, bindVars).asListRemaining();
         if(reducedUserInformationLookups.isEmpty()){
             return Collections.emptyMap();
         }
@@ -161,7 +162,7 @@ public class UsersRepository implements SetupLogic {
             logger.info(String.format("Creating / updating user profile for %s", user.getNativeId()));
             user.setId(idUtils.buildAbsoluteUrl(userInstanceId));
             user.put(ArangoVocabulary.KEY, userInstanceId);
-            getUserCollection().insertDocument(user, new DocumentCreateOptions().overwrite(true));
+            getUserCollection().insertDocument(user, new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
         }
     }
 
