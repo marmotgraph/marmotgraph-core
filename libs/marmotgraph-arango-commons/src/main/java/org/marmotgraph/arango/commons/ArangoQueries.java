@@ -64,30 +64,27 @@ public class ArangoQueries {
                 aql.getQueryOptions().memoryLimit(maxMemoryForQuery.longValue());
             }
             aql.getQueryOptions().count(true);
-            try (ArangoCursor<NormalizedJsonLd> result = db.query(value, NormalizedJsonLd.class, aqlQuery.getBindVars(), aql.getQueryOptions())) {
-                logger.debug("Received {} results from Arango in {}ms", result.getCount(), new Date().getTime() - launch);
-                Long count = result.getCount() != null ? result.getCount().longValue() : null;
-                Long totalCount;
-                if (aql.getPaginationParam() != null && aql.getPaginationParam().getSize() != null) {
-                    totalCount = aql.getPaginationParam().isReturnTotalResults() ? result.getStats().getFullCount() : null;
-                } else {
-                    totalCount = count;
-                }
-
-                logger.debug("Start parsing the results after {}ms", new Date().getTime() - launch);
-                final Stream<NormalizedJsonLd> stream = StreamSupport.stream(result.spliterator(), false);
-                Stream<T> resultStream = stream.map(Objects.requireNonNullElseGet(mapper, () -> s -> (T) s));
-                logger.debug("Done processing the Arango result - received {} results in {}ms total", count, new Date().getTime() - launch);
-                if (aql.getPaginationParam() != null && aql.getPaginationParam().getSize() == null && (int) aql.getPaginationParam().getFrom() > 0 && count != null && (int) aql.getPaginationParam().getFrom() < count) {
-                    //Arango doesn't allow to request from a specific offset to infinite. To achieve this, we load everything and we cut the additional instances in Java
-                    resultStream = resultStream.skip((int) aql.getPaginationParam().getFrom());
-                    return new PaginatedStream<>(resultStream, totalCount, count - aql.getPaginationParam().getFrom(), aql.getPaginationParam() != null ? aql.getPaginationParam().getFrom() : 0);
-                }
-                return new PaginatedStream<>(resultStream, totalCount, count != null ? count : -1L, aql.getPaginationParam() != null ? aql.getPaginationParam().getFrom() : 0);
-            } catch (IOException e) {
-                logger.error(String.format("Was not able to execute query : %s", aqlQuery), e);
-                throw new ArangoDBException(e.getMessage());
+            ArangoCursor<NormalizedJsonLd> result = db.query(value, NormalizedJsonLd.class, aqlQuery.getBindVars(), aql.getQueryOptions());
+            logger.debug("Received {} results from Arango in {}ms", result.getCount(), new Date().getTime() - launch);
+            Long count = result.getCount() != null ? result.getCount().longValue() : null;
+            Long totalCount;
+            if (aql.getPaginationParam() != null && aql.getPaginationParam().getSize() != null) {
+                totalCount = aql.getPaginationParam().isReturnTotalResults() ? result.getStats().getFullCount() : null;
+            } else {
+                totalCount = count;
             }
+
+            logger.debug("Start parsing the results after {}ms", new Date().getTime() - launch);
+            final Stream<NormalizedJsonLd> stream = StreamSupport.stream(result.spliterator(), false);
+            Stream<T> resultStream = stream.map(Objects.requireNonNullElseGet(mapper, () -> s -> (T) s));
+            logger.debug("Done processing the Arango result - received {} results in {}ms total", count, new Date().getTime() - launch);
+            if (aql.getPaginationParam() != null && aql.getPaginationParam().getSize() == null && (int) aql.getPaginationParam().getFrom() > 0 && count != null && (int) aql.getPaginationParam().getFrom() < count) {
+                //Arango doesn't allow to request from a specific offset to infinite. To achieve this, we load everything and we cut the additional instances in Java
+                resultStream = resultStream.skip((int) aql.getPaginationParam().getFrom());
+                return new PaginatedStream<>(resultStream, totalCount, count - aql.getPaginationParam().getFrom(), aql.getPaginationParam() != null ? aql.getPaginationParam().getFrom() : 0);
+            }
+            return new PaginatedStream<>(resultStream, totalCount, count != null ? count : -1L, aql.getPaginationParam() != null ? aql.getPaginationParam().getFrom() : 0);
+
         } catch (ArangoDBException ex) {
             logger.error(String.format("Was not able to execute query : %s", aqlQuery), ex);
             switch (ex.getErrorNum()) {
@@ -98,11 +95,13 @@ public class ArangoQueries {
         }
     }
 
-    public static Paginated<NormalizedJsonLd> queryDocuments(ArangoDatabase db, AQLQuery aqlQuery, Double maxMemoryForQuery) {
+    public static Paginated<NormalizedJsonLd> queryDocuments(ArangoDatabase db, AQLQuery aqlQuery, Double
+            maxMemoryForQuery) {
         return new Paginated<>(queryDocuments(db, aqlQuery, null, maxMemoryForQuery));
     }
 
-    public static PaginatedStream<NormalizedJsonLd> queryDocumentsAsStream(ArangoDatabase db, AQLQuery aqlQuery, Double maxMemoryForQuery) {
+    public static PaginatedStream<NormalizedJsonLd> queryDocumentsAsStream(ArangoDatabase db, AQLQuery
+            aqlQuery, Double maxMemoryForQuery) {
         return queryDocuments(db, aqlQuery, null, maxMemoryForQuery);
     }
 }
