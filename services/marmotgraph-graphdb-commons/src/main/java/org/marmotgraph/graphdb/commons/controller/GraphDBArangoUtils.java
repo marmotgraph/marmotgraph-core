@@ -1,31 +1,35 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
- * Copyright 2021 - 2022 EBRAINS AISBL
+ * Copyright 2021 - 2024 EBRAINS AISBL
+ * Copyright 2024 - 2025 ETH Zurich
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0.
+ *  http://www.apache.org/licenses/LICENSE-2.0.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
- * This open source software code was developed in part or in whole in the
- * Human Brain Project, funded from the European Union's Horizon 2020
- * Framework Programme for Research and Innovation under
- * Specific Grant Agreements No. 720270, No. 785907, and No. 945539
- * (Human Brain Project SGA1, SGA2 and SGA3).
+ *  This open source software code was developed in part or in whole in the
+ *  Human Brain Project, funded from the European Union's Horizon 2020
+ *  Framework Programme for Research and Innovation under
+ *  Specific Grant Agreements No. 720270, No. 785907, and No. 945539
+ *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
 package org.marmotgraph.graphdb.commons.controller;
 
 import com.arangodb.ArangoCollection;
+import com.arangodb.ArangoCursor;
+import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.model.AqlQueryOptions;
+import jakarta.annotation.PostConstruct;
 import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
 import org.marmotgraph.arango.commons.model.ArangoDatabaseProxy;
@@ -39,7 +43,7 @@ import org.marmotgraph.graphdb.instances.model.ArangoRelation;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
+import java.io.IOException;
 import java.util.*;
 
 @Component
@@ -90,7 +94,12 @@ public class GraphDBArangoUtils {
             bindVars.put("@relation", relationColl.getCollectionName());
             bindVars.put("@space", documentSpace.getCollectionName());
             bindVars.put("id", useOriginalTo ? idUtils.buildAbsoluteUrl(id).getId() : space.getName() + "/" + id);
-            return db.query(aql, bindVars, new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
+            try(ArangoCursor<NormalizedJsonLd> result = db.query(aql, NormalizedJsonLd.class, bindVars, new AqlQueryOptions())){
+                return result.asListRemaining();
+            }
+            catch (IOException e){
+                throw new ArangoDBException(e.getMessage());
+            }
         }
         return Collections.emptyList();
     }

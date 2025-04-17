@@ -1,24 +1,25 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
- * Copyright 2021 - 2022 EBRAINS AISBL
+ * Copyright 2021 - 2024 EBRAINS AISBL
+ * Copyright 2024 - 2025 ETH Zurich
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0.
+ *  http://www.apache.org/licenses/LICENSE-2.0.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
- * This open source software code was developed in part or in whole in the
- * Human Brain Project, funded from the European Union's Horizon 2020
- * Framework Programme for Research and Innovation under
- * Specific Grant Agreements No. 720270, No. 785907, and No. 945539
- * (Human Brain Project SGA1, SGA2 and SGA3).
+ *  This open source software code was developed in part or in whole in the
+ *  Human Brain Project, funded from the European Union's Horizon 2020
+ *  Framework Programme for Research and Innovation under
+ *  Specific Grant Agreements No. 720270, No. 785907, and No. 945539
+ *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
 package org.marmotgraph.graphdb.commons.controller;
@@ -156,7 +157,7 @@ public class ArangoRepositoryCommons {
     }
 
     private <T> List<T> query(ArangoDatabase db, String query, Map<String, Object> bindVars, AqlQueryOptions options, Class<T> clazz) {
-        return db.query(query, bindVars, options, String.class).asListRemaining().stream().map(i -> jsonAdapter.fromJson(i, clazz)).collect(Collectors.toList());
+        return db.query(query, String.class, bindVars, options).asListRemaining().stream().map(i -> jsonAdapter.fromJson(i, clazz)).collect(Collectors.toList());
     }
 
 
@@ -187,7 +188,7 @@ public class ArangoRepositoryCommons {
                 logger.trace(aql.buildSimpleDebugQuery(bindVars));
             }
             long start = new Date().getTime();
-            List<String> ids = db.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).asListRemaining();
+            List<String> ids = db.query(aql.build().getValue(), String.class, bindVars, new AqlQueryOptions()).asListRemaining();
             logger.debug(String.format("Resolved %d references for document id %s in %dms", ids.size(), documentId, new Date().getTime() - start));
             return ids.stream().filter(Objects::nonNull).map(id -> ArangoDocumentReference.fromArangoId(id, null)).collect(Collectors.toSet());
         }
@@ -213,7 +214,7 @@ public class ArangoRepositoryCommons {
         aql.addLine(AQL.trust(String.format("RETURN { \"id\": id, \"type\": doc.`%s`,", JsonLdConsts.TYPE)));
         aql.addLine(AQL.trust(String.format("    \"space\": doc.`%s`,", EBRAINSVocabulary.META_SPACE)));
         aql.addLine(AQL.trust(String.format("    \"properties\": (FOR a IN ATTRIBUTES(doc, true) FILTER a NOT LIKE \"%s%%\" AND a NOT LIKE \"@%%\" RETURN a)}", EBRAINSVocabulary.META)));
-        return databases.getByStage(stage).query(aql.build().getValue(), bindVars, CacheEvictionPlan.class).asListRemaining();
+        return databases.getByStage(stage).query(aql.build().getValue(), CacheEvictionPlan.class, bindVars).asListRemaining();
     }
 
 
@@ -339,9 +340,9 @@ public class ArangoRepositoryCommons {
             cacheEvictionPlansBeforeTransaction = fetchCacheEvictionPlans(stage, allIds);
         }
         try {
-            removedDocuments.stream().collect(Collectors.groupingBy(ArangoDocumentReference::getArangoCollectionReference)).forEach((c, v) -> db.collection(c.getCollectionName()).deleteDocuments(v.stream().map(r -> r.getDocumentId().toString()).collect(Collectors.toSet()), String.class, deleteOptions));
+            removedDocuments.stream().collect(Collectors.groupingBy(ArangoDocumentReference::getArangoCollectionReference)).forEach((c, v) -> db.collection(c.getCollectionName()).deleteDocuments(v.stream().map(r -> r.getDocumentId().toString()).collect(Collectors.toSet()), deleteOptions, String.class));
             edgeResolutionDependencies.values().stream().collect(Collectors.groupingBy(i -> i.getId().getArangoCollectionReference())).forEach((c, v) -> db.collection(c.getCollectionName()).updateDocuments(v.stream().map(doc -> jsonAdapter.toJson(doc.getDoc())).collect(Collectors.toList()), updateOptions));
-            insertedDocuments.forEach((c, v) -> db.collection(c.getCollectionName()).insertDocuments(v, insertOptions.overwrite(true)));
+            insertedDocuments.forEach((c, v) -> db.collection(c.getCollectionName()).insertDocuments(v, insertOptions.overwriteMode(OverwriteMode.replace)));
             db.commitStreamTransaction(tx.getId());
             logger.debug(String.format("Committing transaction %s after %dms", tx.getId(), new Date().getTime() - startTransactionDate));
         } catch (Exception e) {

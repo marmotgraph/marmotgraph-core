@@ -1,24 +1,25 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
- * Copyright 2021 - 2022 EBRAINS AISBL
+ * Copyright 2021 - 2024 EBRAINS AISBL
+ * Copyright 2024 - 2025 ETH Zurich
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0.
+ *  http://www.apache.org/licenses/LICENSE-2.0.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
- * This open source software code was developed in part or in whole in the
- * Human Brain Project, funded from the European Union's Horizon 2020
- * Framework Programme for Research and Innovation under
- * Specific Grant Agreements No. 720270, No. 785907, and No. 945539
- * (Human Brain Project SGA1, SGA2 and SGA3).
+ *  This open source software code was developed in part or in whole in the
+ *  Human Brain Project, funded from the European Union's Horizon 2020
+ *  Framework Programme for Research and Innovation under
+ *  Specific Grant Agreements No. 720270, No. 785907, and No. 945539
+ *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
 package org.marmotgraph.arango.commons;
@@ -36,6 +37,7 @@ import org.marmotgraph.commons.model.PaginatedStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.Objects;
 import java.util.function.Function;
@@ -58,29 +60,34 @@ public class ArangoQueries {
             }
             String value = aql.build().getValue();
             long launch = new Date().getTime();
-            if(maxMemoryForQuery!=null){
+            if (maxMemoryForQuery != null) {
                 aql.getQueryOptions().memoryLimit(maxMemoryForQuery.longValue());
             }
             aql.getQueryOptions().count(true);
-            ArangoCursor<NormalizedJsonLd> result = db.query(value, aqlQuery.getBindVars(), aql.getQueryOptions(), NormalizedJsonLd.class);
-            logger.debug("Received {} results from Arango in {}ms", result.getCount(), new Date().getTime() - launch);
-            Long count = result.getCount() != null ? result.getCount().longValue() : null;
-            Long totalCount;
-            if (aql.getPaginationParam() != null && aql.getPaginationParam().getSize() != null) {
-                totalCount = aql.getPaginationParam().isReturnTotalResults() ? result.getStats().getFullCount() : null;
-            } else {
-                totalCount = count;
+            try (ArangoCursor<NormalizedJsonLd> result = db.query(value, NormalizedJsonLd.class, aqlQuery.getBindVars(), aql.getQueryOptions())) {
+                logger.debug("Received {} results from Arango in {}ms", result.getCount(), new Date().getTime() - launch);
+                Long count = result.getCount() != null ? result.getCount().longValue() : null;
+                Long totalCount;
+                if (aql.getPaginationParam() != null && aql.getPaginationParam().getSize() != null) {
+                    totalCount = aql.getPaginationParam().isReturnTotalResults() ? result.getStats().getFullCount() : null;
+                } else {
+                    totalCount = count;
+                }
+
+                logger.debug("Start parsing the results after {}ms", new Date().getTime() - launch);
+                final Stream<NormalizedJsonLd> stream = StreamSupport.stream(result.spliterator(), false);
+                Stream<T> resultStream = stream.map(Objects.requireNonNullElseGet(mapper, () -> s -> (T) s));
+                logger.debug("Done processing the Arango result - received {} results in {}ms total", count, new Date().getTime() - launch);
+                if (aql.getPaginationParam() != null && aql.getPaginationParam().getSize() == null && (int) aql.getPaginationParam().getFrom() > 0 && count != null && (int) aql.getPaginationParam().getFrom() < count) {
+                    //Arango doesn't allow to request from a specific offset to infinite. To achieve this, we load everything and we cut the additional instances in Java
+                    resultStream = resultStream.skip((int) aql.getPaginationParam().getFrom());
+                    return new PaginatedStream<>(resultStream, totalCount, count - aql.getPaginationParam().getFrom(), aql.getPaginationParam() != null ? aql.getPaginationParam().getFrom() : 0);
+                }
+                return new PaginatedStream<>(resultStream, totalCount, count != null ? count : -1L, aql.getPaginationParam() != null ? aql.getPaginationParam().getFrom() : 0);
+            } catch (IOException e) {
+                logger.error(String.format("Was not able to execute query : %s", aqlQuery), e);
+                throw new ArangoDBException(e.getMessage());
             }
-            logger.debug("Start parsing the results after {}ms", new Date().getTime() - launch);
-            final Stream<NormalizedJsonLd> stream = StreamSupport.stream(result.spliterator(), false);
-            Stream<T> resultStream = stream.map(Objects.requireNonNullElseGet(mapper, () -> s -> (T) s));
-            logger.debug("Done processing the Arango result - received {} results in {}ms total", count, new Date().getTime() - launch);
-            if (aql.getPaginationParam() != null && aql.getPaginationParam().getSize() == null && (int) aql.getPaginationParam().getFrom() > 0 && count != null && (int) aql.getPaginationParam().getFrom() < count) {
-                //Arango doesn't allow to request from a specific offset to infinite. To achieve this, we load everything and we cut the additional instances in Java
-                resultStream = resultStream.skip((int) aql.getPaginationParam().getFrom());
-                return new PaginatedStream<>(resultStream, totalCount, count-aql.getPaginationParam().getFrom(), aql.getPaginationParam() != null ? aql.getPaginationParam().getFrom() : 0);
-            }
-            return new PaginatedStream<>(resultStream, totalCount, count != null ? count : -1L, aql.getPaginationParam() != null ? aql.getPaginationParam().getFrom() : 0);
         } catch (ArangoDBException ex) {
             logger.error(String.format("Was not able to execute query : %s", aqlQuery), ex);
             switch (ex.getErrorNum()) {

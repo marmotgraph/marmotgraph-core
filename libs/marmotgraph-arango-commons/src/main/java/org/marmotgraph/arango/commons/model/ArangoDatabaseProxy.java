@@ -1,24 +1,25 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
- * Copyright 2021 - 2022 EBRAINS AISBL
+ * Copyright 2021 - 2024 EBRAINS AISBL
+ * Copyright 2024 - 2025 ETH Zurich
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0.
+ *  http://www.apache.org/licenses/LICENSE-2.0.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
- * This open source software code was developed in part or in whole in the
- * Human Brain Project, funded from the European Union's Horizon 2020
- * Framework Programme for Research and Innovation under
- * Specific Grant Agreements No. 720270, No. 785907, and No. 945539
- * (Human Brain Project SGA1, SGA2 and SGA3).
+ *  This open source software code was developed in part or in whole in the
+ *  Human Brain Project, funded from the European Union's Horizon 2020
+ *  Framework Programme for Research and Innovation under
+ *  Specific Grant Agreements No. 720270, No. 785907, and No. 945539
+ *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
 package org.marmotgraph.arango.commons.model;
@@ -28,17 +29,17 @@ import com.arangodb.ArangoDB;
 import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.CollectionType;
+import com.arangodb.entity.IndexEntity;
 import com.arangodb.model.CollectionCreateOptions;
-import com.arangodb.model.HashIndexOptions;
-import com.arangodb.model.SkiplistIndexOptions;
+import com.arangodb.model.PersistentIndexOptions;
 import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.commons.jsonld.IndexedJsonLdDoc;
 import org.marmotgraph.commons.jsonld.JsonLdConsts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class ArangoDatabaseProxy {
 
@@ -154,14 +155,33 @@ public class ArangoDatabaseProxy {
         if(logger.isDebugEnabled()) {
             logger.debug("Ensuring indices properly set for collection {}", collection.name());
         }
-        collection.ensureHashIndex(Collections.singleton(ArangoVocabulary.COLLECTION), new HashIndexOptions());
-        collection.ensureSkiplistIndex(Collections.singletonList(JsonLdConsts.ID), new SkiplistIndexOptions());
+        List<Collection<String>> existingIndices = collection.getIndexes().stream().map(IndexEntity::getFields).toList();
+        Set<String> collectionIndex = Collections.singleton(ArangoVocabulary.COLLECTION);
+        if(existingIndices.stream().noneMatch(i -> i.containsAll(collectionIndex) && collectionIndex.containsAll(i))) {
+            collection.ensurePersistentIndex(collectionIndex, new PersistentIndexOptions());
+        }
+        List<String> idIndex = Collections.singletonList(JsonLdConsts.ID);
+        if(existingIndices.stream().noneMatch(i -> i.equals(idIndex) && idIndex.containsAll(i))) {
+            collection.ensurePersistentIndex(idIndex, new PersistentIndexOptions());
+        }
         if (collection.getInfo().getType() == CollectionType.EDGES) {
-            collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.ORIGINAL_TO), new SkiplistIndexOptions());
+            List<String> originalToIndex = Collections.singletonList(IndexedJsonLdDoc.ORIGINAL_TO);
+            if(existingIndices.stream().noneMatch(i -> i.equals(originalToIndex) && originalToIndex.containsAll(i))) {
+                collection.ensurePersistentIndex(originalToIndex, new PersistentIndexOptions());
+            }
         } else {
-            collection.ensureSkiplistIndex(Arrays.asList(JsonLdConsts.TYPE + "[*]", IndexedJsonLdDoc.EMBEDDED, IndexedJsonLdDoc.LABEL, ArangoVocabulary.KEY), new SkiplistIndexOptions().name(BROWSE_AND_SEARCH_INDEX));
-            collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.IDENTIFIERS + "[*]"), new SkiplistIndexOptions());
-            collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.EMBEDDED), new SkiplistIndexOptions());
+            List<String> combinedIndex = Arrays.asList(JsonLdConsts.TYPE + "[*]", IndexedJsonLdDoc.EMBEDDED, IndexedJsonLdDoc.LABEL, ArangoVocabulary.KEY);
+            if(existingIndices.stream().noneMatch(i -> i.equals(combinedIndex) && combinedIndex.containsAll(i))) {
+                collection.ensurePersistentIndex(combinedIndex, new PersistentIndexOptions().name(BROWSE_AND_SEARCH_INDEX));
+            }
+            List<String> identifiersIndex = Collections.singletonList(IndexedJsonLdDoc.IDENTIFIERS + "[*]");
+            if(existingIndices.stream().noneMatch(i -> i.equals(identifiersIndex) && identifiersIndex.containsAll(i))) {
+                collection.ensurePersistentIndex(identifiersIndex, new PersistentIndexOptions());
+            }
+            List<String> embeddedIndex = Collections.singletonList(IndexedJsonLdDoc.EMBEDDED);
+            if(existingIndices.stream().noneMatch(i -> i.equals(embeddedIndex) && embeddedIndex.containsAll(i))) {
+                collection.ensurePersistentIndex(embeddedIndex, new PersistentIndexOptions());
+            }
         }
     }
 
