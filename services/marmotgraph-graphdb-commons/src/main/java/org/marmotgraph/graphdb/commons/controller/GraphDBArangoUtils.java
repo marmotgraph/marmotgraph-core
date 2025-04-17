@@ -64,7 +64,7 @@ public class GraphDBArangoUtils {
         this.idUtils = idUtils;
     }
 
-    @Cacheable(value = CacheConstant.CACHE_KEYS_ARANGO_COLLECTION, key = "{#db.name(), #c.collectionName}", cacheManager = CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    @Cacheable(value = CacheConstant.CACHE_KEYS_ARANGO_COLLECTION, key = "{#db.name(), #c.collectionName}")
     public ArangoCollection getOrCreateArangoCollection(ArangoDatabase db, ArangoCollectionReference c) {
         return ArangoDatabaseProxy.getOrCreateArangoCollection(db, c);
     }

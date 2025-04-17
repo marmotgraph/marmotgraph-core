@@ -29,9 +29,6 @@ public class CacheConstant {
     private CacheConstant() {
     }
 
-    // Cache Manager
-    public static final String CACHE_MANAGER_IN_MEMORY = "inMemoryCache";
-
     // keys
     public static final String CACHE_KEYS_IDS_COLLECTIONS = "idsCollection";
     public static final String CACHE_KEYS_PRIMARY_STORE_COLLECTION = "primaryStoreCollection";

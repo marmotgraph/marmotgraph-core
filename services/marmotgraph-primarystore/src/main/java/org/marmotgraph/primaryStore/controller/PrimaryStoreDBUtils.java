@@ -35,7 +35,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class PrimaryStoreDBUtils {
 
-    @Cacheable(value= CacheConstant.CACHE_KEYS_PRIMARY_STORE_COLLECTION, key="{#db.name(), #c.collectionName}", cacheManager = CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    @Cacheable(value= CacheConstant.CACHE_KEYS_PRIMARY_STORE_COLLECTION, key="{#db.name(), #c.collectionName}")
     public ArangoCollection getOrCreateArangoCollection(ArangoDatabase db, ArangoCollectionReference c) {
         return ArangoDatabaseProxy.getOrCreateArangoCollection(db, c);
     }

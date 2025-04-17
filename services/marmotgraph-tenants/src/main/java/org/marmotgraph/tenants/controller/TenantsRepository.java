@@ -120,13 +120,13 @@ public class TenantsRepository {
         }
 
     }
-    @CacheEvict(value = {CacheConstant.CACHE_KEYS_TENANTDEFINITION}, key="{#name}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    @CacheEvict(value = {CacheConstant.CACHE_KEYS_TENANTDEFINITION}, key="{#name}")
     public void upsertTenant(String name, TenantDefinition tenantDefinition){
         ArangoCollection tenantDefinitions = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(TENANTS, false));
         tenantDefinitions.insertDocument(new ArangoWrapper<>(name, tenantDefinition), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
     }
 
-    @Cacheable(value = CacheConstant.CACHE_KEYS_TENANTDEFINITION, key="{#name}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    @Cacheable(value = CacheConstant.CACHE_KEYS_TENANTDEFINITION, key="{#name}")
     public TenantDefinition getTenantDefinition(String name){
         logger.info("Cache miss for tenant definition of tenant {}", name);
         ArangoCollection tenantDefinitions = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(TENANTS, false));
@@ -139,40 +139,40 @@ public class TenantsRepository {
         return arangoDatabase.get().query(aql.build().getValue(), String.class).asListRemaining();
     }
 
-    @CacheEvict(value = CacheConstant.CACHE_KEYS_FONT, key="{#name}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    @CacheEvict(value = CacheConstant.CACHE_KEYS_FONT, key="{#name}")
     public void upsertFont(String name, Font font){
         logger.info("Cache miss for tenant definition of tenant {}", name);
         ArangoCollection colorSchemes = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(FONT, false));
         colorSchemes.insertDocument(new ArangoWrapper<>(name, font), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
     }
 
-    @Cacheable(value = CacheConstant.CACHE_KEYS_FONT, key="{#name}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    @Cacheable(value = CacheConstant.CACHE_KEYS_FONT, key="{#name}")
     public Font getFont(String name){
         logger.info("Cache miss for font of tenant {}", name);
         ArangoCollection fonts = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(FONT, false));
         return fonts.getDocument(name, Font.class);
     }
 
-    @CacheEvict(value = CacheConstant.CACHE_KEYS_COLOR_SCHEME, key="{#name}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    @CacheEvict(value = CacheConstant.CACHE_KEYS_COLOR_SCHEME, key="{#name}")
     public void upsertColorScheme(String name, ColorScheme colorScheme){
         ArangoCollection colorSchemes = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(COLOR_SCHEMES, false));
         colorSchemes.insertDocument(new ArangoWrapper<>(name, colorScheme), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
     }
 
-    @Cacheable(value = CacheConstant.CACHE_KEYS_COLOR_SCHEME, key="{#name}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    @Cacheable(value = CacheConstant.CACHE_KEYS_COLOR_SCHEME, key="{#name}")
     public ColorScheme getColorScheme(String name){
         logger.info("Cache miss for color scheme of tenant {}", name);
         ArangoCollection colorSchemes = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(COLOR_SCHEMES, false));
         return colorSchemes.getDocument(name, ColorScheme.class);
     }
 
-    @CacheEvict(value = CacheConstant.CACHE_KEYS_CUSTOM_CSS, key="{#name}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    @CacheEvict(value = CacheConstant.CACHE_KEYS_CUSTOM_CSS, key="{#name}")
     public void upsertCustomCSS(String name, String css){
         ArangoCollection customCSS = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(CUSTOM_CSS, false));
         customCSS.insertDocument(new CustomCSS(name, css), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
     }
 
-    @Cacheable(value = CacheConstant.CACHE_KEYS_CUSTOM_CSS, key="{#name}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    @Cacheable(value = CacheConstant.CACHE_KEYS_CUSTOM_CSS, key="{#name}")
     public String getCustomCSS(String name){
         logger.info("Cache miss for custom css tenant {}", name);
         ArangoCollection customCSS = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(CUSTOM_CSS, false));
@@ -180,13 +180,13 @@ public class TenantsRepository {
         return document!=null ? document.getCss() : null;
     }
 
-    @CacheEvict(value = CacheConstant.CACHE_KEYS_FAVICONS, key="{#name}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    @CacheEvict(value = CacheConstant.CACHE_KEYS_FAVICONS, key="{#name}")
     public void upsertFavicon(String name, ImageDefinition image){
         ArangoCollection favicons = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(FAVICON, false));
         favicons.insertDocument(new ArangoWrapper<>(name, image), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
     }
 
-    @Cacheable(value = CacheConstant.CACHE_KEYS_FAVICONS, key="{#name}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    @Cacheable(value = CacheConstant.CACHE_KEYS_FAVICONS, key="{#name}")
     public ImageResult getFavicon(String name){
         logger.info("Cache miss for favicon of tenant {}", name);
         ArangoCollection favicons = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(FAVICON, false));
@@ -199,13 +199,13 @@ public class TenantsRepository {
         return darkMode ? "_dark" : "_bright";
     }
 
-    @CacheEvict(value = CacheConstant.CACHE_KEYS_LOGOS, key="{#name, #darkMode}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    @CacheEvict(value = CacheConstant.CACHE_KEYS_LOGOS, key="{#name, #darkMode}")
     public void upsertLogo(String name, ImageDefinition image, boolean darkMode){
         ArangoCollection logos = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(LOGO, false));
         logos.insertDocument(new ArangoWrapper<>(name+postfix(darkMode), image), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
     }
 
-    @Cacheable(value = CacheConstant.CACHE_KEYS_LOGOS, key="{#name, #darkMode}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    @Cacheable(value = CacheConstant.CACHE_KEYS_LOGOS, key="{#name, #darkMode}")
     public ImageResult getLogo(String name, boolean darkMode){
         logger.info("Cache miss for logo of tenant {}", name);
         ArangoCollection logos = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(LOGO, false));
@@ -213,13 +213,13 @@ public class TenantsRepository {
         return definition != null ? new ImageResult(Base64.decodeBase64(definition.getBase64()), definition.getMimeType()) : null;
     }
 
-    @CacheEvict(value = CacheConstant.CACHE_KEYS_BACKGROUND_IMAGES, key="{#name, #darkMode}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    @CacheEvict(value = CacheConstant.CACHE_KEYS_BACKGROUND_IMAGES, key="{#name, #darkMode}")
     public void upsertBackgroundImage(String name, ImageDefinition image, boolean darkMode){
         ArangoCollection backgroundImages = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(BACKGROUND_IMAGE, false));
         backgroundImages.insertDocument(new ArangoWrapper<>(name+postfix(darkMode), image), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
     }
 
-    @Cacheable(value = CacheConstant.CACHE_KEYS_BACKGROUND_IMAGES, key="{#name, #darkMode}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    @Cacheable(value = CacheConstant.CACHE_KEYS_BACKGROUND_IMAGES, key="{#name, #darkMode}")
     public ImageResult getBackgroundImage(String name, boolean darkMode){
         logger.info("Cache miss for background image of tenant {}", name);
         ArangoCollection backgroundImages = tenantsDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(BACKGROUND_IMAGE, false));

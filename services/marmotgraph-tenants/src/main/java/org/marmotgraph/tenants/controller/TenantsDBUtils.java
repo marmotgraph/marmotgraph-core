@@ -35,7 +35,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class TenantsDBUtils {
 
-    @Cacheable(value = CacheConstant.CACHE_KEYS_IDS_COLLECTIONS, key="{#db.name(), #c.collectionName}", cacheManager=CacheConstant.CACHE_MANAGER_IN_MEMORY)
+    @Cacheable(value = CacheConstant.CACHE_KEYS_IDS_COLLECTIONS, key="{#db.name(), #c.collectionName}")
     public ArangoCollection getOrCreateArangoCollection(ArangoDatabase db, ArangoCollectionReference c) {
         return ArangoDatabaseProxy.getOrCreateArangoCollection(db, c);
     }
