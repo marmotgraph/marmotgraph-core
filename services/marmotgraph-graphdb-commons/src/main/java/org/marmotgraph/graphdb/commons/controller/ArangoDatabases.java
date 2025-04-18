@@ -101,17 +101,12 @@ public class ArangoDatabases {
         return this.consistencyChecks.getOrCreate();
     }
 
-    public ArangoDatabase getByStage(DataStage stage) {
-        switch (stage) {
-            case NATIVE:
-                return nativeDB.getOrCreate();
-            case IN_PROGRESS:
-                return inProgressDB.getOrCreate();
-            case RELEASED:
-                return releasedDB.getOrCreate();
-            default:
-                throw new IllegalArgumentException("Unknown data stage requested: " + stage.name());
-        }
+    public ArangoDatabase getByStage(DataStage stage) {;
+        return switch (stage) {
+            case NATIVE -> nativeDB.getOrCreate();
+            case IN_PROGRESS -> inProgressDB.getOrCreate();
+            case RELEASED -> releasedDB.getOrCreate();
+        };
     }
 
 }

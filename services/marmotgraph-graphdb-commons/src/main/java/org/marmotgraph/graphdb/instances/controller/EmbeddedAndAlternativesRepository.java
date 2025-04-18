@@ -38,6 +38,8 @@ import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.graphdb.commons.controller.ArangoDatabases;
 import org.marmotgraph.graphdb.commons.controller.GraphDBArangoUtils;
 import org.marmotgraph.graphdb.commons.model.ArangoDocument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -45,6 +47,7 @@ import java.util.stream.Collectors;
 
 @Component
 public class EmbeddedAndAlternativesRepository {
+    private static final Logger logger = LoggerFactory.getLogger(EmbeddedAndAlternativesRepository.class);
 
     private final PrimaryStoreUsers.Client primaryStoreUsers;
     private final IdUtils idUtils;
@@ -99,6 +102,9 @@ public class EmbeddedAndAlternativesRepository {
         bindVars.put("@documentIdRelationCollection", InternalSpace.DOCUMENT_ID_EDGE_COLLECTION.getCollectionName());
         bindVars.put("idlist", ids);
         ArangoDatabase database = databases.getByStage(stage);
+        if(database == null) {
+            logger.info("Database for stage {} is null", stage.name());
+        }
         graphDBArangoUtils.getOrCreateArangoCollection(database, InternalSpace.DOCUMENT_ID_EDGE_COLLECTION);
         return database.query(aql.build().getValue(), NormalizedJsonLd[].class, bindVars, new AqlQueryOptions()).asListRemaining();
     }
