@@ -67,8 +67,7 @@ public class IdRepository {
         ArangoDatabase database = arangoDatabase.getOrCreate();
         ArangoCollection collection = database.collection(getCollectionName(stage));
         if (collection.exists()) {
-            String document = collection.getDocument(uuid.toString(), String.class);
-            return jsonAdapter.fromJson(document, PersistedId.class);
+            return collection.getDocument(uuid.toString(), PersistedId.class);
         }
         return null;
     }
@@ -91,7 +90,7 @@ public class IdRepository {
         ArangoCollection coll = getOrCreateCollection(stage);
         //TODO make this transactional
         if (stage == DataStage.IN_PROGRESS) {
-            PersistedId document = jsonAdapter.fromJson(coll.getDocument(id.getKey(), String.class), PersistedId.class);
+            PersistedId document = coll.getDocument(id.getKey(), PersistedId.class);
             //It could happen that identifiers disappear during updates. We need to make sure that the old identifiers are not lost though (getting rid of them is called "splitting" and is a separate process).
             if (document != null && document.getAlternativeIds() != null) {
                 JsonLdId instanceId = idUtils.buildAbsoluteUrl(document.getUUID());
@@ -115,7 +114,7 @@ public class IdRepository {
         bindVars.put("@collection", collectionName);
         aql.addLine(AQL.trust("FILTER d != NULL"));
         aql.addLine(AQL.trust("RETURN d"));
-        return database.query(aql.build().getValue(), String.class, bindVars, new AqlQueryOptions()).asListRemaining().stream().map(s->jsonAdapter.fromJson(s, PersistedId.class)).collect(Collectors.toList());
+        return database.query(aql.build().getValue(), PersistedId.class, bindVars, new AqlQueryOptions()).asListRemaining();
     }
 
     private List<PersistedId> fetchPersistedIdsByAlternativeId(ArangoDatabase database, List<Tuple<String, SpaceName>> ids, String collectionName){
@@ -140,7 +139,7 @@ public class IdRepository {
             counter++;
         }
         aql.addLine(AQL.trust("RETURN doc"));
-        return database.query(aql.build().getValue(), String.class, bindVars, new AqlQueryOptions()).asListRemaining().stream().map(s -> jsonAdapter.fromJson(s, PersistedId.class)).collect(Collectors.toList());
+        return database.query(aql.build().getValue(), PersistedId.class, bindVars, new AqlQueryOptions()).asListRemaining();
     }
 
     public InstanceId findInstanceByIdentifiers(DataStage stage, UUID uuid, List<String> identifiers) throws AmbiguousException{
@@ -164,7 +163,7 @@ public class IdRepository {
             }
         }
         aql.addLine(AQL.trust("RETURN i"));
-        final List<PersistedId> persistedIds = database.query(aql.build().getValue(), String.class, bindVars).asListRemaining().stream().map(s -> jsonAdapter.fromJson(s, PersistedId.class)).collect(Collectors.toList());
+        final List<PersistedId> persistedIds = database.query(aql.build().getValue(), PersistedId.class, bindVars).asListRemaining();
         switch(persistedIds.size()) {
             case 0:
                 return null;

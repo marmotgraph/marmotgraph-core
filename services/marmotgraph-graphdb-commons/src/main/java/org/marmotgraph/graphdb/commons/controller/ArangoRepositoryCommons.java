@@ -157,7 +157,7 @@ public class ArangoRepositoryCommons {
     }
 
     private <T> List<T> query(ArangoDatabase db, String query, Map<String, Object> bindVars, AqlQueryOptions options, Class<T> clazz) {
-        return db.query(query, String.class, bindVars, options).asListRemaining().stream().map(i -> jsonAdapter.fromJson(i, clazz)).collect(Collectors.toList());
+        return db.query(query, clazz, bindVars, options).asListRemaining();
     }
 
 

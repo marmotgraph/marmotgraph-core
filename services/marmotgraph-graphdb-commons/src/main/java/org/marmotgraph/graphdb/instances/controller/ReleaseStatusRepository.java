@@ -156,9 +156,9 @@ public class ReleaseStatusRepository extends AbstractRepository {
         aql.addLine(AQL.trust("RETURN {\"id\": doc._key, \"status\": NOT_NULL(FIRST(FOR v IN 1..1 INBOUND doc @@releaseStatusCollection"));
         aql.addLine(AQL.trust("RETURN v.`" + SchemaOrgVocabulary.NAME + "`), \"" + ReleaseStatus.UNRELEASED.name() + "\")}"));
         bindVars.put("@releaseStatusCollection", releaseStatusCollection.getCollectionName());
-        List<String> data = db.query(aql.build().getValue(), String.class, bindVars, new AqlQueryOptions()).asListRemaining();
+        List<DynamicJson> data = db.query(aql.build().getValue(), DynamicJson.class, bindVars, new AqlQueryOptions()).asListRemaining();
         Map<UUID, ReleaseStatus> result = new HashMap<>();
-        data.stream().map(d -> jsonAdapter.fromJson(d, DynamicJson.class)).forEach(d -> {
+        data.forEach(d -> {
             result.put(UUID.fromString(d.getAs("id", String.class)), ReleaseStatus.valueOf(d.getAs("status", String.class)));
         });
         return result;

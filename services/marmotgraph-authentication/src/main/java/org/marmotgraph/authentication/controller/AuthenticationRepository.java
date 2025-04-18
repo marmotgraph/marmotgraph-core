@@ -303,13 +303,7 @@ public class AuthenticationRepository implements SetupLogic {
 
     @Cacheable(CacheConstant.CACHE_KEYS_TERMS_OF_USE_BY_USER)
     public TermsOfUse findTermsOfUseToAccept(String userId) {
-        String userDoc = getUsersCollection().getDocument(userId, String.class);
-        TermsOfUseAcceptance termsOfUse;
-        if (userDoc != null) {
-            termsOfUse = jsonAdapter.fromJson(userDoc, TermsOfUseAcceptance.class);
-        } else {
-            termsOfUse = null;
-        }
+        TermsOfUseAcceptance termsOfUse = getUsersCollection().getDocument(userId, TermsOfUseAcceptance.class);
         TermsOfUse currentTermsOfUse = termsOfUseRepository.getCurrentTermsOfUse();
         if (currentTermsOfUse != null) {
             String currentVersion = currentTermsOfUse.getVersion();
