@@ -33,7 +33,7 @@ import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.markers.ExposesData;
 import org.marmotgraph.commons.markers.ExposesQuery;
 import org.marmotgraph.commons.model.*;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.graphdb.commons.controller.ArangoDatabases;
 import org.marmotgraph.graphdb.commons.controller.PermissionsController;
 import org.marmotgraph.graphdb.commons.model.ArangoDocument;
@@ -64,14 +64,14 @@ public class QueriesRepository extends AbstractRepository{
     @ExposesData
     public NormalizedJsonLd getQuery(SpaceName space, UUID id) {
         ArangoDocument document = documents.getDocument(DataStage.IN_PROGRESS, ArangoCollectionReference.fromSpace(space).doc(id));
-        if (document == null || !document.getDoc().types().contains(EBRAINSVocabulary.META_QUERY_TYPE)) {
+        if (document == null || !document.getDoc().types().contains(MarmotGraphVocabulary.META_QUERY_TYPE)) {
             //If it's not a query, it's not exposed...
             return null;
         }
         //We explicitly do not check for permissions because queries can be read by everyone
         final NormalizedJsonLd query = document.getDoc();
         query.removeAllInternalProperties();
-        query.remove(EBRAINSVocabulary.META_ALTERNATIVE);
+        query.remove(MarmotGraphVocabulary.META_ALTERNATIVE);
         return query;
     }
 
@@ -87,7 +87,7 @@ public class QueriesRepository extends AbstractRepository{
                 aql.specifyWhitelist();
                 bindVars.putAll(whitelistFilter);
             }
-            iterateThroughTypeList(Collections.singletonList(new Type(EBRAINSVocabulary.META_QUERY_TYPE)), null, bindVars, aql);
+            iterateThroughTypeList(Collections.singletonList(new Type(MarmotGraphVocabulary.META_QUERY_TYPE)), null, bindVars, aql);
             aql.indent().addLine(AQL.trust("FOR v IN 1..1 OUTBOUND typeDefinition.type @@typeRelationCollection"));
             if (whitelistFilter != null) {
                 aql.addDocumentFilterWithWhitelistFilter(AQL.trust("v"));

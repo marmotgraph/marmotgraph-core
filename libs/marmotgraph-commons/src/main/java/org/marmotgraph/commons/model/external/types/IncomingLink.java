@@ -26,7 +26,7 @@ package org.marmotgraph.commons.model.external.types;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 import java.util.List;
@@ -38,7 +38,7 @@ public class IncomingLink {
     @JsonProperty(SchemaOrgVocabulary.IDENTIFIER)
     private String identifier;
 
-    @JsonProperty(EBRAINSVocabulary.META_PROPERTY_SOURCE_TYPES)
+    @JsonProperty(MarmotGraphVocabulary.META_PROPERTY_SOURCE_TYPES)
     private List<SourceType> sourceTypes;
 
     public String getIdentifier() {

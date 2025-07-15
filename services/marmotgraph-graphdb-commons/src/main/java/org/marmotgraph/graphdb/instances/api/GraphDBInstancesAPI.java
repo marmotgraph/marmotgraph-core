@@ -38,7 +38,7 @@ import org.marmotgraph.commons.model.external.types.Property;
 import org.marmotgraph.commons.model.external.types.TargetType;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
 import org.marmotgraph.commons.params.ReleaseTreeScope;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.graphdb.instances.model.ArangoRelation;
 import org.marmotgraph.graphdb.structure.api.GraphDBTypesAPI;
 import org.apache.commons.lang3.StringUtils;
@@ -115,7 +115,7 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
                 //We're also interested in the properties which are marked as "searchable"
                 searchableProperties = typeInformation.getData().getProperties().stream()
                         .filter(p -> {
-                            Boolean searchable = p.getAs(EBRAINSVocabulary.META_PROPERTY_SEARCHABLE, Boolean.class);
+                            Boolean searchable = p.getAs(MarmotGraphVocabulary.META_PROPERTY_SEARCHABLE, Boolean.class);
                             return searchable != null && searchable;
                         }).map(Property::getIdentifier).filter(Objects::nonNull).collect(Collectors.toList());
             }
@@ -221,7 +221,7 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
             final Result<TypeInformation> typeInformation = targetTypeInformation.get(t);
             if(typeInformation!=null && typeInformation.getData()!=null){
                 final List<String> searchableProperties = typeInformation.getData().getProperties().stream().filter(p -> {
-                    final Boolean searchable = p.getAs(EBRAINSVocabulary.META_PROPERTY_SEARCHABLE, Boolean.class);
+                    final Boolean searchable = p.getAs(MarmotGraphVocabulary.META_PROPERTY_SEARCHABLE, Boolean.class);
                     return searchable != null && searchable;
                 }).map(Property::getIdentifier).distinct().collect(Collectors.toList());
                 searchablePropertiesByType.put(t, searchableProperties);

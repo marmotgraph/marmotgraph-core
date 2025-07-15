@@ -30,7 +30,7 @@ import org.marmotgraph.commons.model.Result;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
 import org.marmotgraph.commons.permission.roles.RoleMapping;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.core.api.testutils.AbstractFunctionalityTest;
 import org.marmotgraph.core.api.testutils.TestDataFactory;
 import org.marmotgraph.core.api.types.test.DefineTypeTest;
@@ -163,7 +163,7 @@ class TypesTest extends AbstractFunctionalityTest {
             List<TypeInformation> response = test.assureValidPayload(test.response);
             assertEquals(1, response.size());
             assertEquals(response.get(0).getIdentifier(), TestDataFactory.TEST_TYPE);
-            List<NormalizedJsonLd> properties = response.get(0).getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class);
+            List<NormalizedJsonLd> properties = response.get(0).getAsListOf(MarmotGraphVocabulary.META_PROPERTIES, NormalizedJsonLd.class);
             assertNotNull(properties);
             assertTrue(properties.size() > smallPayload);
         });

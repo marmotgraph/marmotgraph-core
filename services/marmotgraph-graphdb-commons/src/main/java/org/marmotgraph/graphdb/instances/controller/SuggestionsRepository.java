@@ -36,7 +36,7 @@ import org.marmotgraph.commons.jsonld.JsonLdConsts;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.markers.ExposesData;
 import org.marmotgraph.commons.model.*;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.graphdb.commons.controller.ArangoDatabases;
 import org.marmotgraph.graphdb.commons.controller.PermissionsController;
 import org.marmotgraph.graphdb.structure.controller.MetaDataController;
@@ -76,7 +76,7 @@ public class SuggestionsRepository extends AbstractRepository {
                     l.setId(uuid);
                     l.setLabel(result.getAs(IndexedJsonLdDoc.LABEL, String.class));
                     l.setType(types.get(0));
-                    l.setSpace(result.getAs(EBRAINSVocabulary.META_SPACE, String.class, null));
+                    l.setSpace(result.getAs(MarmotGraphVocabulary.META_SPACE, String.class, null));
                     return new Paginated<>(Collections.singletonList(l), 1L, 1, 0);
                 }
             }
@@ -138,20 +138,20 @@ public class SuggestionsRepository extends AbstractRepository {
 
         aql.addLine(AQL.trust("LET additionalInfo = "));
         if (whitelistFilter != null) {
-            aql.addLine(AQL.trust("v.`" + EBRAINSVocabulary.META_SPACE + "` NOT IN restrictedSpaces ? null : "));
+            aql.addLine(AQL.trust("v.`" + MarmotGraphVocabulary.META_SPACE + "` NOT IN restrictedSpaces ? null : "));
         }
         aql.addLine(AQL.trust("CONCAT_SEPARATOR(\", \", (FOR s IN NOT_NULL(searchableProperties[typeDefinition.typeName], []) RETURN v[s]))"));
-        aql.addLine(AQL.trust("LET attWithMeta = [{name: \"" + JsonLdConsts.ID + "\", value: v.`" + JsonLdConsts.ID + "`}, {name: \"" + EBRAINSVocabulary.LABEL + "\", value: v." + IndexedJsonLdDoc.LABEL + "},  {name: \"" + EBRAINSVocabulary.ADDITIONAL_INFO + "\", value: additionalInfo}, {name: \"" + EBRAINSVocabulary.META_TYPE + "\", value: typeDefinition.typeName}, {name: \"" + EBRAINSVocabulary.META_SPACE + "\", value: v.`" + EBRAINSVocabulary.META_SPACE + "`}]"));
+        aql.addLine(AQL.trust("LET attWithMeta = [{name: \"" + JsonLdConsts.ID + "\", value: v.`" + JsonLdConsts.ID + "`}, {name: \"" + MarmotGraphVocabulary.LABEL + "\", value: v." + IndexedJsonLdDoc.LABEL + "},  {name: \"" + MarmotGraphVocabulary.ADDITIONAL_INFO + "\", value: additionalInfo}, {name: \"" + MarmotGraphVocabulary.META_TYPE + "\", value: typeDefinition.typeName}, {name: \"" + MarmotGraphVocabulary.META_SPACE + "\", value: v.`" + MarmotGraphVocabulary.META_SPACE + "`}]"));
         aql.addLine(AQL.trust("RETURN ZIP(attWithMeta[*].name, attWithMeta[*].value)"));
         Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = ArangoQueries.queryDocuments(databases.getByStage(stage), new AQLQuery(aql, bindVars), null);
         List<SuggestedLink> links = normalizedJsonLdPaginated.getData().stream().map(payload -> {
             SuggestedLink link = new SuggestedLink();
             UUID uuid = idUtils.getUUID(payload.id());
             link.setId(uuid);
-            link.setLabel(payload.getAs(EBRAINSVocabulary.LABEL, String.class, uuid != null ? uuid.toString() : null));
-            link.setType(payload.getAs(EBRAINSVocabulary.META_TYPE, String.class, null));
-            link.setSpace(payload.getAs(EBRAINSVocabulary.META_SPACE, String.class, null));
-            link.setAdditionalInformation(payload.getAs(EBRAINSVocabulary.ADDITIONAL_INFO, String.class, null));
+            link.setLabel(payload.getAs(MarmotGraphVocabulary.LABEL, String.class, uuid != null ? uuid.toString() : null));
+            link.setType(payload.getAs(MarmotGraphVocabulary.META_TYPE, String.class, null));
+            link.setSpace(payload.getAs(MarmotGraphVocabulary.META_SPACE, String.class, null));
+            link.setAdditionalInformation(payload.getAs(MarmotGraphVocabulary.ADDITIONAL_INFO, String.class, null));
             return link;
         }).collect(Collectors.toList());
         return new Paginated<>(links, normalizedJsonLdPaginated.getTotalResults(), normalizedJsonLdPaginated.getSize(), normalizedJsonLdPaginated.getFrom());

@@ -39,7 +39,7 @@ import org.marmotgraph.commons.jsonld.*;
 import org.marmotgraph.commons.markers.ExposesData;
 import org.marmotgraph.commons.markers.ExposesIds;
 import org.marmotgraph.commons.model.*;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.graphdb.commons.controller.ArangoDatabases;
 import org.marmotgraph.graphdb.commons.controller.GraphDBArangoUtils;
 import org.marmotgraph.graphdb.commons.controller.PermissionsController;
@@ -183,9 +183,9 @@ public class DocumentsRepository extends  AbstractRepository{
                 final SpaceName privateSpace = authContext.getUserWithRolesWithoutTermsCheck().getPrivateSpace();
                 normalizedJsonLdPaginated.getData().forEach(r -> {
                     r.removeAllInternalProperties();
-                    final String s = r.getAs(EBRAINSVocabulary.META_SPACE, String.class);
+                    final String s = r.getAs(MarmotGraphVocabulary.META_SPACE, String.class);
                     if (privateSpace.getName().equals(s)) {
-                        r.put(EBRAINSVocabulary.META_SPACE, SpaceName.PRIVATE_SPACE);
+                        r.put(MarmotGraphVocabulary.META_SPACE, SpaceName.PRIVATE_SPACE);
                     }
                 });
                 return normalizedJsonLdPaginated;
@@ -345,7 +345,7 @@ public class DocumentsRepository extends  AbstractRepository{
                         incomingLinks.resolveIncomingLinks(stage, instanceIncomingLinks, invitationDocuments);
                         normalizedJsonLds.forEach(d -> {
                             String id = idUtils.getUUID(d.id()).toString();
-                            d.put(EBRAINSVocabulary.META_INCOMING_LINKS, instanceIncomingLinks.get(id));
+                            d.put(MarmotGraphVocabulary.META_INCOMING_LINKS, instanceIncomingLinks.get(id));
                         });
                     }
                 }
@@ -363,11 +363,11 @@ public class DocumentsRepository extends  AbstractRepository{
     }
 
     Set<String> getMinimalFields(DataStage stage, List<String> types, List<NormalizedJsonLd> invitationDocuments) {
-        Set<String> keepProperties = new HashSet<>(metaDataController.getTypesByName(types, stage, null, false, false, authContext.getUserWithRoles(), authContext.getClientSpace()!=null ? authContext.getClientSpace().getName() : null, invitationDocuments).values().stream().filter(r -> r.getData() != null).map(r -> r.getData().getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class)).filter(Objects::nonNull).collect(Collectors.toSet()));
+        Set<String> keepProperties = new HashSet<>(metaDataController.getTypesByName(types, stage, null, false, false, authContext.getUserWithRoles(), authContext.getClientSpace()!=null ? authContext.getClientSpace().getName() : null, invitationDocuments).values().stream().filter(r -> r.getData() != null).map(r -> r.getData().getAs(MarmotGraphVocabulary.META_TYPE_LABEL_PROPERTY, String.class)).filter(Objects::nonNull).collect(Collectors.toSet()));
         keepProperties.add(JsonLdConsts.ID);
         keepProperties.add(IndexedJsonLdDoc.LABEL);
         keepProperties.add(JsonLdConsts.TYPE);
-        keepProperties.add(EBRAINSVocabulary.META_SPACE);
+        keepProperties.add(MarmotGraphVocabulary.META_SPACE);
         return keepProperties;
     }
 

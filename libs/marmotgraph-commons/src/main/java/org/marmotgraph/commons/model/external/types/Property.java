@@ -28,7 +28,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import org.marmotgraph.commons.jsonld.DynamicJson;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 import java.util.List;
@@ -66,34 +66,34 @@ public class Property extends DynamicJson {
         put(SchemaOrgVocabulary.NAME, name);
     }
 
-    @JsonGetter(EBRAINSVocabulary.META_OCCURRENCES)
+    @JsonGetter(MarmotGraphVocabulary.META_OCCURRENCES)
     public Integer getOccurrences() {
-        return getAs(EBRAINSVocabulary.META_OCCURRENCES, Integer.class);
+        return getAs(MarmotGraphVocabulary.META_OCCURRENCES, Integer.class);
     }
 
-    @JsonSetter(EBRAINSVocabulary.META_OCCURRENCES)
+    @JsonSetter(MarmotGraphVocabulary.META_OCCURRENCES)
     public void setOccurrences(Integer occurrences) {
-        put(EBRAINSVocabulary.META_OCCURRENCES, occurrences);
+        put(MarmotGraphVocabulary.META_OCCURRENCES, occurrences);
     }
 
-    @JsonGetter(EBRAINSVocabulary.META_NAME_REVERSE_LINK)
+    @JsonGetter(MarmotGraphVocabulary.META_NAME_REVERSE_LINK)
     public String getNameForReverseLink() {
-        return getAs(EBRAINSVocabulary.META_NAME_REVERSE_LINK, String.class);
+        return getAs(MarmotGraphVocabulary.META_NAME_REVERSE_LINK, String.class);
     }
 
-    @JsonSetter(EBRAINSVocabulary.META_NAME_REVERSE_LINK)
+    @JsonSetter(MarmotGraphVocabulary.META_NAME_REVERSE_LINK)
     public void setNameForReverseLink(String nameForReverseLink) {
-        put(EBRAINSVocabulary.META_NAME_REVERSE_LINK, nameForReverseLink);
+        put(MarmotGraphVocabulary.META_NAME_REVERSE_LINK, nameForReverseLink);
     }
 
-    @JsonGetter(EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES)
+    @JsonGetter(MarmotGraphVocabulary.META_PROPERTY_TARGET_TYPES)
     public List<TargetType> getTargetTypes() {
-        return getAsListOf(EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES, TargetType.class);
+        return getAsListOf(MarmotGraphVocabulary.META_PROPERTY_TARGET_TYPES, TargetType.class);
     }
 
-    @JsonSetter(EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES)
+    @JsonSetter(MarmotGraphVocabulary.META_PROPERTY_TARGET_TYPES)
     public void setTargetTypes(List<TargetType> targetTypes) {
-        put(EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES, targetTypes);
+        put(MarmotGraphVocabulary.META_PROPERTY_TARGET_TYPES, targetTypes);
     }
 
 }

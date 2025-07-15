@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.internal.spaces.Space;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 
@@ -39,16 +39,16 @@ public class SpaceSpecification {
     @JsonProperty(SchemaOrgVocabulary.IDENTIFIER)
     private String identifier;
 
-    @JsonProperty(EBRAINSVocabulary.META_AUTORELEASE_SPACE)
+    @JsonProperty(MarmotGraphVocabulary.META_AUTORELEASE_SPACE)
     private Boolean autoRelease;
 
-    @JsonProperty(EBRAINSVocabulary.META_DEFER_CACHE_SPACE)
+    @JsonProperty(MarmotGraphVocabulary.META_DEFER_CACHE_SPACE)
     private Boolean deferCache;
 
-    @JsonProperty(EBRAINSVocabulary.META_CLIENT_SPACE)
+    @JsonProperty(MarmotGraphVocabulary.META_CLIENT_SPACE)
     private Boolean clientSpace;
 
-    @JsonProperty(EBRAINSVocabulary.META_SCOPE_RELEVANT_SPACE)
+    @JsonProperty(MarmotGraphVocabulary.META_SCOPE_RELEVANT_SPACE)
     private Boolean scopeRelevant;
 
     public String getName() {

@@ -24,7 +24,7 @@
 package org.marmotgraph.commons.jsonld;
 
 import org.marmotgraph.commons.model.SpaceName;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -56,14 +56,14 @@ public class NormalizedJsonLd extends JsonLdDoc {
 
 
     public void defineFieldUpdateTimes(Map<String, ZonedDateTime> fieldUpdateTimes) {
-        put(EBRAINSVocabulary.META_PROPERTYUPDATES, serializeUpdateTimes(fieldUpdateTimes));
+        put(MarmotGraphVocabulary.META_PROPERTYUPDATES, serializeUpdateTimes(fieldUpdateTimes));
     }
 
     private transient Map<String, ZonedDateTime> fieldUpdateTimes;
 
     public Map<String, ZonedDateTime> fieldUpdateTimes() {
         if(fieldUpdateTimes == null) {
-            Object o = get(EBRAINSVocabulary.META_PROPERTYUPDATES);
+            Object o = get(MarmotGraphVocabulary.META_PROPERTYUPDATES);
             if (o instanceof Map) {
                 fieldUpdateTimes = deserializeUpdateTimes((Map) o);
             }
@@ -102,7 +102,7 @@ public class NormalizedJsonLd extends JsonLdDoc {
     public NormalizedJsonLd renameSpace(SpaceName privateSpace, boolean invitation){
         if(privateSpace!=null || invitation) {
             visitKeys((map, key) -> {
-                if(key.equals(EBRAINSVocabulary.META_SPACE)) {
+                if(key.equals(MarmotGraphVocabulary.META_SPACE)) {
                     if (privateSpace != null && privateSpace.getName().equals(map.get(key))){
                         map.put(key, SpaceName.PRIVATE_SPACE);
                     }

@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.permission.Functionality;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 import java.util.List;
@@ -54,13 +54,13 @@ public class SpaceInformation extends DynamicJson {
         this.put(SchemaOrgVocabulary.NAME, name);
     }
 
-    @JsonGetter(EBRAINSVocabulary.META_PERMISSIONS)
+    @JsonGetter(MarmotGraphVocabulary.META_PERMISSIONS)
     public List<Functionality> getPermissions() {
-        return getAsListOf(EBRAINSVocabulary.META_PERMISSIONS, Functionality.class);
+        return getAsListOf(MarmotGraphVocabulary.META_PERMISSIONS, Functionality.class);
     }
 
-    @JsonSetter(EBRAINSVocabulary.META_PERMISSIONS)
+    @JsonSetter(MarmotGraphVocabulary.META_PERMISSIONS)
     public void setPermissions(List<Functionality> permissions) {
-        this.put(EBRAINSVocabulary.META_PERMISSIONS, permissions);
+        this.put(MarmotGraphVocabulary.META_PERMISSIONS, permissions);
     }
 }

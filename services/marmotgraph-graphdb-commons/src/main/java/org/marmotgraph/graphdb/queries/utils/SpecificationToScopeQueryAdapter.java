@@ -26,7 +26,7 @@ package org.marmotgraph.graphdb.queries.utils;
 import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.commons.jsonld.IndexedJsonLdDoc;
 import org.marmotgraph.commons.jsonld.JsonLdConsts;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.graphdb.queries.model.spec.SpecProperty;
 import org.marmotgraph.graphdb.queries.model.spec.SpecTraverse;
 import org.marmotgraph.graphdb.queries.model.spec.Specification;
@@ -140,7 +140,7 @@ public class SpecificationToScopeQueryAdapter {
         return new SpecProperty("type", null, Collections.singletonList(new SpecTraverse(JsonLdConsts.TYPE, false, null)), null, false, false, false,false, null, SpecProperty.SingleItemStrategy.FIRST);
     }
     private SpecProperty spaceProperty(){
-        return new SpecProperty("space", null, Collections.singletonList(new SpecTraverse(EBRAINSVocabulary.META_SPACE, false, null)), null, false, false, false,false, null, SpecProperty.SingleItemStrategy.FIRST);
+        return new SpecProperty("space", null, Collections.singletonList(new SpecTraverse(MarmotGraphVocabulary.META_SPACE, false, null)), null, false, false, false,false, null, SpecProperty.SingleItemStrategy.FIRST);
     }
 
 }

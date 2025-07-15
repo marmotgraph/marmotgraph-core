@@ -26,17 +26,17 @@ package org.marmotgraph.commons.model.external.types;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 
 import java.util.Objects;
 @JsonPropertyOrder(alphabetic=true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SpaceReference {
 
-    @JsonProperty(EBRAINSVocabulary.META_SPACE)
+    @JsonProperty(MarmotGraphVocabulary.META_SPACE)
     private String space;
 
-    @JsonProperty(EBRAINSVocabulary.META_OCCURRENCES)
+    @JsonProperty(MarmotGraphVocabulary.META_OCCURRENCES)
     private Integer occurrences;
 
     public String getSpace() {

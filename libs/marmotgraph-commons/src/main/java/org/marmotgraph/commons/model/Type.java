@@ -25,7 +25,7 @@ package org.marmotgraph.commons.model;
 
 import org.marmotgraph.commons.model.external.types.SpaceTypeInformation;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -85,7 +85,7 @@ public class Type {
 
     public static Type fromPayload(TypeInformation payload) {
         Type targetType = new Type(payload.getIdentifier());
-        targetType.setIgnoreIncomingLinks(payload.getAs(EBRAINSVocabulary.META_IGNORE_INCOMING_LINKS, Boolean.class));
+        targetType.setIgnoreIncomingLinks(payload.getAs(MarmotGraphVocabulary.META_IGNORE_INCOMING_LINKS, Boolean.class));
         final List<SpaceTypeInformation> spaces = payload.getSpaces();
         if(spaces!=null){
             targetType.spaces = spaces.stream().map(s -> SpaceName.fromString(s.getSpace())).collect(Collectors.toSet());

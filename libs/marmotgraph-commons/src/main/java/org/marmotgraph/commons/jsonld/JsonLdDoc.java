@@ -24,7 +24,7 @@
 package org.marmotgraph.commons.jsonld;
 
 import org.marmotgraph.commons.exception.InvalidRequestException;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 import java.util.*;
@@ -169,7 +169,7 @@ public class JsonLdDoc extends DynamicJson {
     }
 
     private boolean isKgMetaProperty(String key) {
-        return key != null && key.startsWith(EBRAINSVocabulary.META);
+        return key != null && key.startsWith(MarmotGraphVocabulary.META);
     }
 
     private boolean isValidIRI(Object value) {

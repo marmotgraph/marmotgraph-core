@@ -27,7 +27,7 @@ import org.marmotgraph.commons.exception.ForbiddenException;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.*;
 import org.marmotgraph.commons.permission.roles.RoleMapping;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import org.marmotgraph.core.api.instances.tests.*;
 import org.marmotgraph.core.api.v3.InstancesV3;
@@ -151,7 +151,7 @@ class InstancesTest extends AbstractFunctionalityTest {
                 assertNotNull(document.get(k));
                 assertNotEquals(test.originalInstance.get(k), document.get(k), "The dynamic properties should change when doing the update");
             });
-            test.originalInstance.keySet().stream().filter(k -> !k.startsWith(TestDataFactory.DYNAMIC_FIELD_PREFIX) && !k.startsWith(EBRAINSVocabulary.META)).forEach(k -> {
+            test.originalInstance.keySet().stream().filter(k -> !k.startsWith(TestDataFactory.DYNAMIC_FIELD_PREFIX) && !k.startsWith(MarmotGraphVocabulary.META)).forEach(k -> {
                 assertNotNull(document.get(k));
                 assertEquals(test.originalInstance.get(k), document.get(k), "The non-dynamic properties should remain the same when doing a contribution");
             });
@@ -185,7 +185,7 @@ class InstancesTest extends AbstractFunctionalityTest {
                     assertEquals(test.originalInstance.get(k), document.get(k), "All other dynamic properties should remain the same after a partial update");
                 }
             });
-            test.originalInstance.keySet().stream().filter(k -> !k.startsWith(TestDataFactory.DYNAMIC_FIELD_PREFIX) && !k.startsWith(EBRAINSVocabulary.META)).forEach(k -> {
+            test.originalInstance.keySet().stream().filter(k -> !k.startsWith(TestDataFactory.DYNAMIC_FIELD_PREFIX) && !k.startsWith(MarmotGraphVocabulary.META)).forEach(k -> {
                 assertNotNull(document.get(k));
                 assertEquals(test.originalInstance.get(k), document.get(k), "The non-dynamic properties should remain the same when doing a contribution");
             });
@@ -203,18 +203,18 @@ class InstancesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             NormalizedJsonLd document = test.assureValidPayloadIncludingId(test.response);
-            final NormalizedJsonLd alternative = document.getAs(EBRAINSVocabulary.META_ALTERNATIVE, NormalizedJsonLd.class);
+            final NormalizedJsonLd alternative = document.getAs(MarmotGraphVocabulary.META_ALTERNATIVE, NormalizedJsonLd.class);
             assertNotNull(alternative);
 
             final List<NormalizedJsonLd> alternativeOfManipulatedProperty = alternative.getAsListOf(ContributeToInstancePartialReplacementTest.MANIPULATED_PROPERTY, NormalizedJsonLd.class);
             assertEquals(2, alternativeOfManipulatedProperty.size());
 
-            final NormalizedJsonLd selectedAlternative = alternativeOfManipulatedProperty.stream().filter(a -> a.getAs(EBRAINSVocabulary.META_SELECTED, Boolean.class)).findFirst().orElseThrow();
-            final NormalizedJsonLd userOfSelectedAlternative = selectedAlternative.getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class);
+            final NormalizedJsonLd selectedAlternative = alternativeOfManipulatedProperty.stream().filter(a -> a.getAs(MarmotGraphVocabulary.META_SELECTED, Boolean.class)).findFirst().orElseThrow();
+            final NormalizedJsonLd userOfSelectedAlternative = selectedAlternative.getAs(MarmotGraphVocabulary.META_USER, NormalizedJsonLd.class);
             assertEquals("Alice", userOfSelectedAlternative.getAs(SchemaOrgVocabulary.NAME, String.class));
 
-            final NormalizedJsonLd notSelectedAlternative = alternativeOfManipulatedProperty.stream().filter(a -> !a.getAs(EBRAINSVocabulary.META_SELECTED, Boolean.class)).findFirst().orElseThrow();
-            final NormalizedJsonLd userOfNotSelectedAlternative = notSelectedAlternative.getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class);
+            final NormalizedJsonLd notSelectedAlternative = alternativeOfManipulatedProperty.stream().filter(a -> !a.getAs(MarmotGraphVocabulary.META_SELECTED, Boolean.class)).findFirst().orElseThrow();
+            final NormalizedJsonLd userOfNotSelectedAlternative = notSelectedAlternative.getAs(MarmotGraphVocabulary.META_USER, NormalizedJsonLd.class);
             assertEquals("Admin", userOfNotSelectedAlternative.getAs(SchemaOrgVocabulary.NAME, String.class));
 
         });
@@ -506,21 +506,21 @@ class InstancesTest extends AbstractFunctionalityTest {
             //Then
             ResponseEntity<Result<NormalizedJsonLd>> instanceById = test.fetchInstance();
             NormalizedJsonLd releasedInstance = test.assureValidPayloadIncludingId(instanceById);
-            final String firstRelease = releasedInstance.getAs(EBRAINSVocabulary.META_FIRST_RELEASED_AT, String.class);
+            final String firstRelease = releasedInstance.getAs(MarmotGraphVocabulary.META_FIRST_RELEASED_AT, String.class);
             assertNotNull(firstRelease);
-            final String lastRelease = releasedInstance.getAs(EBRAINSVocabulary.META_LAST_RELEASED_AT, String.class);
+            final String lastRelease = releasedInstance.getAs(MarmotGraphVocabulary.META_LAST_RELEASED_AT, String.class);
             assertNotNull(lastRelease);
             assertEquals(firstRelease, lastRelease);
-            releasedInstance.removeAllFieldsFromNamespace(EBRAINSVocabulary.META);
-            test.originalInstance.removeAllFieldsFromNamespace(EBRAINSVocabulary.META);
+            releasedInstance.removeAllFieldsFromNamespace(MarmotGraphVocabulary.META);
+            test.originalInstance.removeAllFieldsFromNamespace(MarmotGraphVocabulary.META);
             assertEquals(releasedInstance, test.originalInstance);
 
             //Release again and ensure the release dates are correct
             instances.releaseInstance(test.getInstanceUUID(), null);
             NormalizedJsonLd releasedInstanceAfterSecondRelease = test.assureValidPayloadIncludingId(test.fetchInstance());
-            final String firstReleaseAfterSecondRelease = releasedInstanceAfterSecondRelease.getAs(EBRAINSVocabulary.META_FIRST_RELEASED_AT, String.class);
+            final String firstReleaseAfterSecondRelease = releasedInstanceAfterSecondRelease.getAs(MarmotGraphVocabulary.META_FIRST_RELEASED_AT, String.class);
             assertNotNull(firstRelease);
-            final String lastReleaseAfterSecondRelease = releasedInstanceAfterSecondRelease.getAs(EBRAINSVocabulary.META_LAST_RELEASED_AT, String.class);
+            final String lastReleaseAfterSecondRelease = releasedInstanceAfterSecondRelease.getAs(MarmotGraphVocabulary.META_LAST_RELEASED_AT, String.class);
             assertNotNull(lastRelease);
             assertEquals(firstRelease, firstReleaseAfterSecondRelease);
             assertNotEquals(lastRelease, lastReleaseAfterSecondRelease);

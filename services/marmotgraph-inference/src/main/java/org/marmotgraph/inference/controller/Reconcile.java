@@ -32,7 +32,7 @@ import org.marmotgraph.commons.model.Event;
 import org.marmotgraph.commons.model.Result;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -239,7 +239,7 @@ public class Reconcile {
         List<String> types = inferredJsonLdDoc.asIndexed().getDoc().types();
         List<String> distinctLabelProperties = types.stream().map(typesInformation::get).filter(Objects::nonNull).
                 map(Result::getData).filter(Objects::nonNull).
-                map(t -> t.getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class)).filter(Objects::nonNull)
+                map(t -> t.getAs(MarmotGraphVocabulary.META_TYPE_LABEL_PROPERTY, String.class)).filter(Objects::nonNull)
                 .distinct().collect(Collectors.toList());
         if(!distinctLabelProperties.isEmpty()){
             Object labelValue = inferredJsonLdDoc.asIndexed().getDoc().get(distinctLabelProperties.get(0));
@@ -296,12 +296,12 @@ public class Reconcile {
     }
 
     private JsonLdDoc createAlternative(String key, Object value, boolean selected, List<JsonLdId> users) {
-        if (!DynamicJson.isInternalKey(key) && !JsonLdConsts.isJsonLdConst(key) && !SchemaOrgVocabulary.IDENTIFIER.equals(key) && !EBRAINSVocabulary.META_USER.equals(key) && !EBRAINSVocabulary.META_SPACE.equals(key) && !EBRAINSVocabulary.META_PROPERTYUPDATES.equals(key)) {
+        if (!DynamicJson.isInternalKey(key) && !JsonLdConsts.isJsonLdConst(key) && !SchemaOrgVocabulary.IDENTIFIER.equals(key) && !MarmotGraphVocabulary.META_USER.equals(key) && !MarmotGraphVocabulary.META_SPACE.equals(key) && !MarmotGraphVocabulary.META_PROPERTYUPDATES.equals(key)) {
             JsonLdDoc alternative = new JsonLdDoc();
-            alternative.put(EBRAINSVocabulary.META_SELECTED, selected);
+            alternative.put(MarmotGraphVocabulary.META_SELECTED, selected);
             //We always save the users of an alternative as string only to prevent links to be created - the resolution happens lazily.
-            alternative.put(EBRAINSVocabulary.META_USER, users.stream().filter(Objects::nonNull).map(JsonLdId::getId).collect(Collectors.toList()));
-            alternative.put(EBRAINSVocabulary.META_VALUE, value);
+            alternative.put(MarmotGraphVocabulary.META_USER, users.stream().filter(Objects::nonNull).map(JsonLdId::getId).collect(Collectors.toList()));
+            alternative.put(MarmotGraphVocabulary.META_VALUE, value);
             return alternative;
         }
         return null;
@@ -315,8 +315,8 @@ public class Reconcile {
             inferredDocument.setAlternatives(alternatives);
             for (String key : keys) {
                 //We don't need the property update times in inferred -> this is an information for reconciliation only and therefore should only be in NATIVE
-                if (!key.equals(EBRAINSVocabulary.META_PROPERTYUPDATES)) {
-                    List<IndexedJsonLdDoc> documentsForKey = originalInstances.stream().filter(i ->  i.getDoc().containsKey(key) || i.getDoc().getAs(EBRAINSVocabulary.META_PROPERTYUPDATES, Map.class, Collections.emptyMap()).containsKey(key)).collect(Collectors.toList());
+                if (!key.equals(MarmotGraphVocabulary.META_PROPERTYUPDATES)) {
+                    List<IndexedJsonLdDoc> documentsForKey = originalInstances.stream().filter(i ->  i.getDoc().containsKey(key) || i.getDoc().getAs(MarmotGraphVocabulary.META_PROPERTYUPDATES, Map.class, Collections.emptyMap()).containsKey(key)).collect(Collectors.toList());
                     if (documentsForKey.size() == 1) {
                         //Single occurrence - the merge is easy. :)
                         NormalizedJsonLd doc = documentsForKey.get(0).getDoc();
@@ -325,7 +325,7 @@ public class Reconcile {
                         if(value!=null){
                             inferredDocument.asIndexed().getDoc().addProperty(key, value);
                         }
-                        JsonLdDoc alternative = createAlternative(key, doc.get(key), true, Collections.singletonList(doc.getAs(EBRAINSVocabulary.META_USER, JsonLdId.class)));
+                        JsonLdDoc alternative = createAlternative(key, doc.get(key), true, Collections.singletonList(doc.getAs(MarmotGraphVocabulary.META_USER, JsonLdId.class)));
                         if (alternative != null) {
                             alternatives.put(key, Collections.singletonList(alternative));
                         }
@@ -346,7 +346,7 @@ public class Reconcile {
                                 Set<String> identifiers = documentsForKey.stream().map(d -> d.getDoc().identifiers()).flatMap(Collection::stream).collect(Collectors.toSet());
                                 inferredDocument.asIndexed().getDoc().put(SchemaOrgVocabulary.IDENTIFIER, identifiers);
                                 break;
-                            case EBRAINSVocabulary.META_USER:
+                            case MarmotGraphVocabulary.META_USER:
                                 //Users are ignored for the reconciled instance since they can be reconstructed from the alternatives
                                 break;
                             default:
@@ -359,7 +359,7 @@ public class Reconcile {
                                 Map<Object, List<IndexedJsonLdDoc>> documentsByValue = documentsForKey.stream().collect(Collectors.groupingBy(d -> d.getDoc().getOrDefault(key, nullGroup)));
                                 final List<JsonLdDoc> alternativePayloads = documentsByValue.keySet().stream().map(value -> {
                                     List<IndexedJsonLdDoc> docs = documentsByValue.get(value);
-                                    return createAlternative(key, value == nullGroup ? null : value, docs.contains(firstDoc), docs.stream().filter(d -> d.getDoc() != null && d.getDoc().getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class) != null).map(doc -> doc.getDoc().getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class).id()).distinct().collect(Collectors.toList()));
+                                    return createAlternative(key, value == nullGroup ? null : value, docs.contains(firstDoc), docs.stream().filter(d -> d.getDoc() != null && d.getDoc().getAs(MarmotGraphVocabulary.META_USER, NormalizedJsonLd.class) != null).map(doc -> doc.getDoc().getAs(MarmotGraphVocabulary.META_USER, NormalizedJsonLd.class).id()).distinct().collect(Collectors.toList()));
                                 }).filter(Objects::nonNull).collect(Collectors.toList());
                                 if(!CollectionUtils.isEmpty(alternativePayloads)) {
                                     alternatives.put(key, alternativePayloads);

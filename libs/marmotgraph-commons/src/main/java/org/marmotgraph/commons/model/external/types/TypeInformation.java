@@ -25,7 +25,7 @@ package org.marmotgraph.commons.model.external.types;
 
 import com.fasterxml.jackson.annotation.*;
 import org.marmotgraph.commons.jsonld.DynamicJson;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 import java.util.List;
@@ -63,54 +63,54 @@ public class TypeInformation extends DynamicJson {
         put(SchemaOrgVocabulary.NAME, name);
     }
 
-    @JsonGetter(EBRAINSVocabulary.META_INCOMING_LINKS)
+    @JsonGetter(MarmotGraphVocabulary.META_INCOMING_LINKS)
     public List<IncomingLink> getIncomingLinks() {
-        return getAsListOf(EBRAINSVocabulary.META_INCOMING_LINKS, IncomingLink.class);
+        return getAsListOf(MarmotGraphVocabulary.META_INCOMING_LINKS, IncomingLink.class);
     }
-    @JsonSetter(EBRAINSVocabulary.META_INCOMING_LINKS)
+    @JsonSetter(MarmotGraphVocabulary.META_INCOMING_LINKS)
     public void setIncomingLinks(List<IncomingLink> incomingLinks) {
-        put(EBRAINSVocabulary.META_INCOMING_LINKS, incomingLinks);
+        put(MarmotGraphVocabulary.META_INCOMING_LINKS, incomingLinks);
     }
 
-    @JsonGetter(EBRAINSVocabulary.META_OCCURRENCES)
+    @JsonGetter(MarmotGraphVocabulary.META_OCCURRENCES)
     public Integer getOccurrences() {
-        return getAs(EBRAINSVocabulary.META_OCCURRENCES, Integer.class);
+        return getAs(MarmotGraphVocabulary.META_OCCURRENCES, Integer.class);
     }
 
-    @JsonSetter(EBRAINSVocabulary.META_OCCURRENCES)
+    @JsonSetter(MarmotGraphVocabulary.META_OCCURRENCES)
     public void setOccurrences(Integer occurrences) {
-        put(EBRAINSVocabulary.META_OCCURRENCES, occurrences);
+        put(MarmotGraphVocabulary.META_OCCURRENCES, occurrences);
     }
 
-    @JsonGetter(EBRAINSVocabulary.META_PROPERTIES)
+    @JsonGetter(MarmotGraphVocabulary.META_PROPERTIES)
     public List<Property> getProperties() {
-        return getAsListOf(EBRAINSVocabulary.META_PROPERTIES, Property.class);
+        return getAsListOf(MarmotGraphVocabulary.META_PROPERTIES, Property.class);
     }
 
-    @JsonSetter(EBRAINSVocabulary.META_PROPERTIES)
+    @JsonSetter(MarmotGraphVocabulary.META_PROPERTIES)
     public void setProperties(List<Property> properties) {
-        put(EBRAINSVocabulary.META_PROPERTIES, properties);
+        put(MarmotGraphVocabulary.META_PROPERTIES, properties);
     }
 
-    @JsonGetter(EBRAINSVocabulary.META_SPACES)
+    @JsonGetter(MarmotGraphVocabulary.META_SPACES)
     public List<SpaceTypeInformation> getSpaces() {
-        return getAsListOf(EBRAINSVocabulary.META_SPACES, SpaceTypeInformation.class);
+        return getAsListOf(MarmotGraphVocabulary.META_SPACES, SpaceTypeInformation.class);
     }
 
-    @JsonSetter(EBRAINSVocabulary.META_SPACES)
+    @JsonSetter(MarmotGraphVocabulary.META_SPACES)
     public void setSpaces(List<SpaceTypeInformation> spaces) {
-        put(EBRAINSVocabulary.META_SPACES, spaces);
+        put(MarmotGraphVocabulary.META_SPACES, spaces);
     }
 
     @JsonIgnore
     public void clearSpaces(){
-        remove(EBRAINSVocabulary.META_SPACES);
+        remove(MarmotGraphVocabulary.META_SPACES);
     }
 
 
     @JsonIgnore
     public void clearProperties(){
-        remove(EBRAINSVocabulary.META_PROPERTIES);
+        remove(MarmotGraphVocabulary.META_PROPERTIES);
     }
 
 }

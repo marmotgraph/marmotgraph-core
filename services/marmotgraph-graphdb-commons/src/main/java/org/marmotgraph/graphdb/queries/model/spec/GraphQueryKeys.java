@@ -24,7 +24,7 @@
 package org.marmotgraph.graphdb.queries.model.spec;
 
 import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 
 public enum GraphQueryKeys {
 
@@ -55,7 +55,7 @@ public enum GraphQueryKeys {
     GRAPH_QUERY_FILTER_PARAM("parameter");
 
     private final String fieldName;
-    public static final String GRAPH_QUERY = EBRAINSVocabulary.NAMESPACE + "query/";
+    public static final String GRAPH_QUERY = MarmotGraphVocabulary.NAMESPACE + "query/";
 
     GraphQueryKeys(String fieldName){
         this.fieldName = GRAPH_QUERY+fieldName;

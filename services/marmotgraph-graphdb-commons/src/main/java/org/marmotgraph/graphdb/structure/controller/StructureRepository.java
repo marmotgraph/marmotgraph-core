@@ -46,7 +46,7 @@ import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.external.spaces.SpaceSpecification;
 import org.marmotgraph.commons.model.internal.spaces.Space;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import org.marmotgraph.graphdb.commons.controller.ArangoDatabases;
 import org.marmotgraph.graphdb.commons.controller.GraphDBArangoUtils;
@@ -128,7 +128,7 @@ public class StructureRepository {
             if (i < spaces.size() - 1) {
                 query.add(AQL.trust(", "));
             }
-            bindVars.put("space", EBRAINSVocabulary.META_SPACE);
+            bindVars.put("space", MarmotGraphVocabulary.META_SPACE);
         }
         if(spaces.size()>1){
             query.addLine(AQL.trust(")"));
@@ -482,7 +482,7 @@ public class StructureRepository {
         bindVars.put("@propertyEdge", edgeCollection.getCollectionName());
         aql.addLine(AQL.trust("FILTER target != NULL AND target.`@type` != NULL"));
         aql.addLine(AQL.trust(String.format("FOR type IN TO_ARRAY(target.`%s`)", JsonLdConsts.TYPE)));
-        aql.addLine(AQL.trust(String.format("COLLECT t = type, s=target.`%s` WITH COUNT INTO length", EBRAINSVocabulary.META_SPACE)));
+        aql.addLine(AQL.trust(String.format("COLLECT t = type, s=target.`%s` WITH COUNT INTO length", MarmotGraphVocabulary.META_SPACE)));
         aql.addLine(AQL.trust("RETURN {"));
         aql.addLine(AQL.trust("    \"type\": t,"));
         aql.addLine(AQL.trust("    \"space\": s,"));
@@ -500,8 +500,8 @@ public class StructureRepository {
     }
 
     private final List<String> EDGE_BLACKLIST = Arrays.asList(
-            new ArangoCollectionReference(EBRAINSVocabulary.META_ALTERNATIVE, true).getCollectionName(),
-            new ArangoCollectionReference(EBRAINSVocabulary.META_USER, true).getCollectionName(),
+            new ArangoCollectionReference(MarmotGraphVocabulary.META_ALTERNATIVE, true).getCollectionName(),
+            new ArangoCollectionReference(MarmotGraphVocabulary.META_USER, true).getCollectionName(),
             InternalSpace.DOCUMENT_ID_EDGE_COLLECTION.getCollectionName(),
             ArangoCollectionReference.fromSpace(InternalSpace.INFERENCE_OF_SPACE).getCollectionName(),
             InternalSpace.RELEASE_STATUS_EDGE_COLLECTION.getCollectionName(),

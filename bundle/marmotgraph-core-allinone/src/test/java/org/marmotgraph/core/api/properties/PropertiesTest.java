@@ -29,7 +29,7 @@ import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.Result;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
 import org.marmotgraph.commons.permission.roles.RoleMapping;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import org.marmotgraph.core.api.properties.test.DefinePropertyGlobalTest;
 import org.marmotgraph.core.api.v3.InstancesV3;
@@ -69,7 +69,7 @@ class PropertiesTest extends AbstractFunctionalityTest {
             //Then
             Map<String, Result<TypeInformation>> result = test.assureValidPayload(this.types.getTypesByName(Collections.singletonList(test.type), ExposedStage.IN_PROGRESS, true, true, null));
             TypeInformation typeDefinition = test.assureValidPayload(result.get(test.type));
-            List<NormalizedJsonLd> properties = typeDefinition.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class);
+            List<NormalizedJsonLd> properties = typeDefinition.getAsListOf(MarmotGraphVocabulary.META_PROPERTIES, NormalizedJsonLd.class);
             NormalizedJsonLd propertydef = properties.stream().filter(p -> p.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class).equals(test.property)).findFirst().orElse(null);
             Assertions.assertEquals("bar", propertydef.getAs("http://foo", String.class));
         });

@@ -29,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.external.spaces.SpaceInformation;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 import java.util.Objects;
@@ -117,53 +117,53 @@ public class Space extends DynamicJson {
         return Objects.hash(getName());
     }
 
-    @JsonGetter(EBRAINSVocabulary.META_CLIENT_SPACE)
+    @JsonGetter(MarmotGraphVocabulary.META_CLIENT_SPACE)
     public boolean isClientSpace() {
-        return getAs(EBRAINSVocabulary.META_CLIENT_SPACE, Boolean.class, false);
+        return getAs(MarmotGraphVocabulary.META_CLIENT_SPACE, Boolean.class, false);
     }
 
-    @JsonSetter(EBRAINSVocabulary.META_CLIENT_SPACE)
+    @JsonSetter(MarmotGraphVocabulary.META_CLIENT_SPACE)
     public void setClientSpace(Boolean clientSpace) {
-        this.put(EBRAINSVocabulary.META_CLIENT_SPACE, clientSpace);
+        this.put(MarmotGraphVocabulary.META_CLIENT_SPACE, clientSpace);
     }
 
-    @JsonGetter(EBRAINSVocabulary.META_INTERNAL_SPACE)
+    @JsonGetter(MarmotGraphVocabulary.META_INTERNAL_SPACE)
     public boolean isInternalSpace() {
-        return getAs(EBRAINSVocabulary.META_INTERNAL_SPACE, Boolean.class, false);
+        return getAs(MarmotGraphVocabulary.META_INTERNAL_SPACE, Boolean.class, false);
     }
 
-    @JsonSetter(EBRAINSVocabulary.META_INTERNAL_SPACE)
+    @JsonSetter(MarmotGraphVocabulary.META_INTERNAL_SPACE)
     public void setInternalSpace(Boolean internalSpace) {
-        this.put(EBRAINSVocabulary.META_CLIENT_SPACE, internalSpace);
+        this.put(MarmotGraphVocabulary.META_CLIENT_SPACE, internalSpace);
     }
 
-    @JsonGetter(EBRAINSVocabulary.META_AUTORELEASE_SPACE)
+    @JsonGetter(MarmotGraphVocabulary.META_AUTORELEASE_SPACE)
     public boolean isAutoRelease() {
-        return getAs(EBRAINSVocabulary.META_AUTORELEASE_SPACE, Boolean.class, false);
+        return getAs(MarmotGraphVocabulary.META_AUTORELEASE_SPACE, Boolean.class, false);
     }
 
-    @JsonSetter(EBRAINSVocabulary.META_AUTORELEASE_SPACE)
+    @JsonSetter(MarmotGraphVocabulary.META_AUTORELEASE_SPACE)
     public void setAutoRelease(Boolean autoRelease) {
-        this.put(EBRAINSVocabulary.META_AUTORELEASE_SPACE, autoRelease);
+        this.put(MarmotGraphVocabulary.META_AUTORELEASE_SPACE, autoRelease);
     }
 
-    @JsonGetter(EBRAINSVocabulary.META_SCOPE_RELEVANT_SPACE)
+    @JsonGetter(MarmotGraphVocabulary.META_SCOPE_RELEVANT_SPACE)
     public boolean isScopeRelevant() {
-        return getAs(EBRAINSVocabulary.META_SCOPE_RELEVANT_SPACE, Boolean.class, false);
+        return getAs(MarmotGraphVocabulary.META_SCOPE_RELEVANT_SPACE, Boolean.class, false);
     }
 
-    @JsonSetter(EBRAINSVocabulary.META_SCOPE_RELEVANT_SPACE)
+    @JsonSetter(MarmotGraphVocabulary.META_SCOPE_RELEVANT_SPACE)
     public void setScopeRelevant(Boolean scopeRelevant) {
-        this.put(EBRAINSVocabulary.META_SCOPE_RELEVANT_SPACE, scopeRelevant);
+        this.put(MarmotGraphVocabulary.META_SCOPE_RELEVANT_SPACE, scopeRelevant);
     }
 
-    @JsonGetter(EBRAINSVocabulary.META_DEFER_CACHE_SPACE)
+    @JsonGetter(MarmotGraphVocabulary.META_DEFER_CACHE_SPACE)
     public boolean isDeferCache(){
-        return getAs(EBRAINSVocabulary.META_DEFER_CACHE_SPACE, Boolean.class, false);
+        return getAs(MarmotGraphVocabulary.META_DEFER_CACHE_SPACE, Boolean.class, false);
     }
-    @JsonSetter(EBRAINSVocabulary.META_DEFER_CACHE_SPACE)
+    @JsonSetter(MarmotGraphVocabulary.META_DEFER_CACHE_SPACE)
     public void setDeferCache(Boolean deferCache) {
-        this.put(EBRAINSVocabulary.META_DEFER_CACHE_SPACE, deferCache);
+        this.put(MarmotGraphVocabulary.META_DEFER_CACHE_SPACE, deferCache);
     }
 
     @JsonIgnore
@@ -171,7 +171,7 @@ public class Space extends DynamicJson {
         SpaceInformation information = new SpaceInformation();
         information.setName(getName() != null ? getName().getName() : null);
         information.setIdentifier(getIdentifier());
-        keySet().stream().filter(k -> k.startsWith(String.format("%s/", EBRAINSVocabulary.META_SPACE))).forEach(k -> {
+        keySet().stream().filter(k -> k.startsWith(String.format("%s/", MarmotGraphVocabulary.META_SPACE))).forEach(k -> {
             information.put(k, get(k));
         });
         return information;

@@ -24,7 +24,7 @@
 package org.marmotgraph.commons.model;
 
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.semantics.vocabularies.HBPVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 public class User extends NormalizedJsonLd {
@@ -41,7 +41,7 @@ public class User extends NormalizedJsonLd {
         addProperty(SchemaOrgVocabulary.NAMESPACE + "email", email);
         addProperty(SchemaOrgVocabulary.NAMESPACE + "givenName", givenName);
         addProperty(SchemaOrgVocabulary.NAMESPACE + "familyName", familyName);
-        addProperty(HBPVocabulary.NAMESPACE + "users/nativeId", nativeId);
+        addProperty(MarmotGraphVocabulary.NAMESPACE + "users/nativeId", nativeId);
         addIdentifiers(nativeId);
     }
 
@@ -66,7 +66,7 @@ public class User extends NormalizedJsonLd {
     }
 
     public String getNativeId() {
-        return getAs(HBPVocabulary.NAMESPACE + "users/nativeId", String.class);
+        return getAs(MarmotGraphVocabulary.NAMESPACE + "users/nativeId", String.class);
     }
 
     public boolean isEqual(User user){

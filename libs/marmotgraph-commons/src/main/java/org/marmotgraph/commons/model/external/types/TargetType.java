@@ -26,20 +26,20 @@ package org.marmotgraph.commons.model.external.types;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 
 import java.util.List;
 @JsonPropertyOrder(alphabetic=true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TargetType {
 
-    @JsonProperty(EBRAINSVocabulary.META_OCCURRENCES)
+    @JsonProperty(MarmotGraphVocabulary.META_OCCURRENCES)
     private Integer occurrences;
 
-    @JsonProperty(EBRAINSVocabulary.META_SPACES)
+    @JsonProperty(MarmotGraphVocabulary.META_SPACES)
     private List<SpaceReference> spaces;
 
-    @JsonProperty(EBRAINSVocabulary.META_TYPE)
+    @JsonProperty(MarmotGraphVocabulary.META_TYPE)
     private String type;
 
 

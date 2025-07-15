@@ -26,15 +26,15 @@ package org.marmotgraph.commons.model.external.types;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 
 @Setter
 @Getter
 public class TypeInSpace {
-    @JsonProperty(EBRAINSVocabulary.META_SPACE)
+    @JsonProperty(MarmotGraphVocabulary.META_SPACE)
     private String space;
 
-    @JsonProperty(EBRAINSVocabulary.META_TYPE)
+    @JsonProperty(MarmotGraphVocabulary.META_TYPE)
     private String type;
 
     public TypeInSpace(String space, String type) {

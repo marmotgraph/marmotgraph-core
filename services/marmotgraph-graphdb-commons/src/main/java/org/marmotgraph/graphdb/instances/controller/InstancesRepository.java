@@ -37,7 +37,7 @@ import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.Type;
 import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permissions.controller.Permissions;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.graphdb.commons.controller.ArangoDatabases;
 import org.marmotgraph.graphdb.commons.model.ArangoDocument;
 import org.marmotgraph.graphdb.structure.controller.MetaDataController;
@@ -94,7 +94,7 @@ public class InstancesRepository extends AbstractRepository {
                 if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
                     incomingLinks.resolveIncomingLinks(stage, instanceIncomingLinks, invitationDocuments);
                     NormalizedJsonLd d = document.getDoc();
-                    d.put(EBRAINSVocabulary.META_INCOMING_LINKS, instanceIncomingLinks.get(id.toString()));
+                    d.put(MarmotGraphVocabulary.META_INCOMING_LINKS, instanceIncomingLinks.get(id.toString()));
                 }
             }
         }
@@ -122,6 +122,6 @@ public class InstancesRepository extends AbstractRepository {
     }
 
     public static boolean isNotNecessaryKey(String key) {
-        return (!key.equals(EBRAINSVocabulary.META_SPACE) && !key.equals(EBRAINSVocabulary.META_INCOMING_LINKS) && !key.equals(JsonLdConsts.ID));
+        return (!key.equals(MarmotGraphVocabulary.META_SPACE) && !key.equals(MarmotGraphVocabulary.META_INCOMING_LINKS) && !key.equals(JsonLdConsts.ID));
     }
 }

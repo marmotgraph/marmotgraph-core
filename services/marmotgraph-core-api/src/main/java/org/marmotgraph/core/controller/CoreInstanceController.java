@@ -41,7 +41,7 @@ import org.marmotgraph.commons.model.*;
 import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permission.FunctionalityInstance;
 import org.marmotgraph.commons.permissions.controller.Permissions;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -189,7 +189,7 @@ public class CoreInstanceController {
             Set<String> oldKeys = new HashSet<>(instance.keySet());
             normalizedJsonLd.keySet().forEach(k -> {
                 Object value = normalizedJsonLd.get(k);
-                if (value != null && value.equals(EBRAINSVocabulary.RESET_VALUE)) {
+                if (value != null && value.equals(MarmotGraphVocabulary.RESET_VALUE)) {
                     updateTimes.remove(k);
                     instance.remove(k);
                 } else {
@@ -242,7 +242,7 @@ public class CoreInstanceController {
                     NormalizedJsonLd idPayload = new NormalizedJsonLd();
                     UUID uuid = idAfterResolution.getUuid();
                     idPayload.setId(idUtils.buildAbsoluteUrl(uuid));
-                    idPayload.addProperty(EBRAINSVocabulary.META_SPACE, idAfterResolution.getSpace().getName());
+                    idPayload.addProperty(MarmotGraphVocabulary.META_SPACE, idAfterResolution.getSpace().getName());
                     result.put(uuid.toString(), Result.ok(idPayload));
                 }
                 else {
@@ -275,7 +275,7 @@ public class CoreInstanceController {
                 if (id != null) {
                     NormalizedJsonLd jsonLd = new NormalizedJsonLd();
                     jsonLd.setId(id);
-                    jsonLd.addProperty(EBRAINSVocabulary.META_SPACE, r.getAs(EBRAINSVocabulary.META_SPACE, String.class));
+                    jsonLd.addProperty(MarmotGraphVocabulary.META_SPACE, r.getAs(MarmotGraphVocabulary.META_SPACE, String.class));
                     return jsonLd;
                 } else {
                     return null;
@@ -310,7 +310,7 @@ public class CoreInstanceController {
             result = AmbiguousResult.ok(instanceIds.stream().map(id -> {
                 NormalizedJsonLd jsonLd = new NormalizedJsonLd();
                 jsonLd.setId(idUtils.buildAbsoluteUrl(id.getUuid()));
-                jsonLd.addProperty(EBRAINSVocabulary.META_SPACE, id.getSpace().getName());
+                jsonLd.addProperty(MarmotGraphVocabulary.META_SPACE, id.getSpace().getName());
                 jsonLd.renameSpace(privateSpaceName, isInvited(jsonLd));
                 return jsonLd;
             }).collect(Collectors.toList()));
@@ -345,7 +345,7 @@ public class CoreInstanceController {
             if (!responseConfiguration.isReturnIncomingLinks()) {
                 instance = new NormalizedJsonLd();
                 instance.setId(idUtils.buildAbsoluteUrl(instanceId.getUuid()));
-                instance.addProperty(EBRAINSVocabulary.META_SPACE, instanceId.getSpace().getName());
+                instance.addProperty(MarmotGraphVocabulary.META_SPACE, instanceId.getSpace().getName());
             } else {
                 instance = graphDBInstances.getInstanceByIdWithoutPayload(instanceId.getSpace().getName(), instanceId.getUuid(), stage, responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
             }
@@ -362,7 +362,7 @@ public class CoreInstanceController {
         final UUID uuid = idUtils.getUUID(normalizedJsonLd.id());
         if (authContext.getUserWithRolesWithoutTermsCheck().getInvitations().contains(uuid)) {
             //The user is invited for this instance
-            final String space = normalizedJsonLd.getAs(EBRAINSVocabulary.META_SPACE, String.class, null);
+            final String space = normalizedJsonLd.getAs(MarmotGraphVocabulary.META_SPACE, String.class, null);
             if(space!=null){
                 return !permissions.hasPermission(authContext.getUserWithRolesWithoutTermsCheck(), Functionality.READ, SpaceName.fromString(space));
             }
@@ -373,11 +373,11 @@ public class CoreInstanceController {
 
     private void resolveAlternatives(DataStage stage, List<NormalizedJsonLd> documents) {
         Map<String, List<Map<String, Object>>> idsForResolution = documents.stream()
-                .map(d -> d.get(EBRAINSVocabulary.META_ALTERNATIVE)).filter(Objects::nonNull)
+                .map(d -> d.get(MarmotGraphVocabulary.META_ALTERNATIVE)).filter(Objects::nonNull)
                 .filter(a -> a instanceof Map).map(a -> ((Map<?, ?>) a).values()).flatMap(Collection::stream)
                 .map(v -> v instanceof Collection ? (Collection<?>) v : Collections.singleton(v))
                 .flatMap(Collection::stream).filter(value -> value instanceof Map)
-                .map(value -> ((Map<?, ?>) value).get(EBRAINSVocabulary.META_VALUE))
+                .map(value -> ((Map<?, ?>) value).get(MarmotGraphVocabulary.META_VALUE))
                 .filter(Objects::nonNull)
                 .map(v -> v instanceof Collection ? (Collection<?>) v : Collections.singleton(v))
                 .flatMap(Collection::stream).filter(v -> {
@@ -415,11 +415,11 @@ public class CoreInstanceController {
         }
         //Alternatives are a special case -> we merge the values, so this means we're actually always having a single object at once max. Therefore, let's get rid of the wrapping array
         documents.forEach(d -> {
-            List<NormalizedJsonLd> alternatives = d.getAsListOf(EBRAINSVocabulary.META_ALTERNATIVE, NormalizedJsonLd.class);
+            List<NormalizedJsonLd> alternatives = d.getAsListOf(MarmotGraphVocabulary.META_ALTERNATIVE, NormalizedJsonLd.class);
             if (!alternatives.isEmpty()) {
-                d.put(EBRAINSVocabulary.META_ALTERNATIVE, alternatives.get(0));
+                d.put(MarmotGraphVocabulary.META_ALTERNATIVE, alternatives.get(0));
             } else {
-                d.put(EBRAINSVocabulary.META_ALTERNATIVE, null);
+                d.put(MarmotGraphVocabulary.META_ALTERNATIVE, null);
             }
         });
 
@@ -432,13 +432,13 @@ public class CoreInstanceController {
         documents.forEach(result -> {
                     NormalizedJsonLd doc = result.getData();
                     if (doc != null) {
-                        String space = doc.getAs(EBRAINSVocabulary.META_SPACE, String.class);
+                        String space = doc.getAs(MarmotGraphVocabulary.META_SPACE, String.class);
 
                         // standard SpaceName or resolves the real one if it's a private space
                         SpaceName sp = space != null ? authContext.resolveSpaceName(space) : null;
 
                         Set<Functionality> functionalities = permissions.stream().filter(p -> Functionality.FunctionalityGroup.INSTANCE == p.getFunctionality().getFunctionalityGroup() && stage != null && stage == p.getFunctionality().getStage()).filter(p -> p.appliesTo(sp, idUtils.getUUID(doc.id()))).map(FunctionalityInstance::getFunctionality).collect(Collectors.toSet());
-                        doc.put(EBRAINSVocabulary.META_PERMISSIONS, functionalities);
+                        doc.put(MarmotGraphVocabulary.META_PERMISSIONS, functionalities);
                     }
                 }
         );

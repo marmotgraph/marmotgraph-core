@@ -39,7 +39,7 @@ import org.marmotgraph.commons.model.PaginationParam;
 import org.marmotgraph.commons.model.Result;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.core.model.ExposedStage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -102,7 +102,7 @@ public class TypesV3 {
     @WritesData
     @Admin
     public void createTypeDefinition(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)") @RequestParam(value = "global", required = false) boolean global, @RequestParam("type") String type) {
-        JsonLdId typeFromPayload = payload.getAs(EBRAINSVocabulary.META_TYPE, JsonLdId.class);
+        JsonLdId typeFromPayload = payload.getAs(MarmotGraphVocabulary.META_TYPE, JsonLdId.class);
         String decodedType = URLDecoder.decode(type, StandardCharsets.UTF_8);
         if (typeFromPayload != null) {
             throw new IllegalArgumentException("You are not supposed to provide a @type in the payload of the type specifications to avoid ambiguity");

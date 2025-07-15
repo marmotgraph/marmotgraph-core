@@ -33,7 +33,7 @@ import org.marmotgraph.commons.model.ScopeElement;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.internal.spaces.Space;
 import org.marmotgraph.commons.query.KgQuery;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.graphdb.queries.controller.QueryController;
 import org.marmotgraph.graphdb.structure.controller.StructureRepository;
 import org.springframework.stereotype.Component;
@@ -75,7 +75,7 @@ public class ScopeRepository {
         //TODO as a performance optimization, we could try to apply the restrictions already to the queries instead of excluding the instances in a post processing step.
         Stream<NormalizedJsonLd> typeQueries = instance.types().stream().map(type -> queries.getQueriesByRootType(stage, null, null, false, false, type).getData()).flatMap(Collection::stream);
         Set<String> relevantSpaces = structureRepository.getSpaces().stream().filter(Space::isScopeRelevant).map(s -> s.getName().getName()).collect(Collectors.toSet());
-        List<NormalizedJsonLd> results = typeQueries.filter(q -> relevantSpaces.contains(q.getAs(EBRAINSVocabulary.META_SPACE, String.class))).map(q -> {
+        List<NormalizedJsonLd> results = typeQueries.filter(q -> relevantSpaces.contains(q.getAs(MarmotGraphVocabulary.META_SPACE, String.class))).map(q -> {
             QueryResult queryResult = queryController.query(authContext.getUserWithRoles(),
                     new KgQuery(q, stage).setIdRestriction(new InstanceId(id, space)), null, null, true);
             return queryResult != null && queryResult.getResult() != null ? queryResult.getResult().getData() : null;
@@ -101,7 +101,7 @@ public class ScopeRepository {
         boolean skipInstanceByRestriction = false;
         if (applyRestrictions && type.stream().filter(Objects::nonNull).anyMatch(t -> {
             final DynamicJson typeSpecification = structureRepository.getTypeSpecification(t);
-            return typeSpecification != null ? typeSpecification.getAs(EBRAINSVocabulary.META_CAN_BE_EXCLUDED_FROM_SCOPE, Boolean.class, Boolean.FALSE) : Boolean.FALSE;
+            return typeSpecification != null ? typeSpecification.getAs(MarmotGraphVocabulary.META_CAN_BE_EXCLUDED_FROM_SCOPE, Boolean.class, Boolean.FALSE) : Boolean.FALSE;
         })) {
             if (isRoot) {
                 applyRestrictionsForRoot = true;
@@ -161,7 +161,7 @@ public class ScopeRepository {
         final Map<String, Set<ScopeElement>> typeToUUID = new HashMap<>();
         List<ScopeElement> elements;
         if (data == null || data.isEmpty()) {
-            elements = Collections.singletonList(new ScopeElement(idUtils.getUUID(instance.id()), instance.types(), null, instance.getAs(ArangoVocabulary.ID, String.class), instance.getAs(EBRAINSVocabulary.META_SPACE, String.class), instance.getAs(IndexedJsonLdDoc.LABEL, String.class)));
+            elements = Collections.singletonList(new ScopeElement(idUtils.getUUID(instance.id()), instance.types(), null, instance.getAs(ArangoVocabulary.ID, String.class), instance.getAs(MarmotGraphVocabulary.META_SPACE, String.class), instance.getAs(IndexedJsonLdDoc.LABEL, String.class)));
         } else {
             elements = data.stream().map(d -> handleSubElement(d, typeToUUID, applyRestrictions, d)).filter(Objects::nonNull).flatMap(Collection::stream).collect(Collectors.toList());
         }

@@ -36,7 +36,7 @@ import org.marmotgraph.commons.model.external.spaces.SpaceSpecification;
 import org.marmotgraph.commons.model.external.types.*;
 import org.marmotgraph.commons.model.internal.spaces.Space;
 import org.marmotgraph.commons.models.UserWithRoles;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import org.marmotgraph.graphdb.commons.controller.PermissionsController;
 import org.marmotgraph.graphdb.structure.model.PropertyOfTypeInSpaceReflection;
@@ -247,7 +247,7 @@ public class MetaDataController {
         });
     }
 
-    private final static List<String> GLOBAL_PROPERTY_BLACKLIST = Arrays.asList(EBRAINSVocabulary.META_OCCURRENCES, EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES, SchemaOrgVocabulary.IDENTIFIER);
+    private final static List<String> GLOBAL_PROPERTY_BLACKLIST = Arrays.asList(MarmotGraphVocabulary.META_OCCURRENCES, MarmotGraphVocabulary.META_PROPERTY_TARGET_TYPES, SchemaOrgVocabulary.IDENTIFIER);
 
     private List<TypeInformation> aggregateGlobalInformation(boolean withProperties, Map<String, TypeInformation> typeInformation, boolean clearAdditionalInfoForPropertiesInSpaces) {
         return typeInformation.values().stream().peek(t -> {
@@ -366,18 +366,18 @@ public class MetaDataController {
             if (globalPropertySpec != null) {
                 globalPropertySpec.keySet().forEach(k -> {
                     //Target types are part of the property specification but will be treated differently
-                    if (!EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES.equals(k)) {
+                    if (!MarmotGraphVocabulary.META_PROPERTY_TARGET_TYPES.equals(k)) {
                         p.put(k, globalPropertySpec.get(k));
                     }
                 });
-                targetTypesFromSpec.addAll(globalPropertySpec.getAsListOf(EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES, String.class));
+                targetTypesFromSpec.addAll(globalPropertySpec.getAsListOf(MarmotGraphVocabulary.META_PROPERTY_TARGET_TYPES, String.class));
             }
             if (clientSpace != null) {
                 final DynamicJson clientSpecificPropertySpec = structureRepository.getClientSpecificPropertyBySpecification(property.getName(), clientSpace);
                 if (clientSpecificPropertySpec != null) {
                     clientSpecificPropertySpec.keySet().forEach(k -> {
                         //We don't allow client specific target type definitions.
-                        if (!EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES.equals(k)) {
+                        if (!MarmotGraphVocabulary.META_PROPERTY_TARGET_TYPES.equals(k)) {
                             p.put(k, clientSpecificPropertySpec.get(k));
                         }
                     });
@@ -387,17 +387,17 @@ public class MetaDataController {
             if (propertySpecFromRelation != null) {
                 propertySpecFromRelation.keySet().forEach(k -> {
                     //Target types are part of the property specification but will be treated differently
-                    if (!EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES.equals(k)) {
+                    if (!MarmotGraphVocabulary.META_PROPERTY_TARGET_TYPES.equals(k)) {
                         p.put(k, propertySpecFromRelation.get(k));
                     }
                 });
-                targetTypesFromSpec.addAll(propertySpecFromRelation.getAsListOf(EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES, String.class));
+                targetTypesFromSpec.addAll(propertySpecFromRelation.getAsListOf(MarmotGraphVocabulary.META_PROPERTY_TARGET_TYPES, String.class));
             }
             final DynamicJson clientSpecificPropertySpecFromRelation = clientSpecificPropertiesOfTypeBySpecification.get(property.getName());
             if (clientSpecificPropertySpecFromRelation != null) {
                 clientSpecificPropertySpecFromRelation.keySet().forEach(k -> {
                     //We don't allow client specific target type definitions.
-                    if (!EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES.equals(k)) {
+                    if (!MarmotGraphVocabulary.META_PROPERTY_TARGET_TYPES.equals(k)) {
                         p.put(k, clientSpecificPropertySpecFromRelation.get(k));
                     }
                 });

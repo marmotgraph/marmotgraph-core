@@ -35,7 +35,7 @@ import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.GraphEntity;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.permissions.controller.Permissions;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.graphdb.commons.controller.ArangoDatabases;
 import org.marmotgraph.graphdb.commons.controller.PermissionsController;
 import org.springframework.stereotype.Component;
@@ -75,16 +75,16 @@ public class NeighborsRepository extends AbstractRepository{
 
         if (!edges.isEmpty()) {
             aql.addLine(AQL.trust("LET inbnd = (FOR inbnd IN 1..1 INBOUND doc " + edges));
-            aql.addLine(AQL.trust("    RETURN { \"id\": inbnd._key, \"name\": inbnd._label, \"types\": inbnd.`@type`, \"space\": inbnd.`" + EBRAINSVocabulary.META_SPACE + "`})"));
+            aql.addLine(AQL.trust("    RETURN { \"id\": inbnd._key, \"name\": inbnd._label, \"types\": inbnd.`@type`, \"space\": inbnd.`" + MarmotGraphVocabulary.META_SPACE + "`})"));
             aql.addLine(AQL.trust("LET outbnd = (FOR outbnd IN 1..1 OUTBOUND doc " + edges));
             aql.addLine(AQL.trust("    LET outbnd2 = (FOR outbnd2 IN 1..1 OUTBOUND outbnd " + edges));
-            aql.addLine(AQL.trust("    RETURN {\"id\": outbnd2._key, \"name\": outbnd2._label, \"types\": outbnd2.`@type`, \"space\": outbnd2.`" + EBRAINSVocabulary.META_SPACE + "`})"));
-            aql.addLine(AQL.trust("    RETURN {\"id\": outbnd._key,  \"name\": outbnd._label, \"outbound\": outbnd2, \"types\": outbnd.`@type`, \"space\": outbnd.`" + EBRAINSVocabulary.META_SPACE + "` })"));
+            aql.addLine(AQL.trust("    RETURN {\"id\": outbnd2._key, \"name\": outbnd2._label, \"types\": outbnd2.`@type`, \"space\": outbnd2.`" + MarmotGraphVocabulary.META_SPACE + "`})"));
+            aql.addLine(AQL.trust("    RETURN {\"id\": outbnd._key,  \"name\": outbnd._label, \"outbound\": outbnd2, \"types\": outbnd.`@type`, \"space\": outbnd.`" + MarmotGraphVocabulary.META_SPACE + "` })"));
         } else {
             aql.addLine(AQL.trust("LET inbnd = []"));
             aql.addLine(AQL.trust("LET outbnd = []"));
         }
-        aql.addLine(AQL.trust("RETURN {\"id\": doc._key, \"name\": doc._label, \"inbound\" : inbnd, \"outbound\": outbnd, \"types\": doc.`@type`, \"space\": doc.`" + EBRAINSVocabulary.META_SPACE + "` }"));
+        aql.addLine(AQL.trust("RETURN {\"id\": doc._key, \"name\": doc._label, \"inbound\" : inbnd, \"outbound\": outbnd, \"types\": doc.`@type`, \"space\": doc.`" + MarmotGraphVocabulary.META_SPACE + "` }"));
 
         List<GraphEntity> graphEntities = db.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), GraphEntity.class).asListRemaining();
         if (graphEntities.isEmpty()) {

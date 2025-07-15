@@ -37,7 +37,7 @@ import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.markers.ExposesMinimalData;
 import org.marmotgraph.commons.model.*;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import org.marmotgraph.graphdb.commons.controller.ArangoDatabases;
 import org.marmotgraph.graphdb.structure.controller.MetaDataController;
@@ -120,7 +120,7 @@ public class IncomingLinksRepository extends AbstractRepository{
         aql.indent().addLine(AQL.trust("\"" + SchemaOrgVocabulary.IDENTIFIER + "\": e.`_originalLabel`,"));
         aql.addLine(AQL.trust("\"" + JsonLdConsts.ID + "\": inbndRoot.`@id`,"));
         aql.addLine(AQL.trust("\"" + JsonLdConsts.TYPE + "\": inbnd.`@type`,"));
-        aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACE + "\": inbndRoot.`" + EBRAINSVocabulary.META_SPACE + "`"));
+        aql.addLine(AQL.trust("\"" + MarmotGraphVocabulary.META_SPACE + "\": inbndRoot.`" + MarmotGraphVocabulary.META_SPACE + "`"));
         aql.outdent().outdent().addLine(AQL.trust("})"));
 
         aql.addLine(AQL.trust("LET groupedByInstances = (FOR i IN inbnd"));
@@ -129,7 +129,7 @@ public class IncomingLinksRepository extends AbstractRepository{
         aql.addLine(AQL.trust("FOR x IN instancesByIdentifier[*].i"));
         aql.addLine(AQL.trust("COLLECT type = x.`" + JsonLdConsts.TYPE + "` INTO instancesByIdentifierAndType"));
         aql.addLine(AQL.trust("FOR t in type"));
-        aql.addLine(AQL.trust("LET instances = (FOR instance IN instancesByIdentifierAndType[*].x SORT instance.`" + JsonLdConsts.ID + "` LIMIT " + (from != null ? from : 0) + ", " + (pageSize != null ? pageSize : DEFAULT_INCOMING_PAGESIZE) + " RETURN KEEP(instance, \"" + JsonLdConsts.ID + "\", \"" + EBRAINSVocabulary.META_SPACE + "\"))"));
+        aql.addLine(AQL.trust("LET instances = (FOR instance IN instancesByIdentifierAndType[*].x SORT instance.`" + JsonLdConsts.ID + "` LIMIT " + (from != null ? from : 0) + ", " + (pageSize != null ? pageSize : DEFAULT_INCOMING_PAGESIZE) + " RETURN KEEP(instance, \"" + JsonLdConsts.ID + "\", \"" + MarmotGraphVocabulary.META_SPACE + "\"))"));
         aql.addLine(AQL.trust("RETURN { [t] : {\"data\": instances, \"total\": LENGTH(instancesByIdentifierAndType[*].i),\"size\": LENGTH(instances), \"from\": " + (from != null ? from : 0) + "}})"));
         aql.addLine(AQL.trust("RETURN {"));
         aql.addLine(AQL.trust("[identifier]: MERGE(instancesById)"));
@@ -166,7 +166,7 @@ public class IncomingLinksRepository extends AbstractRepository{
 
 
     private void enrichDocument(NormalizedJsonLd instanceIncomingLinks, Map<String, TypeInformation> extendedTypesByIdentifier, Map<UUID, String> labelsForInstances) {
-        List<String> typeInformationBlacklist = Arrays.asList(EBRAINSVocabulary.META_PROPERTIES, SchemaOrgVocabulary.IDENTIFIER, SchemaOrgVocabulary.DESCRIPTION, EBRAINSVocabulary.META_SPACES);
+        List<String> typeInformationBlacklist = Arrays.asList(MarmotGraphVocabulary.META_PROPERTIES, SchemaOrgVocabulary.IDENTIFIER, SchemaOrgVocabulary.DESCRIPTION, MarmotGraphVocabulary.META_SPACES);
         instanceIncomingLinks.keySet().forEach(instance -> {
             Map<String, Map<String, Map<String, Object>>> propertyMap = (Map<String, Map<String, Map<String, Object>>>) instanceIncomingLinks.get(instance);
             propertyMap.keySet().forEach(property -> {
@@ -176,13 +176,13 @@ public class IncomingLinksRepository extends AbstractRepository{
                     TypeInformation extendedTypeInfo = extendedTypesByIdentifier.get(type);
                     if (extendedTypeInfo != null) {
                         extendedTypeInfo.keySet().stream().filter(k -> !typeInformationBlacklist.contains(k)).forEach(extendedTypeInfoKey -> typeDefinition.put(extendedTypeInfoKey, extendedTypeInfo.get(extendedTypeInfoKey)));
-                        NormalizedJsonLd propertyDefinition = extendedTypeInfo.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class).stream().filter(Objects::nonNull)
+                        NormalizedJsonLd propertyDefinition = extendedTypeInfo.getAsListOf(MarmotGraphVocabulary.META_PROPERTIES, NormalizedJsonLd.class).stream().filter(Objects::nonNull)
                                 .filter(f -> f.identifiers().contains(property))
                                 .findFirst()
                                 .orElse(null);
                         if (propertyDefinition != null) {
-                            String nameForReverseLink = propertyDefinition.getAs(EBRAINSVocabulary.META_NAME_REVERSE_LINK, String.class);
-                            typeDefinition.put(EBRAINSVocabulary.META_NAME_REVERSE_LINK, nameForReverseLink);
+                            String nameForReverseLink = propertyDefinition.getAs(MarmotGraphVocabulary.META_NAME_REVERSE_LINK, String.class);
+                            typeDefinition.put(MarmotGraphVocabulary.META_NAME_REVERSE_LINK, nameForReverseLink);
                         }
                     }
                     Map<String, Object> values = typeMap.get(type);
@@ -192,7 +192,7 @@ public class IncomingLinksRepository extends AbstractRepository{
                                 .forEach(el -> {
                                     NormalizedJsonLd normalizedJsonLd = new NormalizedJsonLd(el);
                                     String label = labelsForInstances.get(idUtils.getUUID(normalizedJsonLd.id()));
-                                    el.put(EBRAINSVocabulary.LABEL, label);
+                                    el.put(MarmotGraphVocabulary.LABEL, label);
                                 });
                     }
                 });
@@ -226,7 +226,7 @@ public class IncomingLinksRepository extends AbstractRepository{
                     }
                     return normalizedJsonLds;
                 }).flatMap(Collection::stream).map(normalizedJsonLd ->
-                        new InstanceId(idUtils.getUUID(normalizedJsonLd.id()), new SpaceName(normalizedJsonLd.getAs(EBRAINSVocabulary.META_SPACE, String.class)))
+                        new InstanceId(idUtils.getUUID(normalizedJsonLd.id()), new SpaceName(normalizedJsonLd.getAs(MarmotGraphVocabulary.META_SPACE, String.class)))
                 ).collect(Collectors.toSet());
     }
 

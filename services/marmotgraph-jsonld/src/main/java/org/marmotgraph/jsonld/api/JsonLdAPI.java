@@ -31,7 +31,7 @@ import org.marmotgraph.commons.exception.InvalidRequestException;
 import org.marmotgraph.commons.jsonld.JsonLdConsts;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
@@ -48,7 +48,7 @@ public class JsonLdAPI implements org.marmotgraph.commons.api.JsonLd.Client {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final static String NULL_PLACEHOLDER = EBRAINSVocabulary.NAMESPACE + "jsonld/nullvalue";
+    private final static String NULL_PLACEHOLDER = MarmotGraphVocabulary.NAMESPACE + "jsonld/nullvalue";
 
     private void addNullValuesPlaceholder(Object o) {
         if (o instanceof Map) {

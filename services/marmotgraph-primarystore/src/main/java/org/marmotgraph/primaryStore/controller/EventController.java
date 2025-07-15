@@ -38,7 +38,7 @@ import org.marmotgraph.commons.model.PersistedEvent;
 import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permissions.controller.Permissions;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
@@ -135,7 +135,7 @@ public class EventController {
         }
         if(dataStage==DataStage.NATIVE && (event.getType() == Event.Type.INSERT || event.getType() == Event.Type.UPDATE)){
             //For insert and update, we need to ensure that the user information is also present in the native payload to properly calculate the alternatives
-            event.getData().put(EBRAINSVocabulary.META_USER, idUtils.buildAbsoluteUrl(usersRepository.getUserUUID(userWithRoles.getUser())));
+            event.getData().put(MarmotGraphVocabulary.META_USER, idUtils.buildAbsoluteUrl(usersRepository.getUserUUID(userWithRoles.getUser())));
         }
         PersistedEvent persistedEvent = new PersistedEvent(event, dataStage, userWithRoles.getUser(), graphDBSpaces.getSpace(event.getSpaceName()));
         ensureInternalIdInPayload(persistedEvent, userWithRoles);
@@ -190,8 +190,8 @@ public class EventController {
         if (dataStage == DataStage.RELEASED) {
             final String indexTimestamp = ZonedDateTime.ofInstant(Instant.ofEpochMilli(event.getIndexedTimestamp()), ZoneId.systemDefault()).format(DateTimeFormatter.ISO_INSTANT);
             final String firstRelease = eventRepository.getFirstRelease(event.getDocumentId());
-            data.getDoc().put(EBRAINSVocabulary.META_FIRST_RELEASED_AT, firstRelease == null ? indexTimestamp : firstRelease);
-            data.getDoc().put(EBRAINSVocabulary.META_LAST_RELEASED_AT, indexTimestamp);
+            data.getDoc().put(MarmotGraphVocabulary.META_FIRST_RELEASED_AT, firstRelease == null ? indexTimestamp : firstRelease);
+            data.getDoc().put(MarmotGraphVocabulary.META_LAST_RELEASED_AT, indexTimestamp);
         }
     }
 

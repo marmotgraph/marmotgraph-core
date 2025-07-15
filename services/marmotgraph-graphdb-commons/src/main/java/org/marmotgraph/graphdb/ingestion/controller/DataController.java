@@ -36,7 +36,7 @@ import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.IdWithAlternatives;
 import org.marmotgraph.commons.model.SpaceName;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.graphdb.commons.controller.ArangoRepositoryCommons;
 import org.marmotgraph.graphdb.commons.controller.EntryHookDocuments;
 import org.marmotgraph.graphdb.commons.model.ArangoDocument;
@@ -153,7 +153,7 @@ public class DataController {
         Set<JsonLdId> resolvedJsonLdIds = new HashSet<>();
 
         for (ArangoEdge edge : edges) {
-            if (stage == DataStage.NATIVE || isEdgeOf(edge.getId(), InternalSpace.INFERENCE_OF_SPACE, new SpaceName(EBRAINSVocabulary.META_USER))) {
+            if (stage == DataStage.NATIVE || isEdgeOf(edge.getId(), InternalSpace.INFERENCE_OF_SPACE, new SpaceName(MarmotGraphVocabulary.META_USER))) {
                 //We are either in NATIVE stage or have a relation to inference of or user - we already know that we won't be able to resolve it (since the target instance is in a different database), so we shortcut the process.
                 logger.trace(String.format("Not resolving edge pointing to %s", edge.getOriginalTo()));
                 edge.setTo(UNKNOWN_TARGET);

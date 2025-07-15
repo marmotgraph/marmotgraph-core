@@ -23,7 +23,7 @@
 
 package org.marmotgraph.commons.jsonld;
 
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 
 import java.util.List;
 import java.util.Objects;
@@ -67,7 +67,7 @@ public class InferredJsonLdDoc {
     }
 
     public void setAlternatives(JsonLdDoc alternatives){
-        indexedJsonLdDoc.getDoc().addProperty(EBRAINSVocabulary.META_ALTERNATIVE, alternatives);
+        indexedJsonLdDoc.getDoc().addProperty(MarmotGraphVocabulary.META_ALTERNATIVE, alternatives);
     }
 
     public boolean hasTypes(){

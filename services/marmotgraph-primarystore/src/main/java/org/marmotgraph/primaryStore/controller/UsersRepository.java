@@ -25,6 +25,7 @@ package org.marmotgraph.primaryStore.controller;
 
 import com.arangodb.ArangoCollection;
 import com.arangodb.model.DocumentCreateOptions;
+import org.apache.commons.lang3.StringUtils;
 import org.marmotgraph.arango.commons.ArangoQueries;
 import org.marmotgraph.arango.commons.aqlbuilder.AQL;
 import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
@@ -44,9 +45,8 @@ import org.marmotgraph.commons.model.ReducedUserInformation;
 import org.marmotgraph.commons.model.User;
 import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permissions.controller.Permissions;
-import org.marmotgraph.commons.semantics.vocabularies.HBPVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -145,7 +145,7 @@ public class UsersRepository implements SetupLogic {
         bindVars.put("@userCollection", ArangoCollectionReference.fromSpace(InternalSpace.USERS_SPACE).getCollectionName());
         aql.addPagination(paginationParam);
         if (StringUtils.isNotBlank(id)) {
-            aql.addLine(AQL.trust("FILTER user.`" + HBPVocabulary.NAMESPACE + "users/nativeId" + "` == @id"));
+            aql.addLine(AQL.trust("FILTER user.`" + MarmotGraphVocabulary.NAMESPACE + "users/nativeId" + "` == @id"));
             bindVars.put("id", id);
         }
         aql.addLine(AQL.trust("RETURN UNSET(user, "));

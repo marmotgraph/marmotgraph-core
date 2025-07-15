@@ -25,7 +25,7 @@ package org.marmotgraph.commons.permission;
 
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.Event;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 
 import java.util.Arrays;
 import java.util.List;
@@ -37,7 +37,7 @@ public enum Functionality {
     MINIMAL_READ_RELEASED(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
 
     //Space mgmt
-    MANAGE_SPACE(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.SPACES, null, Event.Type.INSERT, EBRAINSVocabulary.META_SPACEDEFINITION_TYPE),
+    MANAGE_SPACE(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.SPACES, null, Event.Type.INSERT, MarmotGraphVocabulary.META_SPACEDEFINITION_TYPE),
     RERUN_EVENTS_FOR_SPACE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.SPACES, null, null, null),
 
     //Invitations

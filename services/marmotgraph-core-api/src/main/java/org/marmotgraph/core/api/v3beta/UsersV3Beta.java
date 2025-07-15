@@ -41,7 +41,7 @@ import org.marmotgraph.commons.markers.ExposesUserInfo;
 import org.marmotgraph.commons.markers.ExposesUserPicture;
 import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.model.*;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import org.springdoc.api.annotations.ParameterObject;
@@ -190,7 +190,7 @@ public class UsersV3Beta {
         SpaceName targetSpace = InternalSpace.USERS_PICTURE_SPACE;
         Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(userIds.stream().filter(Objects::nonNull).map(userId -> new InstanceId(createUserPictureId(userId), targetSpace).serialize()).collect(Collectors.toList()), DataStage.IN_PROGRESS, null, false, false, false, null);
         Map<UUID, UUID> userPictureIdToUserId = userIds.stream().collect(Collectors.toMap(this::createUserPictureId, v-> v));
-        return ResponseEntity.ok(instancesByIds.keySet().stream().filter(k -> instancesByIds.get(k).getData() != null && instancesByIds.get(k).getData().getAs(EBRAINSVocabulary.META_PICTURE, String.class) != null).collect(Collectors.toMap(userPictureIdToUserId::get, v -> "data:image/jpeg;base64,"+instancesByIds.get(v).getData().getAs(EBRAINSVocabulary.META_PICTURE, String.class))));
+        return ResponseEntity.ok(instancesByIds.keySet().stream().filter(k -> instancesByIds.get(k).getData() != null && instancesByIds.get(k).getData().getAs(MarmotGraphVocabulary.META_PICTURE, String.class) != null).collect(Collectors.toMap(userPictureIdToUserId::get, v -> "data:image/jpeg;base64," + instancesByIds.get(v).getData().getAs(MarmotGraphVocabulary.META_PICTURE, String.class))));
     }
 
 
@@ -203,7 +203,7 @@ public class UsersV3Beta {
         SpaceName targetSpace = InternalSpace.USERS_PICTURE_SPACE;
         NormalizedJsonLd instance = graphDBInstances.getInstanceById(targetSpace.getName(), createUserPictureId(userId), DataStage.IN_PROGRESS, false, false, false, null, true);
         if(instance!=null){
-            String picture = instance.getAs(EBRAINSVocabulary.META_PICTURE, String.class);
+            String picture = instance.getAs(MarmotGraphVocabulary.META_PICTURE, String.class);
             if(picture!=null){
                 return ResponseEntity.ok("data:image/jpeg;base64,"+picture);
             }
@@ -222,10 +222,10 @@ public class UsersV3Beta {
     public ResponseEntity<Result<Void>> defineUserPicture(@PathVariable("id") UUID userId, @RequestBody String base64encodedImage) {
         SpaceName targetSpace = InternalSpace.USERS_PICTURE_SPACE;
         NormalizedJsonLd doc = new NormalizedJsonLd();
-        doc.put(EBRAINSVocabulary.META_PICTURE, base64encodedImage);
+        doc.put(MarmotGraphVocabulary.META_PICTURE, base64encodedImage);
         UUID uuid = createUserPictureId(userId);
         doc.setId(idUtils.buildAbsoluteUrl(uuid));
-        doc.addTypes(EBRAINSVocabulary.META_USER_PICTURE_TYPE);
+        doc.addTypes(MarmotGraphVocabulary.META_USER_PICTURE_TYPE);
         primaryStoreEvents.postEvent(Event.createUpsertEvent(targetSpace, uuid, Event.Type.INSERT, doc));
         return ResponseEntity.ok(Result.ok());
     }

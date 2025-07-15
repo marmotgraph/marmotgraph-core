@@ -37,7 +37,7 @@ import org.marmotgraph.commons.markers.ExposesQuery;
 import org.marmotgraph.commons.markers.WritesData;
 import org.marmotgraph.commons.model.*;
 import org.marmotgraph.commons.query.KgQuery;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.core.controller.CoreQueryController;
 import org.marmotgraph.core.controller.IdsController;
 import org.marmotgraph.core.model.ExposedStage;
@@ -152,7 +152,7 @@ public class QueriesV3Beta {
     @ExposesInputWithoutEnrichedSensitiveData
     public ResponseEntity<Result<NormalizedJsonLd>> saveQuery(@RequestBody JsonLdDoc query, @PathVariable(value = "queryId") UUID queryId, @RequestParam(value = "space", required = false) @Parameter(description = "Required only when the instance is created to specify where it should be stored ("+SpaceName.PRIVATE_SPACE+" for your private space) - but not if it's updated.") String space) {
         NormalizedJsonLd normalizedJsonLd = jsonLd.normalize(query, true);
-        normalizedJsonLd.addTypes(EBRAINSVocabulary.META_QUERY_TYPE);
+        normalizedJsonLd.addTypes(MarmotGraphVocabulary.META_QUERY_TYPE);
         InstanceId resolveId = ids.resolveId(DataStage.IN_PROGRESS, queryId);
         SpaceName spaceName = authContext.resolveSpaceName(space);
         if(resolveId != null){

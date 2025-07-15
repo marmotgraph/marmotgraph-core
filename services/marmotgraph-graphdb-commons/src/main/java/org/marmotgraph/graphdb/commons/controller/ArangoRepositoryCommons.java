@@ -39,7 +39,7 @@ import org.marmotgraph.commons.jsonld.IndexedJsonLdDoc;
 import org.marmotgraph.commons.jsonld.JsonLdConsts;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.graphdb.commons.model.ArangoDocument;
 import org.marmotgraph.graphdb.commons.model.ArangoEdge;
 import org.marmotgraph.graphdb.ingestion.controller.DataController;
@@ -209,10 +209,10 @@ public class ArangoRepositoryCommons {
         aql.addLine(AQL.trust("FOR id IN @ids"));
         bindVars.put("ids", ids);
         aql.addLine(AQL.trust("LET doc = DOCUMENT(id)"));
-        aql.addLine(AQL.trust(String.format("FILTER doc != NULL && doc.`%s` != NULL && doc.`%s` != NULL && doc.`%s` != []", JsonLdConsts.TYPE, EBRAINSVocabulary.META_SPACE, EBRAINSVocabulary.META_SPACE)));
+        aql.addLine(AQL.trust(String.format("FILTER doc != NULL && doc.`%s` != NULL && doc.`%s` != NULL && doc.`%s` != []", JsonLdConsts.TYPE, MarmotGraphVocabulary.META_SPACE, MarmotGraphVocabulary.META_SPACE)));
         aql.addLine(AQL.trust(String.format("RETURN { \"id\": id, \"type\": doc.`%s`,", JsonLdConsts.TYPE)));
-        aql.addLine(AQL.trust(String.format("    \"space\": doc.`%s`,", EBRAINSVocabulary.META_SPACE)));
-        aql.addLine(AQL.trust(String.format("    \"properties\": (FOR a IN ATTRIBUTES(doc, true) FILTER a NOT LIKE \"%s%%\" AND a NOT LIKE \"@%%\" RETURN a)}", EBRAINSVocabulary.META)));
+        aql.addLine(AQL.trust(String.format("    \"space\": doc.`%s`,", MarmotGraphVocabulary.META_SPACE)));
+        aql.addLine(AQL.trust(String.format("    \"properties\": (FOR a IN ATTRIBUTES(doc, true) FILTER a NOT LIKE \"%s%%\" AND a NOT LIKE \"@%%\" RETURN a)}", MarmotGraphVocabulary.META)));
         return databases.getByStage(stage).query(aql.build().getValue(), bindVars, CacheEvictionPlan.class).asListRemaining();
     }
 

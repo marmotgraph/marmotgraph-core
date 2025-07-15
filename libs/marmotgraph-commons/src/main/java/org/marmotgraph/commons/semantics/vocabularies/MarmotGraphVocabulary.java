@@ -28,12 +28,11 @@ import org.marmotgraph.commons.jsonld.JsonLdId;
 import java.util.Arrays;
 import java.util.Objects;
 
-public class EBRAINSVocabulary {
-    private EBRAINSVocabulary() {
+public class MarmotGraphVocabulary {
+    private MarmotGraphVocabulary() {
     }
 
-    public static final String ALIAS = "ebr";
-    public static final String NAMESPACE = "https://core.kg.ebrains.eu/vocab/";
+    public static final String NAMESPACE = "https://marmotgraph.org/vocab/";
     public static final String LABEL = NAMESPACE+"label";
 
     private static String stripHttp(String name){
@@ -43,7 +42,7 @@ public class EBRAINSVocabulary {
     public static JsonLdId createIdForStructureDefinition(String... names){
         StringBuilder sb = new StringBuilder();
         sb.append(NAMESPACE).append("structure");
-        Arrays.stream(names).filter(Objects::nonNull).map(EBRAINSVocabulary::stripHttp).forEach(n -> sb.append('/').append(n));
+        Arrays.stream(names).filter(Objects::nonNull).map(MarmotGraphVocabulary::stripHttp).forEach(n -> sb.append('/').append(n));
         return new JsonLdId(sb.toString());
     }
 

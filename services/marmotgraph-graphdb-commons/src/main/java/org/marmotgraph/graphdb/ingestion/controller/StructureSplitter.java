@@ -30,7 +30,7 @@ import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.TypeUtils;
 import org.marmotgraph.commons.jsonld.*;
 import org.marmotgraph.commons.model.SpaceName;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.graphdb.commons.model.ArangoDocument;
 import org.marmotgraph.graphdb.commons.model.ArangoEdge;
 import org.marmotgraph.graphdb.commons.model.ArangoInstance;
@@ -58,7 +58,7 @@ public class StructureSplitter {
         ArangoDocument arangoDocument = ArangoDocument.from(new NormalizedJsonLd(payload));
         arangoDocument.setReference(documentReference);
         // if is query, we just return the document as we do not split it
-        if(payload.types().contains(EBRAINSVocabulary.META_QUERY_TYPE)){
+        if(payload.types().contains(MarmotGraphVocabulary.META_QUERY_TYPE)){
             return Collections.singletonList(arangoDocument);
         }
         return extractNestedInstances(arangoDocument, arangoDocument.getDoc(), documentReference, new Stack<>(), new ArrayList<>());
@@ -72,11 +72,11 @@ public class StructureSplitter {
         parent.setOriginalDocument(originalDocumentReference);
         collector.add(parent);
         for (String key : subTree.keySet()) {
-            if(EBRAINSVocabulary.META_ALTERNATIVE.equals(key)){
+            if(MarmotGraphVocabulary.META_ALTERNATIVE.equals(key)){
                 //It's an alternative - we treat it somewhat different. We want to prevent the alternatives to become multiple documents although they are nested
                 handleAlternative(parent, subTree, originalDocumentReference, collector);
             }
-            else if (!EBRAINSVocabulary.META_PROPERTYUPDATES.equals(key) && !DynamicJson.isInternalKey(key)) {
+            else if (!MarmotGraphVocabulary.META_PROPERTYUPDATES.equals(key) && !DynamicJson.isInternalKey(key)) {
                 keyStack.push(key);
                 Object value = subTree.get(key);
                 int i = 0;
@@ -118,7 +118,7 @@ public class StructureSplitter {
 
 
     private void handleAlternative(ArangoDocument parent, JsonLdDoc subTree, ArangoDocumentReference originalDocumentReference, List<ArangoInstance> collector) {
-        NormalizedJsonLd alternativePayload = subTree.getAs(EBRAINSVocabulary.META_ALTERNATIVE, NormalizedJsonLd.class);
+        NormalizedJsonLd alternativePayload = subTree.getAs(MarmotGraphVocabulary.META_ALTERNATIVE, NormalizedJsonLd.class);
         ArangoDocument alternative = ArangoDocument.from(alternativePayload);
         alternative.asIndexedDoc().setEmbedded(true);
         alternative.asIndexedDoc().setAlternative(true);
@@ -131,12 +131,12 @@ public class StructureSplitter {
         ArangoEdge edge = new ArangoEdge();
         edge.setOriginalTo(alternativeId);
         edge.setTo(parent.getId().getArangoCollectionReference().doc(alternativeDocumentId));
-        edge.setOriginalLabel(EBRAINSVocabulary.META_ALTERNATIVE);
+        edge.setOriginalLabel(MarmotGraphVocabulary.META_ALTERNATIVE);
         edge.setOriginalDocument(originalDocumentReference);
         edge.setFrom(parent.getId());
-        edge.redefineId(ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_ALTERNATIVE)).doc(UUID.randomUUID()));
+        edge.redefineId(ArangoCollectionReference.fromSpace(new SpaceName(MarmotGraphVocabulary.META_ALTERNATIVE)).doc(UUID.randomUUID()));
         collector.add(edge);
-        subTree.put(EBRAINSVocabulary.META_ALTERNATIVE, alternativeId);
+        subTree.put(MarmotGraphVocabulary.META_ALTERNATIVE, alternativeId);
     }
 
     private void handleInferenceOfReference(ArangoDocumentReference from, List<ArangoInstance> collector, JsonLdId originalTo) {

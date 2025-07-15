@@ -39,7 +39,7 @@ import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.Type;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.graphdb.commons.controller.ArangoDatabases;
 
 import java.util.*;
@@ -110,7 +110,7 @@ public abstract class AbstractRepository {
 
 
     protected void exposeRevision(List<NormalizedJsonLd> documents) {
-        documents.forEach(doc -> doc.put(EBRAINSVocabulary.META_REVISION, doc.get(ArangoVocabulary.REV)));
+        documents.forEach(doc -> doc.put(MarmotGraphVocabulary.META_REVISION, doc.get(ArangoVocabulary.REV)));
     }
 
 
@@ -136,10 +136,10 @@ public abstract class AbstractRepository {
         return db.getCollections(new CollectionsReadOptions().excludeSystem(true)).stream().filter(c ->
                 //We're only interested in edges
                 c.getType() == CollectionType.EDGES &&
-                        //We want to exclude meta properties
-                        !c.getName().startsWith(ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META), true).getCollectionName()) &&
-                        //And we want to exclude the internal ones...
-                        !InternalSpace.INTERNAL_NON_META_EDGES.contains(new ArangoCollectionReference(c.getName(), true))
+                //We want to exclude meta properties
+                !c.getName().startsWith(ArangoCollectionReference.fromSpace(new SpaceName(MarmotGraphVocabulary.META), true).getCollectionName()) &&
+                //And we want to exclude the internal ones...
+                !InternalSpace.INTERNAL_NON_META_EDGES.contains(new ArangoCollectionReference(c.getName(), true))
         ).map(c -> AQL.preventAqlInjection(c.getName()).getValue()).collect(Collectors.toSet());
     }
 }

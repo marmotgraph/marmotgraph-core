@@ -38,7 +38,7 @@ import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.markers.ExposesProperty;
 import org.marmotgraph.commons.markers.WritesData;
 import org.marmotgraph.commons.model.external.types.PropertyInType;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.web.bind.annotation.*;
@@ -122,7 +122,7 @@ public class PropertiesV3 {
     public void definePropertyForType(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)") @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property, @RequestParam("type") String type) {
         String decodedProperty = URLDecoder.decode(property, StandardCharsets.UTF_8);
         String decodedType = URLDecoder.decode(type, StandardCharsets.UTF_8);
-        JsonLdId typeFromPayload = payload.getAs(EBRAINSVocabulary.META_TYPE, JsonLdId.class);
+        JsonLdId typeFromPayload = payload.getAs(MarmotGraphVocabulary.META_TYPE, JsonLdId.class);
         if (typeFromPayload != null) {
             throw new IllegalArgumentException("You are not supposed to provide a @type in the payload of the type specifications to avoid ambiguity");
         }

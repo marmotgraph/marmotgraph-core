@@ -27,7 +27,7 @@ import org.marmotgraph.commons.exception.InstanceNotFoundException;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.external.spaces.SpaceInformation;
 import org.marmotgraph.commons.permission.roles.RoleMapping;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import org.marmotgraph.core.api.spaces.test.GetSpaceWithPermissionsTest;
 import org.marmotgraph.core.api.spaces.test.GetSpacesWithPermissionsTest;
@@ -64,9 +64,9 @@ class SpacesTest extends AbstractFunctionalityTest {
             SpaceInformation spaceInformation = test.assureValidPayload(test.space);
             assertNotNull(spaceInformation);
             assertEquals("functionalitytest", spaceInformation.getName());
-            assertFalse(spaceInformation.getAs(EBRAINSVocabulary.META_AUTORELEASE_SPACE, Boolean.class));
-            assertFalse(spaceInformation.getAs(EBRAINSVocabulary.META_CLIENT_SPACE, Boolean.class));
-            assertFalse(spaceInformation.getAs(EBRAINSVocabulary.META_DEFER_CACHE_SPACE, Boolean.class));
+            assertFalse(spaceInformation.getAs(MarmotGraphVocabulary.META_AUTORELEASE_SPACE, Boolean.class));
+            assertFalse(spaceInformation.getAs(MarmotGraphVocabulary.META_CLIENT_SPACE, Boolean.class));
+            assertFalse(spaceInformation.getAs(MarmotGraphVocabulary.META_DEFER_CACHE_SPACE, Boolean.class));
             assertNotNull(spaceInformation.getPermissions());
         });
     }

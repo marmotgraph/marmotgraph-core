@@ -32,7 +32,7 @@ import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.TodoItem;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.graphdb.commons.controller.ArangoRepositoryCommons;
 import org.marmotgraph.graphdb.commons.model.ArangoDocument;
 import org.marmotgraph.graphdb.commons.model.ArangoInstance;
@@ -134,7 +134,7 @@ public class TodoListProcessor {
 
     public ArangoDocumentReference upsertDocument(ArangoDocumentReference rootDocumentRef, @NotNull NormalizedJsonLd payload, DataStage stage, SpaceName spaceName) {
         if(spaceName!=null){
-            payload.put(EBRAINSVocabulary.META_SPACE, spaceName);
+            payload.put(MarmotGraphVocabulary.META_SPACE, spaceName);
         }
         List<ArangoInstance> arangoInstances = splitter.extractRelations(rootDocumentRef, payload);
         List<DBOperation> upsertOperationsForDocument = dataController.createUpsertOperations(rootDocumentRef, stage, arangoInstances, hasChangedReleaseStatus(stage, rootDocumentRef));

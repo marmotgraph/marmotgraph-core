@@ -33,7 +33,7 @@ import org.marmotgraph.commons.api.PrimaryStoreUsers;
 import org.marmotgraph.commons.jsonld.*;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.ReducedUserInformation;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.graphdb.commons.controller.ArangoDatabases;
 import org.marmotgraph.graphdb.commons.controller.GraphDBArangoUtils;
 import org.marmotgraph.graphdb.commons.model.ArangoDocument;
@@ -62,15 +62,15 @@ public class EmbeddedAndAlternativesRepository {
             List<NormalizedJsonLd[]> embeddedDocuments = getEmbeddedDocuments(documents, stage, true);
             for (NormalizedJsonLd[] embeddedDocument : embeddedDocuments) {
                 Arrays.stream(embeddedDocument).forEach(e -> {
-                    e.remove(EBRAINSVocabulary.META_REVISION);
+                    e.remove(MarmotGraphVocabulary.META_REVISION);
                     //We don't need the space field of embedded instances since it's redundant
-                    e.remove(EBRAINSVocabulary.META_SPACE);
+                    e.remove(MarmotGraphVocabulary.META_SPACE);
                 });
             }
             addEmbeddedInstancesToDocument(documents, embeddedDocuments);
             resolveUsersForAlternatives(documents);
         } else {
-            documents.forEach(d -> d.remove(EBRAINSVocabulary.META_ALTERNATIVE));
+            documents.forEach(d -> d.remove(MarmotGraphVocabulary.META_ALTERNATIVE));
         }
         if (embedded) {
             addEmbeddedInstancesToDocument(documents, getEmbeddedDocuments(documents, stage, false));
@@ -158,7 +158,7 @@ public class EmbeddedAndAlternativesRepository {
     private void resolveUsersForAlternatives(List<NormalizedJsonLd> documents) {
         //Collect all ids to resolve
         final Set<UUID> userIdsToResolve = documents.stream().map(document -> {
-            final NormalizedJsonLd alternative = document.getAs(EBRAINSVocabulary.META_ALTERNATIVE, NormalizedJsonLd.class);
+            final NormalizedJsonLd alternative = document.getAs(MarmotGraphVocabulary.META_ALTERNATIVE, NormalizedJsonLd.class);
             if (alternative != null) {
                 return alternative.keySet().stream().filter(key -> !DynamicJson.isInternalKey(key) && !JsonLdConsts.isJsonLdConst(key)).map(key -> {
                     List<NormalizedJsonLd> alt;
@@ -167,7 +167,7 @@ public class EmbeddedAndAlternativesRepository {
                     } catch (IllegalArgumentException e) {
                         alt = Collections.emptyList();
                     }
-                    return alt != null ? alt.stream().map(a -> a.getAsListOf(EBRAINSVocabulary.META_USER, String.class)).flatMap(List::stream).collect(Collectors.toSet()) : Collections.<String>emptySet();
+                    return alt != null ? alt.stream().map(a -> a.getAsListOf(MarmotGraphVocabulary.META_USER, String.class)).flatMap(List::stream).collect(Collectors.toSet()) : Collections.<String>emptySet();
                 }).flatMap(Set::stream).map(id -> idUtils.getUUID(new JsonLdId(id))).collect(Collectors.toSet());
             }
             return Collections.<UUID>emptySet();
@@ -175,11 +175,11 @@ public class EmbeddedAndAlternativesRepository {
 
         final Map<String, ReducedUserInformation> resolvedUsers = primaryStoreUsers.getUsers(userIdsToResolve);
         documents.forEach(document -> {
-            final NormalizedJsonLd alternative = document.getAs(EBRAINSVocabulary.META_ALTERNATIVE, NormalizedJsonLd.class);
+            final NormalizedJsonLd alternative = document.getAs(MarmotGraphVocabulary.META_ALTERNATIVE, NormalizedJsonLd.class);
             if (alternative != null) {
                 alternative.keySet().stream().filter(key -> !DynamicJson.isInternalKey(key) && !JsonLdConsts.isJsonLdConst(key)).forEach(key -> {
                     alternative.put(key, alternative.getAsListOf(key, NormalizedJsonLd.class, true).stream().peek(a -> {
-                        List<Object> users = a.getAsListOf(EBRAINSVocabulary.META_USER, String.class).stream().map(id -> {
+                        List<Object> users = a.getAsListOf(MarmotGraphVocabulary.META_USER, String.class).stream().map(id -> {
                             UUID uuid = idUtils.getUUID(new JsonLdId(id));
                             ReducedUserInformation userResult = null;
                             if (uuid != null) {
@@ -187,10 +187,10 @@ public class EmbeddedAndAlternativesRepository {
                             }
                             return userResult;
                         }).collect(Collectors.toList());
-                        a.put(EBRAINSVocabulary.META_USER, users);
+                        a.put(MarmotGraphVocabulary.META_USER, users);
                     }).collect(Collectors.toList()));
                 });
-                document.put(EBRAINSVocabulary.META_ALTERNATIVE, alternative);
+                document.put(MarmotGraphVocabulary.META_ALTERNATIVE, alternative);
             }
         });
     }

@@ -30,7 +30,7 @@ import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.Event;
 import org.marmotgraph.commons.model.PersistedEvent;
 import org.marmotgraph.commons.model.SpaceName;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.MarmotGraphVocabulary;
 import org.marmotgraph.primaryStore.model.FailedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,7 +96,7 @@ public class EventProcessor {
             if (e.getSpace() != null && e.getSpace().isAutoRelease()) {
                 NormalizedJsonLd normalizedJsonLd = e.getData();
                 normalizedJsonLd.removeAllInternalProperties();
-                normalizedJsonLd.removeAllFieldsFromNamespace(EBRAINSVocabulary.META);
+                normalizedJsonLd.removeAllFieldsFromNamespace(MarmotGraphVocabulary.META);
                 postEvent(new Event(e.getSpaceName(), e.getDocumentId(), normalizedJsonLd, Event.Type.RELEASE, new Date()));
             }
         });
