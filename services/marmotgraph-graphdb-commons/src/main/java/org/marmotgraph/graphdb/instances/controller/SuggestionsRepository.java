@@ -24,12 +24,15 @@
 
 package org.marmotgraph.graphdb.instances.controller;
 
+import com.arangodb.ArangoDBException;
 import org.marmotgraph.arango.commons.ArangoQueries;
 import org.marmotgraph.arango.commons.aqlbuilder.AQL;
 import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.arango.commons.model.*;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.IdUtils;
+import org.marmotgraph.commons.exception.InvalidRequestException;
+import org.marmotgraph.commons.exception.LimitExceededException;
 import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.jsonld.IndexedJsonLdDoc;
 import org.marmotgraph.commons.jsonld.InstanceId;
@@ -139,22 +142,30 @@ public class SuggestionsRepository extends AbstractRepository {
 
         aql.addLine(AQL.trust("LET additionalInfo = "));
         if (whitelistFilter != null) {
-            aql.addLine(AQL.trust("v.`" + EBRAINSVocabulary.META_SPACE + "` NOT IN restrictedSpaces ? null : "));
+                aql.addLine(AQL.trust("v.`" + EBRAINSVocabulary.META_SPACE + "` NOT IN restrictedSpaces ? null : "));
         }
         aql.addLine(AQL.trust("CONCAT_SEPARATOR(\", \", (FOR s IN NOT_NULL(searchableProperties[typeDefinition.typeName], []) RETURN v[s]))"));
         aql.addLine(AQL.trust("LET attWithMeta = [{name: \"" + JsonLdConsts.ID + "\", value: v.`" + JsonLdConsts.ID + "`}, {name: \"" + EBRAINSVocabulary.LABEL + "\", value: v." + IndexedJsonLdDoc.LABEL + "},  {name: \"" + EBRAINSVocabulary.ADDITIONAL_INFO + "\", value: additionalInfo}, {name: \"" + EBRAINSVocabulary.META_TYPE + "\", value: typeDefinition.typeName}, {name: \"" + EBRAINSVocabulary.META_SPACE + "\", value: v.`" + EBRAINSVocabulary.META_SPACE + "`}]"));
         aql.addLine(AQL.trust("RETURN ZIP(attWithMeta[*].name, attWithMeta[*].value)"));
-        Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = ArangoQueries.queryDocuments(databases.getByStage(stage), new AQLQuery(aql, bindVars), null);
-        List<SuggestedLink> links = normalizedJsonLdPaginated.getData().stream().map(payload -> {
-            SuggestedLink link = new SuggestedLink();
-            UUID uuid = idUtils.getUUID(payload.id());
-            link.setId(uuid);
-            link.setLabel(payload.getAs(EBRAINSVocabulary.LABEL, String.class, uuid != null ? uuid.toString() : null));
-            link.setType(payload.getAs(EBRAINSVocabulary.META_TYPE, String.class, null));
-            link.setSpace(payload.getAs(EBRAINSVocabulary.META_SPACE, String.class, null));
-            link.setAdditionalInformation(payload.getAs(EBRAINSVocabulary.ADDITIONAL_INFO, String.class, null));
-            return link;
-        }).collect(Collectors.toList());
-        return new Paginated<>(links, normalizedJsonLdPaginated.getTotalResults(), normalizedJsonLdPaginated.getSize(), normalizedJsonLdPaginated.getFrom());
+        try {
+            Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = ArangoQueries.queryDocuments(databases.getByStage(stage), new AQLQuery(aql, bindVars), null);
+            List<SuggestedLink> links = normalizedJsonLdPaginated.getData().stream().map(payload -> {
+                SuggestedLink link = new SuggestedLink();
+                UUID uuid = idUtils.getUUID(payload.id());
+                link.setId(uuid);
+                link.setLabel(payload.getAs(EBRAINSVocabulary.LABEL, String.class, uuid != null ? uuid.toString() : null));
+                link.setType(payload.getAs(EBRAINSVocabulary.META_TYPE, String.class, null));
+                link.setSpace(payload.getAs(EBRAINSVocabulary.META_SPACE, String.class, null));
+                link.setAdditionalInformation(payload.getAs(EBRAINSVocabulary.ADDITIONAL_INFO, String.class, null));
+                return link;
+            }).collect(Collectors.toList());
+            return new Paginated<>(links, normalizedJsonLdPaginated.getTotalResults(), normalizedJsonLdPaginated.getSize(), normalizedJsonLdPaginated.getFrom());
+        }
+        catch (ArangoDBException e){
+            if(e.getErrorNum() == 1203){
+                return new Paginated<>(Collections.emptyList(), 0L, 0, 0); //Some involved collections do not yet exist which means there is no data available yet.
+            }
+            throw e;
+        }
     }
 }
