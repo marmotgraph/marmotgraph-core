@@ -28,7 +28,7 @@ import org.marmotgraph.arango.commons.model.ArangoDocumentReference;
 
 public interface ArangoInstance {
 
-    ArangoDocumentReference getId();
+    ArangoDocumentReference getReference();
 
     Object getPayload();
 

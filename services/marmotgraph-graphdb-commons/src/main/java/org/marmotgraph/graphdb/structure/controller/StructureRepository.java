@@ -584,8 +584,8 @@ public class StructureRepository {
     public void addLinkBetweenSpaceAndType(SpaceName spaceName, String type) {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
         ArangoEdge edge = new ArangoEdge();
-        edge.setFrom(new ArangoDocumentReference(SPACES, spaceSpecificationRef(spaceName.getName())));
-        edge.setTo(new ArangoDocumentReference(TYPES, typeSpecificationRef(type)));
+        edge.setFromReference(new ArangoDocumentReference(SPACES, spaceSpecificationRef(spaceName.getName())));
+        edge.setToReference(new ArangoDocumentReference(TYPES, typeSpecificationRef(type)));
         edge.redefineId(new ArangoDocumentReference(TYPE_IN_SPACE, typeInSpaceSpecificationRef(spaceName.getName(), type)));
         final ArangoCollection typeInSpace = graphDBArangoUtils.getOrCreateArangoCollection(structureDB, TYPE_IN_SPACE);
         typeInSpace.insertDocument(RawJson.of(jsonAdapter.toJson(edge)), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));

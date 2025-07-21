@@ -24,6 +24,7 @@
 
 package org.marmotgraph.graphdb.commons.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.arango.commons.model.ArangoDocumentReference;
@@ -71,20 +72,23 @@ public class ArangoEdge implements ArangoInstance {
         this.resolvedTargetId = resolvedTargetId;
     }
 
-    public ArangoDocumentReference getTo() {
+    @JsonIgnore
+    public ArangoDocumentReference getToReference() {
         return to != null ? ArangoDocumentReference.fromArangoId(to, false) : null;
     }
 
-    public void setTo(ArangoDocumentReference to) {
+    @JsonIgnore
+    public void setToReference(ArangoDocumentReference to) {
         this.to = to != null ? to.getId() : null;
     }
 
-
-    public ArangoDocumentReference getFrom() {
+    @JsonIgnore
+    public ArangoDocumentReference getFromReference() {
         return from != null ? ArangoDocumentReference.fromArangoId(from, false) : null;
     }
 
-    public void setFrom(ArangoDocumentReference from) {
+    @JsonIgnore
+    public void setFromReference(ArangoDocumentReference from) {
         this.from = from != null ? from.getId() : null;
     }
 
@@ -110,6 +114,7 @@ public class ArangoEdge implements ArangoInstance {
         this.originalTo = originalTo!=null ? originalTo.getId() : null;
     }
 
+    @JsonIgnore
     public void redefineId(ArangoDocumentReference reference){
         this.id = reference.getId();
         setKey(reference.getDocumentId());
@@ -124,11 +129,13 @@ public class ArangoEdge implements ArangoInstance {
         this.originalLabel = originalLabel;
     }
 
-    public void setOriginalDocument(ArangoDocumentReference originalDocument) {
+    @JsonIgnore
+    public void setOriginalDocumentReference(ArangoDocumentReference originalDocument) {
         this.originalDocument = originalDocument != null ? originalDocument.getId() : null;
     }
 
-    public ArangoDocumentReference getOriginalDocument(){
+    @JsonIgnore
+    public ArangoDocumentReference getOriginalDocumentReference(){
         return this.originalDocument == null ? null : ArangoDocumentReference.fromArangoId(this.originalDocument, true);
     }
 
@@ -141,10 +148,12 @@ public class ArangoEdge implements ArangoInstance {
     }
 
     @Override
-    public ArangoDocumentReference getId() {
+    @JsonIgnore
+    public ArangoDocumentReference getReference() {
         return ArangoDocumentReference.fromArangoId(id, true);
     }
 
+    @JsonIgnore
     @Override
     public Object getPayload() {
         return this;
@@ -154,8 +163,9 @@ public class ArangoEdge implements ArangoInstance {
         return collection;
     }
 
+    @JsonIgnore
     public ArangoEdge defineCollectionById() {
-        this.collection = getId()!=null ? getId().getArangoCollectionReference().getCollectionName() : null;
+        this.collection = getReference() != null ? getReference().getArangoCollectionReference().getCollectionName() : null;
         return this;
     }
 }

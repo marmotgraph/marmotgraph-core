@@ -83,7 +83,7 @@ public class EmbeddedAndAlternativesRepository {
 
 
     private List<NormalizedJsonLd[]> getEmbeddedDocuments(List<NormalizedJsonLd> documentsToBeResolved, DataStage stage, boolean alternatives) {
-        List<String> ids = documentsToBeResolved.stream().map(doc -> ArangoDocument.from(doc).getId().getId()).collect(Collectors.toList());
+        List<String> ids = documentsToBeResolved.stream().map(doc -> ArangoDocument.from(doc).getReference().getId()).collect(Collectors.toList());
         AQL aql = new AQL();
         aql.addLine(AQL.trust("FOR id IN @idlist"));
         aql.addLine(AQL.trust("LET embedded = (FOR docId IN 1..1 INBOUND DOCUMENT(id) @@documentIdRelationCollection"));

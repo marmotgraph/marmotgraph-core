@@ -88,7 +88,7 @@ public class DataController {
             defineChangedReleaseStatusIfApplicable(rootDocumentRef, operations);
         }
         //Resolve all edges with to == null
-        Set<ArangoEdge> resolvedEdges = resolveEdges(stage, arangoInstances.stream().filter(i -> i instanceof ArangoEdge).map(i -> (ArangoEdge) i).filter(i -> i.getTo() == null).collect(Collectors.toSet()));
+        Set<ArangoEdge> resolvedEdges = resolveEdges(stage, arangoInstances.stream().filter(i -> i instanceof ArangoEdge).map(i -> (ArangoEdge) i).filter(i -> i.getToReference() == null).collect(Collectors.toSet()));
         arangoInstances.stream().filter(i -> i instanceof ArangoDocument).map(i -> (ArangoDocument)i).forEach(d -> d.applyResolvedEdges(resolvedEdges));
         operations.addAll(createDBUpsertOperations(rootDocumentRef, arangoInstances));
         return operations;
@@ -104,9 +104,9 @@ public class DataController {
         List<EdgeResolutionOperation> result = new ArrayList<>();
         List<ArangoEdge> unresolvedEdgesForIds = repository.findUnresolvedEdgesForIds(stage, allIdentifiers);
         for (ArangoEdge arangoEdge : unresolvedEdgesForIds) {
-            ArangoDocumentReference oldEdgeRef = arangoEdge.getId();
+            ArangoDocumentReference oldEdgeRef = arangoEdge.getReference();
             //Direct the found edges to the new document
-            arangoEdge.setTo(rootDocumentRef);
+            arangoEdge.setToReference(rootDocumentRef);
             //Relocate the edge to the correct edge collection (according to the property label)
             ArangoCollectionReference propertyEdgeCollection = ArangoCollectionReference.fromSpace(new SpaceName(arangoEdge.getOriginalLabel()), true);
             arangoEdge.redefineId(propertyEdgeCollection.doc(arangoEdge.getKey()));
@@ -124,7 +124,7 @@ public class DataController {
             if (arangoInstance instanceof ArangoDocument) {
                 ArangoDocument arangoDocument = (ArangoDocument) arangoInstance;
                 operations.addAll(arangoDocument.getDoc().types().stream().map(t -> {
-                    ArangoEdge edge = entryHookDocuments.createEdgeFromHookDocument(InternalSpace.TYPE_EDGE_COLLECTION, arangoDocument.getId(), entryHookDocuments.getOrCreateTypeHookDocument(stage, t), null);
+                    ArangoEdge edge = entryHookDocuments.createEdgeFromHookDocument(InternalSpace.TYPE_EDGE_COLLECTION, arangoDocument.getReference(), entryHookDocuments.getOrCreateTypeHookDocument(stage, t), null);
                     return new UpsertOperation(rootDocumentRef, typeUtils.translate(edge.getPayload(), NormalizedJsonLd.class), new ArangoDocumentReference(InternalSpace.TYPE_EDGE_COLLECTION, edge.getKey()));
                 }).collect(Collectors.toList()));
             }
@@ -154,10 +154,10 @@ public class DataController {
         Set<JsonLdId> resolvedJsonLdIds = new HashSet<>();
 
         for (ArangoEdge edge : edges) {
-            if (stage == DataStage.NATIVE || isEdgeOf(edge.getId(), InternalSpace.INFERENCE_OF_SPACE, new SpaceName(EBRAINSVocabulary.META_USER))) {
+            if (stage == DataStage.NATIVE || isEdgeOf(edge.getReference(), InternalSpace.INFERENCE_OF_SPACE, new SpaceName(EBRAINSVocabulary.META_USER))) {
                 //We are either in NATIVE stage or have a relation to inference of or user - we already know that we won't be able to resolve it (since the target instance is in a different database), so we shortcut the process.
                 logger.trace(String.format("Not resolving edge pointing to %s", edge.getOriginalTo()));
-                edge.setTo(UNKNOWN_TARGET);
+                edge.setToReference(UNKNOWN_TARGET);
             } else {
                 final InstanceId resolvedId = resolvedIds.get(edgeToRequestId.get(edge.getOriginalTo()));
                 if (resolvedId != null) {
@@ -168,7 +168,7 @@ public class DataController {
                         throw new IllegalArgumentException(String.format("The resolution for the id %s didn't provide the according space", resolvedId.getUuid()));
                     } else {
                         logger.debug(String.format("I have resolved the id %s to %s - redirecting the edge", edge.getOriginalTo().getId(), resolvedId.getUuid()));
-                        edge.setTo(ArangoCollectionReference.fromSpace(resolvedId.getSpace()).doc(uuid));
+                        edge.setToReference(ArangoCollectionReference.fromSpace(resolvedId.getSpace()).doc(uuid));
                         final JsonLdId absoluteId = idUtils.buildAbsoluteUrl(resolvedId.getUuid());
                         edge.setResolvedTargetId(absoluteId);
                         if(resolvedJsonLdIds.add(absoluteId)) {
@@ -177,9 +177,9 @@ public class DataController {
                     }
                 } else {
                     logger.info("Was not able to resolve link -> we postpone it.");
-                    ArangoDocumentReference unresolvedEdge = ArangoCollectionReference.fromSpace(InternalSpace.UNRESOLVED_SPACE, true).doc(edge.getId().getDocumentId());
+                    ArangoDocumentReference unresolvedEdge = ArangoCollectionReference.fromSpace(InternalSpace.UNRESOLVED_SPACE, true).doc(edge.getReference().getDocumentId());
                     edge.redefineId(unresolvedEdge);
-                    edge.setTo(UNKNOWN_TARGET);
+                    edge.setToReference(UNKNOWN_TARGET);
                 }
             }
         }
@@ -190,7 +190,7 @@ public class DataController {
 
     public List<DBOperation> createDBUpsertOperations(ArangoDocumentReference rootDocumentRef, List<ArangoInstance> arangoDocuments) {
         logger.trace("Creating upsert operations");
-        return arangoDocuments.stream().map(i -> new UpsertOperation(rootDocumentRef, typeUtils.translate(i.getPayload(), NormalizedJsonLd.class), i.getId())).collect(Collectors.toList());
+        return arangoDocuments.stream().map(i -> new UpsertOperation(rootDocumentRef, typeUtils.translate(i.getPayload(), NormalizedJsonLd.class), i.getReference())).collect(Collectors.toList());
     }
 
     private boolean isEdgeOf(ArangoDocumentReference edge, SpaceName... spaces) {

@@ -24,6 +24,7 @@
 
 package org.marmotgraph.graphdb.commons.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.arango.commons.model.ArangoDocumentReference;
 import org.marmotgraph.commons.jsonld.IndexedJsonLdDoc;
@@ -74,12 +75,13 @@ public class ArangoDocument implements ArangoInstance {
     }
 
     @Override
-    public ArangoDocumentReference getId() {
+    @JsonIgnore
+    public ArangoDocumentReference getReference() {
         return ArangoDocumentReference.fromArangoId(indexedDoc.getDoc().getAs(ArangoVocabulary.ID, String.class), false);
     }
 
     public void setKeyBasedOnId() {
-        indexedDoc.getDoc().put(ArangoVocabulary.KEY, getId() != null && getId().getDocumentId() != null ? getId().getDocumentId().toString() : null);
+        indexedDoc.getDoc().put(ArangoVocabulary.KEY, getReference() != null && getReference().getDocumentId() != null ? getReference().getDocumentId().toString() : null);
     }
 
     public void setReference(ArangoDocumentReference reference) {
@@ -87,6 +89,7 @@ public class ArangoDocument implements ArangoInstance {
         setKeyBasedOnId();
     }
 
+    @JsonIgnore
     public ArangoDocumentReference getOriginalDocument() {
         String originalDocument = indexedDoc.getDoc().getAs(IndexedJsonLdDoc.ORIGINAL_DOCUMENT, String.class);
         return originalDocument != null ? ArangoDocumentReference.fromArangoId(originalDocument, false) : null;

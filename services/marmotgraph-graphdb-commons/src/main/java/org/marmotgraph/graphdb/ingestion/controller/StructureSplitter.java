@@ -126,15 +126,15 @@ public class StructureSplitter {
         UUID alternativeDocumentId = UUID.randomUUID();
         JsonLdId alternativeId = idUtils.buildAbsoluteUrl(alternativeDocumentId);
         alternative.getDoc().setId(alternativeId);
-        alternative.setReference(parent.getId().getArangoCollectionReference().doc(alternativeDocumentId));
+        alternative.setReference(parent.getReference().getArangoCollectionReference().doc(alternativeDocumentId));
         alternative.setOriginalDocument(originalDocumentReference);
         collector.add(alternative);
         ArangoEdge edge = new ArangoEdge();
         edge.setOriginalTo(alternativeId);
-        edge.setTo(parent.getId().getArangoCollectionReference().doc(alternativeDocumentId));
+        edge.setToReference(parent.getReference().getArangoCollectionReference().doc(alternativeDocumentId));
         edge.setOriginalLabel(EBRAINSVocabulary.META_ALTERNATIVE);
-        edge.setOriginalDocument(originalDocumentReference);
-        edge.setFrom(parent.getId());
+        edge.setOriginalDocumentReference(originalDocumentReference);
+        edge.setFromReference(parent.getReference());
         edge.redefineId(ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_ALTERNATIVE)).doc(UUID.randomUUID()));
         collector.add(edge);
         subTree.put(EBRAINSVocabulary.META_ALTERNATIVE, alternativeId);
@@ -144,7 +144,7 @@ public class StructureSplitter {
         ArangoEdge edge = new ArangoEdge();
         edge.redefineId(ArangoCollectionReference.fromSpace(InternalSpace.INFERENCE_OF_SPACE).doc(UUID.randomUUID()));
         edge.setOriginalTo(originalTo);
-        edge.setFrom(from);
+        edge.setFromReference(from);
         collector.add(edge);
     }
 
@@ -165,10 +165,10 @@ public class StructureSplitter {
             ArangoDocument embedded = ArangoDocument.create();
             embedded.asIndexedDoc().setEmbedded(true);
             embedded.getDoc().setId(embeddedId);
-            embedded.setReference(parent.getId().getArangoCollectionReference().doc(embeddedDocumentId));
+            embedded.setReference(parent.getReference().getArangoCollectionReference().doc(embeddedDocumentId));
             extractNestedInstances(embedded, subTree, originalDocumentRef, keyStack, collector);
             edge.setOriginalTo(embeddedId);
-            edge.setTo(originalDocumentRef.getArangoCollectionReference().doc(embeddedDocumentId));
+            edge.setToReference(originalDocumentRef.getArangoCollectionReference().doc(embeddedDocumentId));
         } else {
             edge.setOriginalTo(id);
             // As part of the inference, we ignore all additional information provided next to the link.
@@ -177,8 +177,8 @@ public class StructureSplitter {
         }
         String relationName = keyStack.peek();
         edge.setOriginalLabel(relationName);
-        edge.setOriginalDocument(originalDocumentRef);
-        edge.setFrom(parent.getId());
+        edge.setOriginalDocumentReference(originalDocumentRef);
+        edge.setFromReference(parent.getReference());
         edge.redefineId(ArangoCollectionReference.fromSpace(new SpaceName(relationName)).doc(UUID.randomUUID()));
         if (edge.getOriginalTo() != null) {
             collector.add(edge);

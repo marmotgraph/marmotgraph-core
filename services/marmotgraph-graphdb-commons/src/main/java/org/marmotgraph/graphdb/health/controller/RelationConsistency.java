@@ -160,20 +160,20 @@ public class RelationConsistency {
                     logger.error(String.format("%s - Too many edges found for property %s (targeting %s)", id, propertyName, payload));
                 } else {
                     final ArangoDocument edge = ArangoDocument.from(foundRelationsFromEdge.iterator().next());
-                    handledEdges.add(edge.getId().getId());
+                    handledEdges.add(edge.getReference().getId());
                     final ArangoDocumentReference originalDocument = edge.getOriginalDocument();
                     if (originalDocument == null) {
-                        resultCollector.computeIfAbsent(id, x -> new ArrayList<>()).add(String.format("Found an edge (%s) without original document", edge.getId()));
-                        logger.error(String.format("%s - Found an edge (%s) without original document", id, edge.getId()));
+                        resultCollector.computeIfAbsent(id, x -> new ArrayList<>()).add(String.format("Found an edge (%s) without original document", edge.getReference()));
+                        logger.error(String.format("%s - Found an edge (%s) without original document", id, edge.getReference()));
                     } else if (!originalDocument.getId().equals(sourceIdWithCollection)) {
-                        resultCollector.computeIfAbsent(id, x -> new ArrayList<>()).add(String.format("Found edge (%s) with inconsistent original document (%s instead of %s)", edge.getId(), edge.getOriginalDocument(), sourceIdWithCollection));
-                        logger.error(String.format("%s - Found edge (%s) with inconsistent original document (%s instead of %s)", id, edge.getId(), edge.getOriginalDocument(), sourceIdWithCollection));
+                        resultCollector.computeIfAbsent(id, x -> new ArrayList<>()).add(String.format("Found edge (%s) with inconsistent original document (%s instead of %s)", edge.getReference(), edge.getOriginalDocument(), sourceIdWithCollection));
+                        logger.error(String.format("%s - Found edge (%s) with inconsistent original document (%s instead of %s)", id, edge.getReference(), edge.getOriginalDocument(), sourceIdWithCollection));
                     }
                 }
             });
-            fromEdge.stream().map(ArangoDocument::from).filter(e -> !handledEdges.contains(e.getId().getId())).forEach(e -> {
-                resultCollector.computeIfAbsent(id, x -> new ArrayList<>()).add(String.format("Found edge (%s) which is not reflected in its document", e.getId().getId()));
-                logger.error(String.format("%s - Found edge (%s) which is not reflected in its document", id, e.getId().getId()));
+            fromEdge.stream().map(ArangoDocument::from).filter(e -> !handledEdges.contains(e.getReference().getId())).forEach(e -> {
+                resultCollector.computeIfAbsent(id, x -> new ArrayList<>()).add(String.format("Found edge (%s) which is not reflected in its document", e.getReference().getId()));
+                logger.error(String.format("%s - Found edge (%s) which is not reflected in its document", id, e.getReference().getId()));
             });
         }
     }

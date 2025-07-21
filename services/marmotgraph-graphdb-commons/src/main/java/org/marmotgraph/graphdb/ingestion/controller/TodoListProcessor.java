@@ -109,7 +109,7 @@ public class TodoListProcessor {
         if(document!=null){
             final NormalizedJsonLd doc = document.asIndexedDoc().getDoc();
             final List<String> inferenceSourceDocs = doc.getAsListOf(InferredJsonLdDoc.INFERENCE_OF, String.class);
-            return inferenceSourceDocs.stream().map(inferenceSourceDoc -> new ArangoDocumentReference(document.getId().getArangoCollectionReference(), idUtils.getUUID(new JsonLdId(inferenceSourceDoc)))).collect(Collectors.toList());
+            return inferenceSourceDocs.stream().map(inferenceSourceDoc -> new ArangoDocumentReference(document.getReference().getArangoCollectionReference(), idUtils.getUUID(new JsonLdId(inferenceSourceDoc)))).collect(Collectors.toList());
         }
         return Collections.emptyList();
     }

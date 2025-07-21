@@ -86,8 +86,8 @@ public class EntryHookDocuments {
 
     public ArangoEdge createEdgeFromHookDocument(ArangoCollectionReference edgeCollection, ArangoDocumentReference targetDocument, ArangoDocumentReference hookDocument, JsonLdId originalTo) {
         ArangoEdge arangoEdge = new ArangoEdge();
-        arangoEdge.setFrom(hookDocument);
-        arangoEdge.setTo(targetDocument);
+        arangoEdge.setFromReference(hookDocument);
+        arangoEdge.setToReference(targetDocument);
         arangoEdge.setOriginalTo(originalTo);
         arangoEdge.redefineId(new ArangoDocumentReference(edgeCollection,  UUID.randomUUID()));
         return arangoEdge;
