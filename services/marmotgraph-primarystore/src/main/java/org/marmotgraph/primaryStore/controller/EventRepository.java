@@ -52,20 +52,17 @@ public class EventRepository {
     private final ArangoDatabaseProxy arangoDatabase;
     private final PrimaryStoreDBUtils primaryStoreDBUtils;
 
-    private final JsonAdapter jsonAdapter;
-
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public EventRepository(@Qualifier("primaryStoreDB") ArangoDatabaseProxy arangoDatabase, JsonAdapter jsonAdapter, PrimaryStoreDBUtils primaryStoreDBUtils) {
+    public EventRepository(@Qualifier("primaryStoreDB") ArangoDatabaseProxy arangoDatabase, PrimaryStoreDBUtils primaryStoreDBUtils) {
         this.primaryStoreDBUtils = primaryStoreDBUtils;
         this.arangoDatabase = arangoDatabase;
-        this.jsonAdapter = jsonAdapter;
     }
 
     void recordFailedEvent(FailedEvent e) {
         try {
             ArangoCollection events = getOrCreateFailuresCollection(e.getPersistedEvent().getDataStage());
-            events.insertDocument(jsonAdapter.toJson(e));
+            events.insertDocument(e);
         } catch (Exception recordingException) {
             //We don't want any failure recording issue to abort the rest of the logic - but we need to be notified about these events nevertheless...
             logger.error(String.format("Was not able to record failed event for %s! ", e.getPersistedEvent().getEventId()), recordingException);
@@ -74,7 +71,7 @@ public class EventRepository {
 
     void insert(PersistedEvent e) {
         ArangoCollection events = getOrCreateCollection(e.getDataStage());
-        events.insertDocument(jsonAdapter.toJson(e));
+        events.insertDocument(e);
     }
 
     public long count(DataStage stage) {

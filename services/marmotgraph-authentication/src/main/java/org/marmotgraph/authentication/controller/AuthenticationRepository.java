@@ -37,7 +37,6 @@ import org.marmotgraph.authentication.model.AcceptedTermsOfUse;
 import org.marmotgraph.authentication.model.InstanceScope;
 import org.marmotgraph.authentication.model.Invitation;
 import org.marmotgraph.authentication.model.TermsOfUseAcceptance;
-import org.marmotgraph.commons.JsonAdapter;
 import org.marmotgraph.commons.SetupLogic;
 import org.marmotgraph.commons.cache.CacheConstant;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
@@ -56,7 +55,6 @@ public class AuthenticationRepository implements SetupLogic {
 
     private final ArangoDatabaseProxy arangoDatabase;
     private final TermsOfUseRepository termsOfUseRepository;
-    private final JsonAdapter jsonAdapter;
 
     @PostConstruct
     public void setup() {
@@ -67,10 +65,9 @@ public class AuthenticationRepository implements SetupLogic {
         arangoDatabase.createCollectionIfItDoesntExist("instanceScopes");
     }
 
-    public AuthenticationRepository(@Qualifier("termsOfUseDB") ArangoDatabaseProxy arangoDatabase, JsonAdapter jsonAdapter, TermsOfUseRepository termsOfUseRepository) {
+    public AuthenticationRepository(@Qualifier("termsOfUseDB") ArangoDatabaseProxy arangoDatabase, TermsOfUseRepository termsOfUseRepository) {
         this.arangoDatabase = arangoDatabase;
         this.termsOfUseRepository = termsOfUseRepository;
-        this.jsonAdapter = jsonAdapter;
     }
 
     private ArangoCollection getPermissionsCollection() {
@@ -164,11 +161,11 @@ public class AuthenticationRepository implements SetupLogic {
     }
 
     public void createInvitation(Invitation invitation){
-        getInvitationsCollection().insertDocument(jsonAdapter.toJson(invitation), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace).silent(true));
+        getInvitationsCollection().insertDocument(invitation, new DocumentCreateOptions().overwriteMode(OverwriteMode.replace).silent(true));
     }
 
     public void createOrUpdateInstanceScope(InstanceScope instanceScope){
-        getInstanceScopesCollection().insertDocument(jsonAdapter.toJson(instanceScope), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace).silent(true));
+        getInstanceScopesCollection().insertDocument(instanceScope, new DocumentCreateOptions().overwriteMode(OverwriteMode.replace).silent(true));
     }
 
     public void deleteInvitation(Invitation invitation){
@@ -321,7 +318,7 @@ public class AuthenticationRepository implements SetupLogic {
             userAcceptance = new TermsOfUseAcceptance(userId, userId, new ArrayList<>());
         }
         userAcceptance.getAcceptedTermsOfUse().add(new AcceptedTermsOfUse(version, new Date()));
-        getUsersCollection().insertDocument(jsonAdapter.toJson(userAcceptance), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace).silent(true));
+        getUsersCollection().insertDocument(userAcceptance, new DocumentCreateOptions().overwriteMode(OverwriteMode.replace).silent(true));
     }
 
 }

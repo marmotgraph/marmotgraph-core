@@ -31,7 +31,6 @@ import com.arangodb.model.OverwriteMode;
 import jakarta.annotation.PostConstruct;
 import org.marmotgraph.arango.commons.model.ArangoDatabaseProxy;
 import org.marmotgraph.authentication.model.ArangoTermsOfUse;
-import org.marmotgraph.commons.JsonAdapter;
 import org.marmotgraph.commons.SetupLogic;
 import org.marmotgraph.commons.cache.CacheConstant;
 import org.marmotgraph.commons.model.TermsOfUse;
@@ -45,7 +44,6 @@ import java.util.Arrays;
 @Component
 public class TermsOfUseRepository implements SetupLogic {
     private final ArangoDatabaseProxy arangoDatabase;
-    private final JsonAdapter jsonAdapter;
 
 
     @PostConstruct
@@ -54,9 +52,8 @@ public class TermsOfUseRepository implements SetupLogic {
         arangoDatabase.createCollectionIfItDoesntExist("termsOfUse");
     }
 
-    public TermsOfUseRepository(@Qualifier("termsOfUseDB") ArangoDatabaseProxy arangoDatabase, JsonAdapter jsonAdapter) {
+    public TermsOfUseRepository(@Qualifier("termsOfUseDB") ArangoDatabaseProxy arangoDatabase) {
         this.arangoDatabase = arangoDatabase;
-        this.jsonAdapter = jsonAdapter;
     }
 
 
@@ -77,7 +74,7 @@ public class TermsOfUseRepository implements SetupLogic {
         }
         ArangoTermsOfUse versioned = new ArangoTermsOfUse(termsOfUse.getVersion(), termsOfUse.getData(), termsOfUse.getVersion());
         ArangoTermsOfUse current = new ArangoTermsOfUse(termsOfUse.getVersion(), termsOfUse.getData(), "current");
-        getTermsOfUseCollection().insertDocuments(Arrays.asList(jsonAdapter.toJson(versioned), jsonAdapter.toJson(current)), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace).silent(true));
+        getTermsOfUseCollection().insertDocuments(Arrays.asList(versioned, current), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace).silent(true));
     }
 
 

@@ -29,6 +29,7 @@ import com.arangodb.entity.CollectionEntity;
 import com.arangodb.entity.CollectionType;
 import com.arangodb.entity.StreamTransactionEntity;
 import com.arangodb.model.*;
+import com.arangodb.util.RawJson;
 import org.marmotgraph.arango.commons.aqlbuilder.AQL;
 import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
@@ -240,7 +241,7 @@ public class ArangoRepositoryCommons {
         //An UPSERT is implemented as a DELETE & INSERT - we therefore need to remove all dependent resources (there can be many) for the original document ID
         Set<ArangoDocumentReference> upsertIdsForDelete = upserts.stream().filter(UpsertOperation::isAttachToOriginalDocument).map(UpsertOperation::getLifecycleDocumentId).filter(u -> !deleteIds.contains(u)).collect(Collectors.toSet());
         Set<ArangoDocumentReference> removedDocuments = new HashSet<>();
-        Map<ArangoCollectionReference, List<String>> insertedDocuments = new HashMap<>();
+        Map<ArangoCollectionReference, List<RawJson>> insertedDocuments = new HashMap<>();
         upsertIdsForDelete.forEach(upsertForDelete -> {
             removedDocuments.addAll(findRemovalOfAllDependenciesForDocumentId(db, upsertForDelete, removedDocuments));
         });
@@ -255,7 +256,7 @@ public class ArangoRepositoryCommons {
                     edge.redefineId(new ArangoDocumentReference(ArangoCollectionReference.fromSpace(InternalSpace.UNRESOLVED_SPACE), edge.getKey()));
                     edge.defineCollectionById();
                     edge.setTo(DataController.UNKNOWN_TARGET);
-                    insertedDocuments.computeIfAbsent(unresolvedSpace, x -> new ArrayList<>()).add(jsonAdapter.toJson(edge));
+                    insertedDocuments.computeIfAbsent(unresolvedSpace, x -> new ArrayList<>()).add(RawJson.of(jsonAdapter.toJson(edge)));
                 });
             }
             removedDocuments.add(documentReference);
@@ -278,11 +279,11 @@ public class ArangoRepositoryCommons {
             removedDocuments.add(edgeResolution.getUnresolvedEdgeRef());
 
             //... create the new edge ...
-            insertedDocuments.computeIfAbsent(edgeReference.getArangoCollectionReference(), x -> new ArrayList<>()).add(jsonAdapter.toJson(edgeResolution.getUpdatedEdge().defineCollectionById()));
+            insertedDocuments.computeIfAbsent(edgeReference.getArangoCollectionReference(), x -> new ArrayList<>()).add(RawJson.of(jsonAdapter.toJson(edgeResolution.getUpdatedEdge().defineCollectionById())));
 
             //... and attach it to the document id
             ArangoDocumentReference internalDocReference = new ArangoDocumentReference(ArangoCollectionReference.fromSpace(InternalSpace.DOCUMENT_ID_SPACE), edgeResolution.getUpdatedEdge().getOriginalDocument().getDocumentId());
-            insertedDocuments.computeIfAbsent(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, x -> new ArrayList<>()).add(jsonAdapter.toJson(entryHookDocuments.createEdgeFromHookDocument(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, edgeReference, internalDocReference, null).defineCollectionById()));
+            insertedDocuments.computeIfAbsent(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, x -> new ArrayList<>()).add(RawJson.of(jsonAdapter.toJson(entryHookDocuments.createEdgeFromHookDocument(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, edgeReference, internalDocReference, null).defineCollectionById())));
 
             //... finally, update the payload of the related document to the resolved id
             ArangoDocument originalDocument = edgeResolutionDependencies.get(edgeResolution.getUpdatedEdge().getOriginalDocument());
@@ -304,7 +305,7 @@ public class ArangoRepositoryCommons {
             arangoDocument.asIndexedDoc().setCollection(arangoDocument.getId().getArangoCollectionReference().getCollectionName());
             arangoDocument.asIndexedDoc().updateIdentifiers();
             arangoDocument.setKeyBasedOnId();
-            insertedDocuments.computeIfAbsent(collection, x -> new ArrayList<>()).add(jsonAdapter.toJson(upsert.getPayload()));
+            insertedDocuments.computeIfAbsent(collection, x -> new ArrayList<>()).add(RawJson.of(jsonAdapter.toJson(upsert.getPayload())));
             if (upsert.isAttachToOriginalDocument()) {
                 //Attention: The following method is non-transactional. It's just the hook-document though and therefore acceptable
                 ArangoDocumentReference documentIdHook = documentIdHooks.get(upsert.getLifecycleDocumentId());
@@ -312,7 +313,7 @@ public class ArangoRepositoryCommons {
                     documentIdHook = entryHookDocuments.getOrCreateDocumentIdHookDocument(upsert.getLifecycleDocumentId(), db);
                     documentIdHooks.put(upsert.getLifecycleDocumentId(), documentIdHook);
                 }
-                insertedDocuments.computeIfAbsent(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, x -> new ArrayList<>()).add(jsonAdapter.toJson(entryHookDocuments.createEdgeFromHookDocument(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, upsert.getDocumentReference(), documentIdHook, null).defineCollectionById()));
+                insertedDocuments.computeIfAbsent(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, x -> new ArrayList<>()).add(RawJson.of(jsonAdapter.toJson(entryHookDocuments.createEdgeFromHookDocument(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, upsert.getDocumentReference(), documentIdHook, null).defineCollectionById())));
             }
         });
 
@@ -336,12 +337,12 @@ public class ArangoRepositoryCommons {
         List<String> allIds = null;
         List<CacheEvictionPlan> cacheEvictionPlansBeforeTransaction = null;
         if (stage == DataStage.IN_PROGRESS || stage == DataStage.RELEASED) {
-            allIds = Stream.concat(Stream.concat(removedDocuments.stream().map(ArangoDocumentReference::getId), edgeResolutionDependencies.keySet().stream().map(ArangoDocumentReference::getId)), insertedDocuments.values().stream().flatMap(Collection::stream).map(i -> jsonAdapter.fromJson(i, DynamicJson.class).getAs(ArangoVocabulary.ID, String.class))).distinct().collect(Collectors.toList());
+            allIds = Stream.concat(Stream.concat(removedDocuments.stream().map(ArangoDocumentReference::getId), edgeResolutionDependencies.keySet().stream().map(ArangoDocumentReference::getId)), insertedDocuments.values().stream().flatMap(Collection::stream).map(i -> jsonAdapter.fromJson(i.get(), DynamicJson.class).getAs(ArangoVocabulary.ID, String.class))).distinct().collect(Collectors.toList());
             cacheEvictionPlansBeforeTransaction = fetchCacheEvictionPlans(stage, allIds);
         }
         try {
             removedDocuments.stream().collect(Collectors.groupingBy(ArangoDocumentReference::getArangoCollectionReference)).forEach((c, v) -> db.collection(c.getCollectionName()).deleteDocuments(v.stream().map(r -> r.getDocumentId().toString()).collect(Collectors.toSet()), deleteOptions, String.class));
-            edgeResolutionDependencies.values().stream().collect(Collectors.groupingBy(i -> i.getId().getArangoCollectionReference())).forEach((c, v) -> db.collection(c.getCollectionName()).updateDocuments(v.stream().map(doc -> jsonAdapter.toJson(doc.getDoc())).collect(Collectors.toList()), updateOptions));
+            edgeResolutionDependencies.values().stream().collect(Collectors.groupingBy(i -> i.getId().getArangoCollectionReference())).forEach((c, v) -> db.collection(c.getCollectionName()).updateDocuments(v.stream().map(doc -> RawJson.of(jsonAdapter.toJson(doc.getDoc()))).collect(Collectors.toList()), updateOptions));
             insertedDocuments.forEach((c, v) -> db.collection(c.getCollectionName()).insertDocuments(v, insertOptions.overwriteMode(OverwriteMode.replace)));
             db.commitStreamTransaction(tx.getId());
             logger.debug(String.format("Committing transaction %s after %dms", tx.getId(), new Date().getTime() - startTransactionDate));

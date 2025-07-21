@@ -33,6 +33,7 @@ import com.arangodb.entity.CollectionType;
 import com.arangodb.model.CollectionsReadOptions;
 import com.arangodb.model.DocumentCreateOptions;
 import com.arangodb.model.OverwriteMode;
+import com.arangodb.util.RawJson;
 import org.marmotgraph.arango.commons.aqlbuilder.AQL;
 import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
@@ -587,7 +588,7 @@ public class StructureRepository {
         edge.setTo(new ArangoDocumentReference(TYPES, typeSpecificationRef(type)));
         edge.redefineId(new ArangoDocumentReference(TYPE_IN_SPACE, typeInSpaceSpecificationRef(spaceName.getName(), type)));
         final ArangoCollection typeInSpace = graphDBArangoUtils.getOrCreateArangoCollection(structureDB, TYPE_IN_SPACE);
-        typeInSpace.insertDocument(jsonAdapter.fromJson(jsonAdapter.toJson(edge), Map.class), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
+        typeInSpace.insertDocument(RawJson.of(jsonAdapter.toJson(edge)), new DocumentCreateOptions().overwriteMode(OverwriteMode.replace));
     }
 
     public void removeLinkBetweenSpaceAndType(SpaceName spaceName, String type) {

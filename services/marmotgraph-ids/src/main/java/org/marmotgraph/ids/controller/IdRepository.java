@@ -59,8 +59,6 @@ public class IdRepository {
 
     private final IdsDBUtils idsDBUtils;
 
-    private final JsonAdapter jsonAdapter;
-
     private final IdUtils idUtils;
 
     public PersistedId getId(UUID uuid, DataStage stage) {
@@ -72,9 +70,8 @@ public class IdRepository {
         return null;
     }
 
-    public IdRepository(@Qualifier("idsDB") ArangoDatabaseProxy arangoDatabase, JsonAdapter jsonAdapter, IdUtils idUtils, IdsDBUtils idsDBUtils) {
+    public IdRepository(@Qualifier("idsDB") ArangoDatabaseProxy arangoDatabase, IdUtils idUtils, IdsDBUtils idsDBUtils) {
         this.arangoDatabase = arangoDatabase;
-        this.jsonAdapter = jsonAdapter;
         this.idUtils = idUtils;
         this.idsDBUtils = idsDBUtils;
     }
@@ -102,7 +99,7 @@ public class IdRepository {
         //Add the id in its fully qualified form as an alternative
         id.setAlternativeIds(new HashSet<>(id.getAlternativeIds() != null ? id.getAlternativeIds() : Collections.emptySet()));
         id.getAlternativeIds().add(idUtils.buildAbsoluteUrl(id.getUUID()).getId());
-        coll.insertDocument(jsonAdapter.toJson(id), new DocumentCreateOptions().waitForSync(true).overwriteMode(OverwriteMode.replace));
+        coll.insertDocument(id, new DocumentCreateOptions().waitForSync(true).overwriteMode(OverwriteMode.replace));
     }
 
     private List<PersistedId> fetchPersistedIdsByUUID(ArangoDatabase database, List<UUID> uuid, String collectionName){

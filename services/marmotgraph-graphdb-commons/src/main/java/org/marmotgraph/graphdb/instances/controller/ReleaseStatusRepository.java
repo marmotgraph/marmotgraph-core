@@ -61,14 +61,12 @@ public class ReleaseStatusRepository extends AbstractRepository {
     private final Permissions permissions;
     private final ScopeRepository scope;
     private final ArangoDatabases databases;
-    private final JsonAdapter jsonAdapter;
 
-    public ReleaseStatusRepository(AuthContext authContext, Permissions permissions, ScopeRepository scope, ArangoDatabases databases, JsonAdapter jsonAdapter) {
+    public ReleaseStatusRepository(AuthContext authContext, Permissions permissions, ScopeRepository scope, ArangoDatabases databases) {
         this.authContext = authContext;
         this.permissions = permissions;
         this.scope = scope;
         this.databases = databases;
-        this.jsonAdapter = jsonAdapter;
     }
 
     @ExposesReleaseStatus
