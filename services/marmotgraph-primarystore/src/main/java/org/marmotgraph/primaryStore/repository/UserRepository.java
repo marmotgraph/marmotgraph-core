@@ -34,9 +34,6 @@ import java.util.UUID;
 
 @Repository
 public interface UserRepository extends JpaRepository<PrimaryStoreUser, Long> {
-
     PrimaryStoreUser findByNativeId(String nativeId);
     List<PrimaryStoreUser> findByUuidIn(Set<UUID> ids);
-
-
 }

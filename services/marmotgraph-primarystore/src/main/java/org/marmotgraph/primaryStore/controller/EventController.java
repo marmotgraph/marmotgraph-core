@@ -192,9 +192,8 @@ public class EventController {
         data.setIndexTimestamp(event.getIndexedTimestamp());
         if (dataStage == DataStage.RELEASED) {
             final String indexTimestamp = ZonedDateTime.ofInstant(Instant.ofEpochMilli(event.getIndexedTimestamp()), ZoneId.systemDefault()).format(DateTimeFormatter.ISO_INSTANT);
-            // TODO reenable first release
-            //final String firstRelease = eventRepository.getFirstRelease(event.getDocumentId());
-            //data.getDoc().put(EBRAINSVocabulary.META_FIRST_RELEASED_AT, firstRelease == null ? indexTimestamp : firstRelease);
+            final String firstRelease = eventService.getFirstRelease(event.getDocumentId());
+            data.getDoc().put(EBRAINSVocabulary.META_FIRST_RELEASED_AT, firstRelease == null ? indexTimestamp : firstRelease);
             data.getDoc().put(EBRAINSVocabulary.META_LAST_RELEASED_AT, indexTimestamp);
         }
     }

@@ -29,9 +29,7 @@ import org.marmotgraph.commons.api.Inference;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.PersistedEvent;
 import org.marmotgraph.commons.model.SpaceName;
-import org.marmotgraph.primaryStore.repository.EventRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.marmotgraph.primaryStore.service.EventService;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -43,17 +41,15 @@ public class InferenceProcessor {
 
     private final Indexing.Client indexing;
 
-    private final EventRepository eventRepository;
+    private final EventService eventService;
 
     private final EventController eventController;
 
     private final Inference.Client inference;
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-
-    public InferenceProcessor(Indexing.Client indexing, EventRepository eventRepository, EventController eventController, Inference.Client inference) {
+    public InferenceProcessor(Indexing.Client indexing, EventService eventService, EventController eventController, Inference.Client inference) {
         this.indexing = indexing;
-        this.eventRepository = eventRepository;
+        this.eventService = eventService;
         this.eventController = eventController;
         this.inference = inference;
     }
@@ -64,8 +60,7 @@ public class InferenceProcessor {
             try {
                 indexing.indexEvent(evt);
             } catch (Exception e) {
-                //TODO reactivate
-                //eventRepository.recordFailedEvent(new FailedEvent(evt, e, ZonedDateTime.now()));
+                eventService.saveFailedEvent(evt, e);
                 throw e;
             }
         });

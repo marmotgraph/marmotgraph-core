@@ -25,6 +25,7 @@
 package org.marmotgraph.primaryStore.model;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -33,7 +34,7 @@ import org.marmotgraph.commons.model.PersistedEvent;
 
 
 @Entity
-@Table(name="events")
+@Table(name="events", indexes = @Index(name = "documentByStage", columnList = "uuid, stage"))
 @Getter
 @Setter
 public class PrimaryStoreEvent extends AbstractPrimaryStoreEvent{

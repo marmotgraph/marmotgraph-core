@@ -52,7 +52,7 @@ public class PrimaryStoreFailedEvent extends AbstractPrimaryStoreEvent {
         StringWriter sw  = new StringWriter();
         e.printStackTrace(new PrintWriter((sw)));
         primaryStoreFailedEvent.setException(sw.toString());
-        primaryStoreFailedEvent.setIndexedTimestamp(ZonedDateTime.now().toEpochSecond());
+        primaryStoreFailedEvent.setTimestampOfFailure(ZonedDateTime.now().toEpochSecond());
         return primaryStoreFailedEvent;
     }
 

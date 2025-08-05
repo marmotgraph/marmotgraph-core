@@ -39,7 +39,11 @@ import java.util.UUID;
 @Setter
 public abstract class AbstractPrimaryStoreEvent {
 
+
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID eventId;
+
     private UUID uuid;
 
     @Column(columnDefinition = "TEXT")

@@ -24,22 +24,31 @@
 
 package org.marmotgraph.primaryStore.service;
 
+import jakarta.persistence.EntityManager;
 import org.marmotgraph.commons.JsonAdapter;
+import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.PersistedEvent;
 import org.marmotgraph.primaryStore.model.PrimaryStoreEvent;
 import org.marmotgraph.primaryStore.model.PrimaryStoreFailedEvent;
 import org.marmotgraph.primaryStore.repository.EventRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 public class EventService {
 
     private final EventRepository eventRepository;
     private final JsonAdapter jsonAdapter;
+    private final EntityManager entityManager;
 
-    public EventService(EventRepository eventRepository, JsonAdapter jsonAdapter) {
+    public EventService(EventRepository eventRepository, JsonAdapter jsonAdapter, EntityManager entityManager) {
         this.eventRepository = eventRepository;
         this.jsonAdapter = jsonAdapter;
+        this.entityManager = entityManager;
     }
 
     public void saveEvent(PersistedEvent event){
@@ -48,6 +57,16 @@ public class EventService {
 
     public void saveFailedEvent(PersistedEvent event, Exception e){
         eventRepository.saveAndFlush(PrimaryStoreFailedEvent.failedEvent(event, e, jsonAdapter));
+    }
+
+    @Cacheable("firstReleases")
+    public String getFirstRelease(UUID instanceId){
+        Long firstRelease = entityManager.createQuery("SELECT e.indexedTimestamp from PrimaryStoreEvent e WHERE e.uuid = :id and e.stage = :stage ORDER BY e.indexedTimestamp ASC LIMIT 1", Long.class).setParameter("id", instanceId).setParameter("stage", DataStage.RELEASED).getSingleResult();
+        if(firstRelease != null){
+            return Instant.ofEpochMilli(firstRelease).toString();
+        }
+        return null;
+
     }
 
 }
