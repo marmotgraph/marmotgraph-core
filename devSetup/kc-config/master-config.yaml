@@ -1,0 +1,21 @@
+realm: master
+enabled: true
+groups:
+  - name: marmotgraph-admins
+    realmRoles:
+      - admin
+users:
+  #- username: temporaryadmin
+  #  enabled: false
+  - username: admin
+    enabled: true
+    emailVerified: true
+    firstName: MarmotGraph
+    lastName: Administrator
+    email: support@marmotgraph.org
+    credentials:
+      - type: password
+        value: helloMarmotGraph
+        temporary: false
+    groups:
+      - marmotgraph-admins

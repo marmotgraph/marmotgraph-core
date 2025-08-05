@@ -22,19 +22,21 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.commons.api;
+package org.marmotgraph.primaryStore.repository;
 
-import org.marmotgraph.commons.jsonld.InstanceId;
-import org.marmotgraph.commons.model.Event;
+import org.marmotgraph.primaryStore.model.PrimaryStoreUser;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-public interface PrimaryStoreEvents {
+@Repository
+public interface UserRepository extends JpaRepository<PrimaryStoreUser, Long> {
 
-    interface Client extends PrimaryStoreEvents {}
+    PrimaryStoreUser findByNativeId(String nativeId);
+    List<PrimaryStoreUser> findByUuidIn(Set<UUID> ids);
 
-    Set<InstanceId> postEvent(Event event);
 
-    void infer(String space, UUID id);
 }

@@ -176,12 +176,6 @@ public class SpacesV3Beta {
         spaceController.removeSpaceSpecification(SpaceName.fromString(space));
     }
 
-    @Operation(summary = "Trigger a rerun of the events of this space")
-    @PutMapping("{space}/eventHistory")
-    @Admin
-    public void rerunEvents(@PathVariable(value = "space") @Parameter(description = "The space the event rerun shall be executed for.") String space) {
-        spaceController.rerunEvents(SpaceName.fromString(space));
-    }
 
     @Operation(summary = "Triggers the inference of all documents of the given space")
     @Admin

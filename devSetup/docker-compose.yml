@@ -1,0 +1,60 @@
+version: '3.9'
+
+services:
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3.2
+    container_name: marmotgraph_keycloak
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: temporaryadmin
+      KEYCLOAK_ADMIN_PASSWORD: temporaryadmin
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: marmotgraph_pg_usr
+      KC_DB_PASSWORD: marmotgraph_pg_pwd
+    ports:
+      - "9001:8080"
+    depends_on:
+      - postgres
+
+  keycloak-config-cli:
+    image: bitnami/keycloak-config-cli:latest
+    depends_on:
+      - keycloak
+    environment:
+      - KEYCLOAK_URL=http://keycloak:8080
+      - KEYCLOAK_USER=temporaryadmin
+      - KEYCLOAK_PASSWORD=temporaryadmin
+      - KEYCLOAK_AVAILABILITYCHECK_ENABLED=true
+      - IMPORT_FILES_LOCATIONS=/config/*
+    volumes:
+      - ./kc-config:/config
+
+  postgres:
+    image: postgres:17
+    container_name: marmotgraph_postgres
+    environment:
+      POSTGRES_USER: marmotgraph_pg_usr
+      POSTGRES_PASSWORD: marmotgraph_pg_pwd
+    ports:
+      - "9002:5432"  # Host:Container port mapping
+    volumes:
+      - ./postgres:/docker-entrypoint-initdb.d
+      - marmotgraph_postgres:/var/lib/postgresql/data
+
+  arango:
+    image: arangodb:3.11
+    ports:
+      - "9003:8529"
+    environment:
+      - ARANGO_ROOT_PASSWORD=marmotgraph_arango_pwd
+    volumes:
+      - marmotgraph_arango:/var/lib/arangodb3
+    command: >
+      --server.maximal-threads=32 --query.global-memory-limit=6442450944 --query.memory-limit=4294967296
+
+volumes:
+  marmotgraph_postgres:
+  marmotgraph_arango:

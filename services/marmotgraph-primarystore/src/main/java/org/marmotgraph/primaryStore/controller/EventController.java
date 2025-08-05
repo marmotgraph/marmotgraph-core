@@ -40,6 +40,8 @@ import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permissions.controller.Permissions;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.primaryStore.service.EventService;
+import org.marmotgraph.primaryStore.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
@@ -58,21 +60,21 @@ public class EventController {
 
     private final Permissions permissions;
     private final Ids.Client ids;
-    private final EventRepository eventRepository;
+    private final EventService eventService;
     private final IdUtils idUtils;
     private final GraphDBSpaces.Client graphDBSpaces;
     private final AuthContext authContext;
-    private final UsersRepository usersRepository;
+    private final UserService userService;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public EventController(Permissions permissions, Ids.Client ids, EventRepository eventRepository, IdUtils idUtils, GraphDBSpaces.Client graphDBSpaces, UsersRepository usersRepository, AuthContext authContext) {
+    public EventController(Permissions permissions, Ids.Client ids, EventService eventService, IdUtils idUtils, GraphDBSpaces.Client graphDBSpaces, UserService userService, AuthContext authContext) {
         this.permissions = permissions;
         this.ids = ids;
-        this.eventRepository = eventRepository;
+        this.eventService = eventService;
         this.idUtils = idUtils;
         this.graphDBSpaces = graphDBSpaces;
-        this.usersRepository = usersRepository;
+        this.userService = userService;
         this.authContext = authContext;
     }
 
@@ -132,17 +134,17 @@ public class EventController {
         }
         if(dataStage == event.getType().getStage()){
             //We only update the representation of the user at its original stage since otherwise, we might end up having the user updated multiple times (once per stage)
-            usersRepository.updateUserRepresentation(userWithRoles.getUser());
+            userService.save(userWithRoles.getUser());
         }
         if(dataStage==DataStage.NATIVE && (event.getType() == Event.Type.INSERT || event.getType() == Event.Type.UPDATE)){
             //For insert and update, we need to ensure that the user information is also present in the native payload to properly calculate the alternatives
-            event.getData().put(EBRAINSVocabulary.META_USER, idUtils.buildAbsoluteUrl(usersRepository.getUserUUID(userWithRoles.getUser())));
+            event.getData().put(EBRAINSVocabulary.META_USER, idUtils.buildAbsoluteUrl(UserService.getUserUUID(userWithRoles.getUser())));
         }
         PersistedEvent persistedEvent = new PersistedEvent(event, dataStage, userWithRoles.getUser(), graphDBSpaces.getSpace(event.getSpaceName()));
         ensureInternalIdInPayload(persistedEvent, userWithRoles);
         checkPermission(persistedEvent);
         handleIds(dataStage, persistedEvent);
-        eventRepository.insert(persistedEvent);
+        eventService.saveEvent(persistedEvent);
         return persistedEvent;
     }
 
@@ -190,8 +192,9 @@ public class EventController {
         data.setIndexTimestamp(event.getIndexedTimestamp());
         if (dataStage == DataStage.RELEASED) {
             final String indexTimestamp = ZonedDateTime.ofInstant(Instant.ofEpochMilli(event.getIndexedTimestamp()), ZoneId.systemDefault()).format(DateTimeFormatter.ISO_INSTANT);
-            final String firstRelease = eventRepository.getFirstRelease(event.getDocumentId());
-            data.getDoc().put(EBRAINSVocabulary.META_FIRST_RELEASED_AT, firstRelease == null ? indexTimestamp : firstRelease);
+            // TODO reenable first release
+            //final String firstRelease = eventRepository.getFirstRelease(event.getDocumentId());
+            //data.getDoc().put(EBRAINSVocabulary.META_FIRST_RELEASED_AT, firstRelease == null ? indexTimestamp : firstRelease);
             data.getDoc().put(EBRAINSVocabulary.META_LAST_RELEASED_AT, indexTimestamp);
         }
     }

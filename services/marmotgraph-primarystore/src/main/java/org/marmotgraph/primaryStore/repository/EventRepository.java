@@ -22,21 +22,14 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.commons.api;
+package org.marmotgraph.primaryStore.repository;
 
-import org.marmotgraph.commons.jsonld.DynamicJson;
-import org.marmotgraph.commons.model.DataStage;
+import org.marmotgraph.primaryStore.model.AbstractPrimaryStoreEvent;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import java.util.UUID;
 
-public interface GraphDBHealth {
-
-    interface Client extends GraphDBHealth {}
-
-    void analyzeHealthStatus();
-
-    List<DynamicJson> getReport(DataStage stage, String name);
-
-    List<String> getAvailableChecks();
-
+@Repository
+public interface EventRepository extends JpaRepository<AbstractPrimaryStoreEvent, UUID> {
 }

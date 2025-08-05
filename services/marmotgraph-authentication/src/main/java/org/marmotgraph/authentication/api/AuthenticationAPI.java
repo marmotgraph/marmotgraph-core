@@ -79,9 +79,6 @@ public class AuthenticationAPI implements Authentication.Client {
         this.termsOfUseRepository = termsOfUseRepository;
         this.permissions = permissions;
         this.authorizationConfiguration = authorizationConfiguration;
-        if(authorizationConfiguration.isDisablePermissionAuthorization()){
-            logger.warn("ATTENTION: You have disabled the authorization requirement for defining permissions! This is meant to be active only for the first execution! Please define a mapping for your administrator and set this property to false!");
-        }
     }
 
 
@@ -183,7 +180,7 @@ public class AuthenticationAPI implements Authentication.Client {
     @Override
     public JsonLdDoc updateClaimForRole(RoleMapping role, String space, Map<String, Object> claimPattern, boolean removeClaim) {
         if(removeClaim){
-            if(authorizationConfiguration.isDisablePermissionAuthorization() || permissions.hasGlobalPermission(this.getRoles(false), Functionality.DELETE_PERMISSION)) {
+            if(permissions.hasGlobalPermission(this.getRoles(false), Functionality.DELETE_PERMISSION)) {
                 return authenticationRepository.removeClaimFromRole(role.toRole(SpaceName.fromString(space)), claimPattern);
             }
             else{
@@ -191,7 +188,7 @@ public class AuthenticationAPI implements Authentication.Client {
             }
         }
         else{
-            if(authorizationConfiguration.isDisablePermissionAuthorization() || permissions.hasGlobalPermission(this.getRoles(false), Functionality.CREATE_PERMISSION)) {
+            if(permissions.hasGlobalPermission(this.getRoles(false), Functionality.CREATE_PERMISSION)) {
                 return authenticationRepository.addClaimToRole(role.toRole(SpaceName.fromString(space)), claimPattern);
             }
             else{
@@ -212,7 +209,7 @@ public class AuthenticationAPI implements Authentication.Client {
 
     private boolean canShowPermissions(){
         final UserWithRoles roles = this.getRoles(false);
-        return authorizationConfiguration.isDisablePermissionAuthorization() || permissions.hasGlobalPermission(roles, Functionality.DELETE_PERMISSION) || permissions.hasGlobalPermission(roles, Functionality.CREATE_PERMISSION);
+        return permissions.hasGlobalPermission(roles, Functionality.DELETE_PERMISSION) || permissions.hasGlobalPermission(roles, Functionality.CREATE_PERMISSION);
     }
 
     @Override

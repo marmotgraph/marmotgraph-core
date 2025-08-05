@@ -77,11 +77,5 @@ public class GraphDBArangoConfiguration {
         return new ArangoDatabaseProxy(arangoDB.build(), "kg1-structure");
     }
 
-    @Bean
-    @Qualifier("consistencyChecks")
-    public ArangoDatabaseProxy produceConsistencyChecksDb(@Qualifier("arangoBuilderForGraphDB") ArangoDB.Builder arangoDB) {
-        return new ArangoDatabaseProxy(arangoDB.build(), "kg1-consistencyChecks");
-    }
-
 
 }

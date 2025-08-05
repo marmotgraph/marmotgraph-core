@@ -48,14 +48,11 @@ public class ArangoDatabases {
     final ArangoDatabaseProxy nativeDB;
     final ArangoDatabaseProxy inProgressDB;
 
-    final ArangoDatabaseProxy consistencyChecks;
-
-    public ArangoDatabases(@Qualifier("structure") ArangoDatabaseProxy structureDB, @Qualifier("released") ArangoDatabaseProxy releasedDB, @Qualifier("native") ArangoDatabaseProxy nativeDB, @Qualifier("inProgress") ArangoDatabaseProxy inProgressDB, @Qualifier("consistencyChecks") ArangoDatabaseProxy consistencyChecks) {
+    public ArangoDatabases(@Qualifier("structure") ArangoDatabaseProxy structureDB, @Qualifier("released") ArangoDatabaseProxy releasedDB, @Qualifier("native") ArangoDatabaseProxy nativeDB, @Qualifier("inProgress") ArangoDatabaseProxy inProgressDB) {
         this.releasedDB = releasedDB;
         this.nativeDB = nativeDB;
         this.inProgressDB = inProgressDB;
         this.structureDB = structureDB;
-        this.consistencyChecks = consistencyChecks;
     }
 
     /**
@@ -66,7 +63,6 @@ public class ArangoDatabases {
         releasedDB.removeDatabase();
         nativeDB.removeDatabase();
         inProgressDB.removeDatabase();
-        consistencyChecks.removeDatabase();
     }
 
 
@@ -75,7 +71,6 @@ public class ArangoDatabases {
         structureDB.createIfItDoesntExist();
         inProgressDB.createIfItDoesntExist();
         releasedDB.createIfItDoesntExist();
-        consistencyChecks.createIfItDoesntExist();
         StructureRepository.setupCollections(structureDB);
         logger.debug("Setting up in progress db... ");
         ArangoDatabase inProgress = inProgressDB.get();
@@ -95,10 +90,6 @@ public class ArangoDatabases {
 
     public ArangoDatabase getStructureDB(){
         return this.structureDB.getOrCreate();
-    }
-
-    public ArangoDatabase getConsistencyChecksDB(){
-        return this.consistencyChecks.getOrCreate();
     }
 
     public ArangoDatabase getByStage(DataStage stage) {;

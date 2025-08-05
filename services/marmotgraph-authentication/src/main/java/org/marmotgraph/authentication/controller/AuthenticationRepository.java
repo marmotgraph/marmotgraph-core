@@ -42,7 +42,9 @@ import org.marmotgraph.commons.cache.CacheConstant;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.model.TermsOfUse;
 import org.marmotgraph.commons.permission.roles.Role;
+import org.marmotgraph.commons.permission.roles.RoleMapping;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
@@ -55,6 +57,7 @@ public class AuthenticationRepository implements SetupLogic {
 
     private final ArangoDatabaseProxy arangoDatabase;
     private final TermsOfUseRepository termsOfUseRepository;
+    private final String adminGroup;
 
     @PostConstruct
     public void setup() {
@@ -63,11 +66,13 @@ public class AuthenticationRepository implements SetupLogic {
         arangoDatabase.createCollectionIfItDoesntExist("permissions");
         arangoDatabase.createCollectionIfItDoesntExist("invitations");
         arangoDatabase.createCollectionIfItDoesntExist("instanceScopes");
+        addClaimToRole(RoleMapping.ADMIN.toRole(null), Map.of("groups", Collections.singletonList(adminGroup)));
     }
 
-    public AuthenticationRepository(@Qualifier("termsOfUseDB") ArangoDatabaseProxy arangoDatabase, TermsOfUseRepository termsOfUseRepository) {
+    public AuthenticationRepository(@Qualifier("termsOfUseDB") ArangoDatabaseProxy arangoDatabase, TermsOfUseRepository termsOfUseRepository, @Value("${org.marmotgraph.authentication.adminGroup}") String adminGroup) {
         this.arangoDatabase = arangoDatabase;
         this.termsOfUseRepository = termsOfUseRepository;
+        this.adminGroup = adminGroup;
     }
 
     private ArangoCollection getPermissionsCollection() {

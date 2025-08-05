@@ -22,21 +22,23 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.primaryStore.controller;
+package org.marmotgraph.primaryStore.model;
 
-import com.arangodb.ArangoCollection;
-import com.arangodb.ArangoDatabase;
-import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
-import org.marmotgraph.arango.commons.model.ArangoDatabaseProxy;
-import org.marmotgraph.commons.cache.CacheConstant;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.stereotype.Component;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
+import org.marmotgraph.commons.JsonAdapter;
+import org.marmotgraph.commons.model.PersistedEvent;
 
-@Component
-public class PrimaryStoreDBUtils {
 
-    @Cacheable(value= CacheConstant.CACHE_KEYS_PRIMARY_STORE_COLLECTION, key="{#db.name(), #c.collectionName}")
-    public ArangoCollection getOrCreateArangoCollection(ArangoDatabase db, ArangoCollectionReference c) {
-        return ArangoDatabaseProxy.getOrCreateArangoCollection(db, c);
+@Entity
+@Table(name="events")
+@Getter
+@Setter
+public class PrimaryStoreEvent extends AbstractPrimaryStoreEvent{
+
+    public static PrimaryStoreEvent fromPersistedEvent(PersistedEvent event, JsonAdapter jsonAdapter){
+        return populateFromPersistedEvent(new PrimaryStoreEvent(), event, jsonAdapter);
     }
 }

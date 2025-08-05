@@ -24,40 +24,43 @@
 
 package org.marmotgraph.primaryStore.model;
 
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import org.marmotgraph.commons.JsonAdapter;
+import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.PersistedEvent;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.time.ZonedDateTime;
+import java.util.UUID;
 
-public class FailedEvent {
-    private PersistedEvent persistedEvent;
-    private String reason;
-    private ZonedDateTime failureTime;
+@Entity
+@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+@Getter
+@Setter
+public abstract class AbstractPrimaryStoreEvent {
 
-    public FailedEvent() {
+    @Id
+    private UUID uuid;
+
+    @Column(columnDefinition = "TEXT")
+    private String jsonPayload;
+
+    @Enumerated(EnumType.STRING)
+    private DataStage stage;
+
+    private String userId;
+
+    private Long indexedTimestamp;
+
+    private boolean suggestion;
+
+    protected static <T extends AbstractPrimaryStoreEvent> T populateFromPersistedEvent(T e, PersistedEvent event, JsonAdapter jsonAdapter){
+        e.setUuid(event.getDocumentId());
+        e.setSuggestion(event.isSuggestion());
+        e.setStage(event.getDataStage());
+        e.setUserId(event.getUserId());
+        e.setIndexedTimestamp(event.getIndexedTimestamp());
+        e.setJsonPayload(jsonAdapter.toJson(event.getData()));
+        return e;
     }
-
-    public FailedEvent(PersistedEvent persistedEvent, Exception e, ZonedDateTime failureTime) {
-        this.persistedEvent = persistedEvent;
-        StringWriter sw  = new StringWriter();
-        e.printStackTrace(new PrintWriter((sw)));
-        this.reason = sw.toString();
-        this.failureTime = failureTime;
-    }
-
-    public PersistedEvent getPersistedEvent() {
-        return persistedEvent;
-    }
-
-
-    public String getReason() {
-        return reason;
-    }
-
-
-    public ZonedDateTime getFailureTime() {
-        return failureTime;
-    }
-
 }

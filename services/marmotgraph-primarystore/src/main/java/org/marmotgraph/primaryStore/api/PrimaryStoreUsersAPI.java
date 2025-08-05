@@ -30,37 +30,38 @@ import org.marmotgraph.commons.markers.ExposesUserInfo;
 import org.marmotgraph.commons.model.Paginated;
 import org.marmotgraph.commons.model.PaginationParam;
 import org.marmotgraph.commons.model.ReducedUserInformation;
-import org.marmotgraph.primaryStore.controller.UsersRepository;
+import org.marmotgraph.primaryStore.controller.UserController;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
 @Component
 public class PrimaryStoreUsersAPI implements PrimaryStoreUsers.Client {
 
-    private final UsersRepository usersRepository;
+    private final UserController userController;
 
-    public PrimaryStoreUsersAPI(UsersRepository usersRepository) {
-        this.usersRepository = usersRepository;
+    public PrimaryStoreUsersAPI(UserController userController) {
+        this.userController = userController;
     }
 
     @Override
     @ExposesUserInfo
     public Paginated<NormalizedJsonLd> getUsers(PaginationParam paginationParam){
-        return usersRepository.getUsers(paginationParam);
+        return userController.getUsers(paginationParam);
     }
 
     @Override
     @ExposesUserInfo
     public Paginated<NormalizedJsonLd> getUsersWithLimitedInfo(PaginationParam paginationParam, String id){
-        return usersRepository.getUsersWithLimitedInfo(paginationParam, id);
+        return userController.getUsersWithLimitedInfo(paginationParam, Optional.of(id));
     }
 
     @Override
     @ExposesUserInfo
     public Map<String, ReducedUserInformation> getUsers(Set<UUID> uuids) {
-        return usersRepository.getUsers(uuids);
+        return userController.getUsers(uuids);
     }
 }

@@ -29,12 +29,11 @@ import org.marmotgraph.commons.api.Inference;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.PersistedEvent;
 import org.marmotgraph.commons.model.SpaceName;
-import org.marmotgraph.primaryStore.model.FailedEvent;
+import org.marmotgraph.primaryStore.repository.EventRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -65,7 +64,8 @@ public class InferenceProcessor {
             try {
                 indexing.indexEvent(evt);
             } catch (Exception e) {
-                eventRepository.recordFailedEvent(new FailedEvent(evt, e, ZonedDateTime.now()));
+                //TODO reactivate
+                //eventRepository.recordFailedEvent(new FailedEvent(evt, e, ZonedDateTime.now()));
                 throw e;
             }
         });

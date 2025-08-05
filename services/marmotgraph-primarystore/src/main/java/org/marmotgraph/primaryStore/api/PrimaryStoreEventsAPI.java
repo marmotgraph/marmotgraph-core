@@ -52,12 +52,6 @@ public class PrimaryStoreEventsAPI implements PrimaryStoreEvents.Client {
     }
 
     @Override
-    public void rerunEvents(String space) {
-       logger.info(String.format("Received request for rerunning the events of space %s", space));
-       eventProcessor.rerunEvents(SpaceName.fromString(space));
-    }
-
-    @Override
     public Set<InstanceId> postEvent(Event event) {
         return eventProcessor.postEvent(event);
     }

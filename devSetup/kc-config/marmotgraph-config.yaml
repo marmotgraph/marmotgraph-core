@@ -1,0 +1,74 @@
+realm: marmotgraph
+enabled: true
+
+clientScopes:
+  - name: openid
+    description: "OpenID scope to ensure access to userinfo"
+    protocol: openid-connect
+    attributes:
+      display.on.consent.screen: "false"
+      include.in.token.scope: "true"
+  - name: groups
+    description: "Adding groups"
+    protocol: openid-connect
+    attributes:
+      display.on.consent.screen: "false"
+      include.in.token.scope: "false"
+    protocolMappers:
+      - name: groups
+        protocol: openid-connect
+        protocolMapper: oidc-group-membership-mapper
+        consentRequired: false
+        config:
+          access.token.claim: "false"
+          claim.name: groups
+          full.path: "false"
+          id.token.claim: "false"
+          introspection.token.claim: "false"
+          lightweight.claim: "false"
+          userinfo.token.claim: "true"
+          multivalued: "true"
+defaultDefaultClientScopes:
+  - acr
+  - basic
+  - groups
+  - email
+  - profile
+  - role_list
+  - roles
+  - saml_organization
+  - web-origins
+  - openid
+clients:
+  - clientId: kg
+    enabled: true
+    publicClient: true
+    redirectUris:
+        - "http://localhost:8000/*"
+    webOrigins:
+      - "+"
+    protocol: openid-connect
+    standardFlowEnabled: true
+    directAccessGrantsEnabled: false
+    implicitFlowEnabled: false
+    serviceAccountsEnabled: false
+    frontchannelLogout: true
+    attributes:
+      pkce.code.challenge.method: S256
+      oauth2.device.authorization.grant.enabled: "true"
+      frontchannel.logout.session.required: "true"
+groups:
+  - name: marmotgraph-admins
+users:
+  - username: admin
+    enabled: true
+    emailVerified: true
+    firstName: MarmotGraph
+    lastName: Administrator
+    email: support@marmotgraph.org
+    credentials:
+      - type: password
+        value: helloMarmotGraph
+        temporary: false
+    groups:
+      - marmotgraph-admins

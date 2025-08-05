@@ -30,14 +30,12 @@ import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.Event;
 import org.marmotgraph.commons.model.PersistedEvent;
-import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
-import org.marmotgraph.primaryStore.model.FailedEvent;
+import org.marmotgraph.primaryStore.service.EventService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -48,7 +46,7 @@ import java.util.stream.Collectors;
 public class EventProcessor {
     private final Indexing.Client indexing;
 
-    private final EventRepository eventRepository;
+    private final EventService eventService;
 
     private final EventController eventController;
 
@@ -57,20 +55,11 @@ public class EventProcessor {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public EventProcessor(Indexing.Client indexing, EventRepository eventRepository, EventController eventController, InferenceProcessor inferenceProcessor) {
+    public EventProcessor(Indexing.Client indexing, EventService eventService, EventController eventController, InferenceProcessor inferenceProcessor) {
         this.indexing = indexing;
-        this.eventRepository = eventRepository;
+        this.eventService = eventService;
         this.eventController = eventController;
         this.inferenceProcessor = inferenceProcessor;
-    }
-
-    public void rerunEvents(SpaceName spaceName){
-        eventController.checkPermissionsForRerunEvents();
-        final List<PersistedEvent> events = eventRepository.queryAllEvents(DataStage.NATIVE, spaceName);
-        events.forEach(e -> {
-            eventController.handleIds(DataStage.NATIVE, e);
-            processEvent(e);
-        });
     }
 
     public Set<InstanceId> postEvent(Event event) {
@@ -83,7 +72,7 @@ public class EventProcessor {
         try {
             indexing.indexEvent(persistedEvent);
         } catch (Exception e) {
-            eventRepository.recordFailedEvent(new FailedEvent(persistedEvent, e, ZonedDateTime.now()));
+            eventService.saveFailedEvent(persistedEvent, e);
             throw e;
         }
         if (persistedEvent.getDataStage() == DataStage.NATIVE) {

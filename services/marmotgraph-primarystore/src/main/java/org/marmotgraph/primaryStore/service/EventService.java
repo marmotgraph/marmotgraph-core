@@ -22,19 +22,32 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.commons.api;
+package org.marmotgraph.primaryStore.service;
 
-import org.marmotgraph.commons.jsonld.InstanceId;
-import org.marmotgraph.commons.model.Event;
+import org.marmotgraph.commons.JsonAdapter;
+import org.marmotgraph.commons.model.PersistedEvent;
+import org.marmotgraph.primaryStore.model.PrimaryStoreEvent;
+import org.marmotgraph.primaryStore.model.PrimaryStoreFailedEvent;
+import org.marmotgraph.primaryStore.repository.EventRepository;
+import org.springframework.stereotype.Service;
 
-import java.util.Set;
-import java.util.UUID;
+@Service
+public class EventService {
 
-public interface PrimaryStoreEvents {
+    private final EventRepository eventRepository;
+    private final JsonAdapter jsonAdapter;
 
-    interface Client extends PrimaryStoreEvents {}
+    public EventService(EventRepository eventRepository, JsonAdapter jsonAdapter) {
+        this.eventRepository = eventRepository;
+        this.jsonAdapter = jsonAdapter;
+    }
 
-    Set<InstanceId> postEvent(Event event);
+    public void saveEvent(PersistedEvent event){
+        eventRepository.saveAndFlush(PrimaryStoreEvent.fromPersistedEvent(event, jsonAdapter));
+    }
 
-    void infer(String space, UUID id);
+    public void saveFailedEvent(PersistedEvent event, Exception e){
+        eventRepository.saveAndFlush(PrimaryStoreFailedEvent.failedEvent(event, e, jsonAdapter));
+    }
+
 }

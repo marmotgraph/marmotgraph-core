@@ -22,19 +22,5 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.commons.api;
-
-import org.marmotgraph.commons.jsonld.InstanceId;
-import org.marmotgraph.commons.model.Event;
-
-import java.util.Set;
-import java.util.UUID;
-
-public interface PrimaryStoreEvents {
-
-    interface Client extends PrimaryStoreEvents {}
-
-    Set<InstanceId> postEvent(Event event);
-
-    void infer(String space, UUID id);
-}
+CREATE DATABASE keycloak;
+CREATE DATABASE marmotgraph;
