@@ -31,7 +31,7 @@
     <groupId>org.marmotgraph</groupId>
     <artifactId>marmotgraph-core</artifactId>
     <packaging>pom</packaging>
-    <version>3.0-SNAPSHOT</version>
+    <version>4.0</version>
     <modules>
         <module>config/marmotgraph-library</module>
         <module>libs/marmotgraph-commons</module>

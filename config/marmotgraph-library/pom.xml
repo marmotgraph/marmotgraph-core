@@ -30,7 +30,7 @@
 
     <groupId>org.marmotgraph</groupId>
     <artifactId>marmotgraph-library</artifactId>
-    <version>3.0-SNAPSHOT</version>
+    <version>4.0</version>
     <packaging>pom</packaging>
     <licenses>
         <license>

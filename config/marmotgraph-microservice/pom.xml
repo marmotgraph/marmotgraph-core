@@ -49,7 +49,7 @@
 
     <groupId>org.marmotgraph</groupId>
     <artifactId>marmotgraph-microservice</artifactId>
-    <version>3.0-SNAPSHOT</version>
+    <version>4.0</version>
     <packaging>pom</packaging>
     <licenses>
         <license>
@@ -91,17 +91,17 @@
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-commons</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-microservice-commons</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-test-factory</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -111,13 +111,13 @@
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-test-utils</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-spring-test-utils</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

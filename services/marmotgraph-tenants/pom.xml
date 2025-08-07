@@ -30,16 +30,16 @@
     <parent>
         <groupId>org.marmotgraph</groupId>
         <artifactId>marmotgraph-microservice</artifactId>
-        <version>3.0-SNAPSHOT</version>
+        <version>4.0</version>
         <relativePath>../../config/marmotgraph-microservice</relativePath>
     </parent>
     <artifactId>marmotgraph-tenants</artifactId>
-    <version>3.0-SNAPSHOT</version>
+    <version>4.0</version>
     <dependencies>
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-arango-commons</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
         </dependency>
     </dependencies>
 

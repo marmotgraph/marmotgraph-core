@@ -29,18 +29,18 @@
     <parent>
         <groupId>org.marmotgraph</groupId>
         <artifactId>marmotgraph-microservice</artifactId>
-        <version>3.0-SNAPSHOT</version>
+        <version>4.0</version>
         <relativePath>../../config/marmotgraph-microservice</relativePath>
     </parent>
     <artifactId>marmotgraph-graphdb-sync</artifactId>
-    <version>3.0-SNAPSHOT</version>
+    <version>4.0</version>
     <name>marmotgraph-graphdb-sync</name>
 
     <dependencies>
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-graphdb-commons</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
         </dependency>
     </dependencies>
 </project>

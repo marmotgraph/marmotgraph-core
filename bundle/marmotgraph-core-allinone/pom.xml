@@ -30,11 +30,11 @@
     <parent>
         <groupId>org.marmotgraph</groupId>
         <artifactId>marmotgraph-microservice</artifactId>
-        <version>3.0-SNAPSHOT</version>
+        <version>4.0</version>
         <relativePath>../../config/marmotgraph-microservice</relativePath>
     </parent>
     <artifactId>marmotgraph-core-allinone</artifactId>
-    <version>3.0-SNAPSHOT</version>
+    <version>4.0</version>
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
@@ -47,61 +47,61 @@
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-authentication</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
             <classifier>library</classifier>
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-core-api</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
             <classifier>library</classifier>
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-graphdb-sync</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
             <classifier>library</classifier>
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-ids</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
             <classifier>library</classifier>
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-tenants</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
             <classifier>library</classifier>
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-indexing</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
             <classifier>library</classifier>
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-jsonld</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
             <classifier>library</classifier>
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-inference</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
             <classifier>library</classifier>
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-primarystore</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
             <classifier>library</classifier>
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-releasing</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
             <classifier>library</classifier>
         </dependency>
         <dependency>
@@ -116,22 +116,22 @@
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-arango-commons</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-commons</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-microservice-commons</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-graphdb-commons</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
         </dependency>
     </dependencies>
 

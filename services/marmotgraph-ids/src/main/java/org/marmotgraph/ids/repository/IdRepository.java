@@ -22,22 +22,12 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.ids.controller;
+package org.marmotgraph.ids.repository;
 
-import com.arangodb.ArangoCollection;
-import com.arangodb.ArangoDatabase;
-import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
-import org.marmotgraph.arango.commons.model.ArangoDatabaseProxy;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.stereotype.Component;
-import org.marmotgraph.commons.cache.CacheConstant;
+import org.marmotgraph.ids.model.RegisteredId;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-@Component
-public class IdsDBUtils {
-
-    @Cacheable(value = CacheConstant.CACHE_KEYS_IDS_COLLECTIONS, key="{#db.name(), #c.collectionName}")
-    public ArangoCollection getOrCreateArangoCollection(ArangoDatabase db, ArangoCollectionReference c) {
-        return ArangoDatabaseProxy.getOrCreateArangoCollection(db, c);
-    }
-
+@Repository
+public interface IdRepository extends JpaRepository<RegisteredId, RegisteredId.CompositeId> {
 }

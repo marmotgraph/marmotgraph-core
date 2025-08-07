@@ -30,11 +30,11 @@
     <parent>
         <groupId>org.marmotgraph</groupId>
         <artifactId>marmotgraph-library</artifactId>
-        <version>3.0-SNAPSHOT</version>
+        <version>4.0</version>
         <relativePath>../../config/marmotgraph-library</relativePath>
     </parent>
     <artifactId>marmotgraph-arango-commons</artifactId>
-    <version>3.0-SNAPSHOT</version>
+    <version>4.0</version>
     <name>marmotgraph-arango-commons</name>
 
     <dependencies>
@@ -56,7 +56,7 @@
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-commons</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
         </dependency>
     </dependencies>
 </project>

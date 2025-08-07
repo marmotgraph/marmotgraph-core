@@ -30,7 +30,7 @@ import org.marmotgraph.commons.jsonld.InstanceId;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.IdWithAlternatives;
 import org.marmotgraph.commons.model.SpaceName;
-import org.marmotgraph.ids.controller.IdRepository;
+import org.marmotgraph.ids.service.IdService;
 import org.marmotgraph.ids.model.PersistedId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,11 +44,11 @@ import java.util.UUID;
 @Component
 public class IdsAPI implements Ids.Client {
 
-    private final IdRepository idRepository;
+    private final IdService idRepository;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public IdsAPI(IdRepository idRepository) {
+    public IdsAPI(IdService idRepository) {
         this.idRepository = idRepository;
     }
 

@@ -29,12 +29,12 @@
     <parent>
         <groupId>org.marmotgraph</groupId>
         <artifactId>marmotgraph-library</artifactId>
-        <version>3.0-SNAPSHOT</version>
+        <version>4.0</version>
         <relativePath>../../config/marmotgraph-library</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>marmotgraph-microservice-commons</artifactId>
-    <version>3.0-SNAPSHOT</version>
+    <version>4.0</version>
 
     <dependencies>
         <dependency>
@@ -79,7 +79,7 @@
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-commons</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
         </dependency>
         <dependency>
             <groupId>io.sentry</groupId>

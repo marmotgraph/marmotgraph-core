@@ -30,10 +30,10 @@
     <parent>
         <groupId>org.marmotgraph</groupId>
         <artifactId>marmotgraph-library</artifactId>
-        <version>3.0-SNAPSHOT</version>
+        <version>4.0</version>
         <relativePath>../../config/marmotgraph-library</relativePath>
     </parent>
-    <version>3.0-SNAPSHOT</version>
+    <version>4.0</version>
     <artifactId>marmotgraph-test-factory</artifactId>
     <dependencies>
         <dependency>
@@ -44,7 +44,7 @@
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-microservice-commons</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <version>4.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
