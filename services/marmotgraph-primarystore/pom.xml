@@ -36,7 +36,6 @@
     <artifactId>marmotgraph-primarystore</artifactId>
     <version>4.0</version>
     <dependencies>
-
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-commons</artifactId>

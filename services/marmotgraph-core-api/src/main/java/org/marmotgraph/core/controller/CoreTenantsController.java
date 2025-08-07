@@ -24,15 +24,11 @@
 
 package org.marmotgraph.core.controller;
 
-import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.api.Tenants;
-import org.marmotgraph.commons.exception.UnauthorizedException;
 import org.marmotgraph.commons.model.tenant.ColorScheme;
 import org.marmotgraph.commons.model.tenant.Font;
 import org.marmotgraph.commons.model.tenant.ImageResult;
 import org.marmotgraph.commons.model.tenant.TenantDefinition;
-import org.marmotgraph.commons.permission.Functionality;
-import org.marmotgraph.commons.permissions.controller.Permissions;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
@@ -43,21 +39,15 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @Component
-public class TenantsController {
-    private final Tenants.Client client;
-    private final AuthContext authContext;
-    private final Permissions permissions;
+public class CoreTenantsController {
 
-    public TenantsController(Tenants.Client client, AuthContext authContext, Permissions permissions) {
+    private final Tenants.Client client;
+
+    public CoreTenantsController(Tenants.Client client) {
         this.client = client;
-        this.authContext = authContext;
-        this.permissions = permissions;
     }
 
     public void createTenant(String name, TenantDefinition tenantDefinition) {
-        if (!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.TENANT_MANAGEMENT)) {
-            throw new UnauthorizedException("You don't have the right to create tenants.");
-        }
         this.client.createTenant(name, tenantDefinition);
     }
 
@@ -70,22 +60,13 @@ public class TenantsController {
     }
 
     public void setFont(String name, Font font) {
-        if (!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.TENANT_MANAGEMENT)) {
-            throw new UnauthorizedException("You don't have the right to define fonts for a tenant.");
-        }
         this.client.setFont(name, font);
     }
     public void setColorScheme(String name, ColorScheme colorScheme) {
-        if (!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.TENANT_MANAGEMENT)) {
-            throw new UnauthorizedException("You don't have the right to define the color scheme for a tenant.");
-        }
         this.client.setColorScheme(name, colorScheme);
     }
 
     public void setCustomCSS(String name, String css) {
-        if (!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.TENANT_MANAGEMENT)) {
-            throw new UnauthorizedException("You don't have the right to define the custom css for a tenant.");
-        }
         this.client.setCustomCSS(name, css);
     }
 
@@ -102,9 +83,6 @@ public class TenantsController {
     }
 
     public void setFavicon(String name, MultipartFile file) {
-        if (!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.TENANT_MANAGEMENT)) {
-            throw new UnauthorizedException("You don't have the right to define the favicon for a tenant.");
-        }
         this.client.setFavicon(name, file);
     }
 
@@ -117,9 +95,6 @@ public class TenantsController {
     }
 
     public void setBackgroundImage(String name, MultipartFile file, boolean darkMode) {
-        if (!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.TENANT_MANAGEMENT)) {
-            throw new UnauthorizedException("You don't have the right to define the background image for a tenant.");
-        }
         this.client.setBackgroundImage(name, file, darkMode);
     }
 
@@ -132,9 +107,6 @@ public class TenantsController {
     }
 
     public void setLogo(String name, MultipartFile file, boolean darkMode) {
-        if (!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.TENANT_MANAGEMENT)) {
-            throw new UnauthorizedException("You don't have the right to define the logo for a tenant.");
-        }
         this.client.setLogo(name, file, darkMode);
     }
 }

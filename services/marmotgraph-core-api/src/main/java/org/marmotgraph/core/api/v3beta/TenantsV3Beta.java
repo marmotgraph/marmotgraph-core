@@ -30,7 +30,7 @@ import org.marmotgraph.commons.config.openApiGroups.Tenants;
 import org.marmotgraph.commons.model.tenant.ColorScheme;
 import org.marmotgraph.commons.model.tenant.Font;
 import org.marmotgraph.commons.model.tenant.TenantDefinition;
-import org.marmotgraph.core.controller.TenantsController;
+import org.marmotgraph.core.controller.CoreTenantsController;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -44,9 +44,9 @@ import java.util.List;
 @RequestMapping(Version.V3_BETA +"/tenants")
 public class TenantsV3Beta {
 
-    private final TenantsController controller;
+    private final CoreTenantsController controller;
 
-    public TenantsV3Beta(TenantsController controller) {
+    public TenantsV3Beta(CoreTenantsController controller) {
         this.controller = controller;
     }
 

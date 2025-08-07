@@ -24,6 +24,7 @@
 
 package org.marmotgraph.primaryStore.api;
 
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.api.PrimaryStoreEvents;
 import org.marmotgraph.commons.jsonld.InstanceId;
 import org.marmotgraph.commons.model.Event;
@@ -37,6 +38,7 @@ import org.springframework.stereotype.Component;
 import java.util.Set;
 import java.util.UUID;
 
+@AllArgsConstructor
 @Component
 public class PrimaryStoreEventsAPI implements PrimaryStoreEvents.Client {
 
@@ -46,10 +48,6 @@ public class PrimaryStoreEventsAPI implements PrimaryStoreEvents.Client {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public PrimaryStoreEventsAPI(EventProcessor eventProcessor, InferenceProcessor inferenceProcessor) {
-        this.eventProcessor = eventProcessor;
-        this.inferenceProcessor = inferenceProcessor;
-    }
 
     @Override
     public Set<InstanceId> postEvent(Event event) {

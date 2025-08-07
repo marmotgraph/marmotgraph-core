@@ -24,6 +24,7 @@
 
 package org.marmotgraph.primaryStore.controller;
 
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.exception.ForbiddenException;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
@@ -40,18 +41,13 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@AllArgsConstructor
 @Component
 public class UserController {
 
     private final Permissions permissions;
     private final AuthContext authContext;
     private final UserService userService;
-
-    public UserController(Permissions permissions, AuthContext authContext, UserService userService) {
-        this.permissions = permissions;
-        this.authContext = authContext;
-        this.userService = userService;
-    }
 
     public Map<String, ReducedUserInformation> getUsers(Set<UUID> uuids) {
         if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.LIST_USERS_LIMITED, null)) {

@@ -35,7 +35,7 @@
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
 
@@ -55,11 +55,11 @@
     <!-- Ensure this is in sync with marmotgraph-microservice -->
     <properties>
         <java.version>21</java.version>
-        <jackson.version>2.13.4</jackson.version>
+        <jackson.version>2.19.0</jackson.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <docker.image.prefix>registry.humanbrainproject.org/humanbrainproject/marmotgraph-core</docker.image.prefix>
-        <spring.version>3.4.4</spring.version>
+        <spring.version>3.5.4</spring.version>
         <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../../bundle/marmotgraph-core-allinone/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 

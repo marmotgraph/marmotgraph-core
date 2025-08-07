@@ -30,7 +30,7 @@ import org.marmotgraph.commons.config.openApiGroups.Tenants;
 import org.marmotgraph.commons.model.tenant.ColorScheme;
 import org.marmotgraph.commons.model.tenant.Font;
 import org.marmotgraph.commons.model.tenant.TenantDefinition;
-import org.marmotgraph.core.controller.TenantsController;
+import org.marmotgraph.core.controller.CoreTenantsController;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -44,9 +44,9 @@ import java.util.List;
 @RequestMapping(Version.V3 +"/tenants")
 public class TenantsV3 {
 
-    private final TenantsController controller;
+    private final CoreTenantsController controller;
 
-    public TenantsV3(TenantsController controller) {
+    public TenantsV3(CoreTenantsController controller) {
         this.controller = controller;
     }
 
@@ -120,14 +120,14 @@ public class TenantsV3 {
     @GetMapping("{name}/theme/background")
     @ResponseBody
     @SecurityRequirements
-    public ResponseEntity<Resource> getBackgroundImage(@PathVariable String name, @RequestParam(required = false) boolean darkMode){
+    public ResponseEntity<Resource> getBackgroundImage(@PathVariable String name, @RequestParam(defaultValue = "true") boolean darkMode){
         return this.controller.getBackgroundImage(name, darkMode);
     }
 
 
     @Tenants
     @PutMapping(value= "{name}/theme/background", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public void setBackgroundImage(@PathVariable String name, @RequestBody MultipartFile file, @RequestParam(value = "darkMode", required = false) boolean darkMode){
+    public void setBackgroundImage(@PathVariable String name, @RequestBody MultipartFile file, @RequestParam(defaultValue = "true") boolean darkMode){
         this.controller.setBackgroundImage(name, file, darkMode);
     }
 
@@ -136,14 +136,14 @@ public class TenantsV3 {
     @GetMapping("{name}/theme/logo")
     @ResponseBody
     @SecurityRequirements
-    public ResponseEntity<Resource> getLogo(@PathVariable String name, @RequestParam(required = false) boolean darkMode){
+    public ResponseEntity<Resource> getLogo(@PathVariable String name, @RequestParam(defaultValue = "true") boolean darkMode){
        return this.controller.getLogo(name, darkMode);
     }
 
 
     @Tenants
     @PutMapping(value = "{name}/theme/logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public void setLogo(@PathVariable String name, @RequestBody MultipartFile file, @RequestParam(value = "darkMode", required = false) boolean darkMode){
+    public void setLogo(@PathVariable String name, @RequestBody MultipartFile file, @RequestParam(defaultValue = "true") boolean darkMode){
         this.controller.setLogo(name, file, darkMode);
     }
 

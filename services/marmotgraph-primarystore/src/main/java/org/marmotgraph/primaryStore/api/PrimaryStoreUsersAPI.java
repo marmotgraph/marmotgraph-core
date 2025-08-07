@@ -24,6 +24,7 @@
 
 package org.marmotgraph.primaryStore.api;
 
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.api.PrimaryStoreUsers;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.markers.ExposesUserInfo;
@@ -38,14 +39,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+@AllArgsConstructor
 @Component
 public class PrimaryStoreUsersAPI implements PrimaryStoreUsers.Client {
 
     private final UserController userController;
 
-    public PrimaryStoreUsersAPI(UserController userController) {
-        this.userController = userController;
-    }
 
     @Override
     @ExposesUserInfo

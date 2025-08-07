@@ -22,19 +22,37 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.commons.model.tenant;
+package org.marmotgraph.tenants.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.*;
+import lombok.*;
+import org.marmotgraph.commons.model.tenant.ImageResult;
 
-@NoArgsConstructor
-@AllArgsConstructor
+@Entity
 @Getter
 @Setter
-public class ImageDefinition {
+@NoArgsConstructor
+@EqualsAndHashCode
+public class Image {
+
+    public Image(String fileName, String mimeType, byte[] image) {
+        this.fileName = fileName;
+        this.mimeType = mimeType;
+        this.image = image;
+    }
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     private String fileName;
     private String mimeType;
-    private String base64;
+
+    @Column(name = "image", columnDefinition = "BYTEA")
+    private byte[] image;
+
+    public ImageResult toImageResult() {
+        return new ImageResult(getImage(), getMimeType());
+    }
+
 }
