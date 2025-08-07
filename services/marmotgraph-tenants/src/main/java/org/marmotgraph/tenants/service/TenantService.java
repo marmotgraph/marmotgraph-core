@@ -34,7 +34,6 @@ import org.marmotgraph.commons.model.tenant.Font;
 import org.marmotgraph.commons.model.tenant.TenantDefinition;
 import org.marmotgraph.tenants.model.Image;
 import org.marmotgraph.tenants.model.Tenant;
-import org.marmotgraph.tenants.repository.TenantRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;

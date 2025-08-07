@@ -24,9 +24,14 @@
 
 package org.marmotgraph.tenants.api;
 
+import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.api.Tenants;
+import org.marmotgraph.commons.exception.UnauthorizedException;
 import org.marmotgraph.commons.model.tenant.*;
-import org.marmotgraph.tenants.controller.TenantsController;
+import org.marmotgraph.commons.permission.Functionality;
+import org.marmotgraph.commons.permissions.controller.Permissions;
+import org.marmotgraph.tenants.model.Image;
+import org.marmotgraph.tenants.service.TenantService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,82 +39,98 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
+import java.util.function.Supplier;
 
 @Component
 public class TenantsAPI implements Tenants.Client {
 
-    private final TenantsController tenantsRepository;
+    private final TenantService tenantService;
+    private final Permissions permissions;
+    private final AuthContext authContext;
     private final String namespace;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public TenantsAPI(@Value("${org.marmotgraph.namespace}") String namespace, TenantsController tenantsRepository) {
-        this.tenantsRepository = tenantsRepository;
+    public TenantsAPI(TenantService tenantService, Permissions permissions, AuthContext authContext, @Value("${org.marmotgraph.namespace}") String namespace) {
+        this.tenantService = tenantService;
+        this.permissions = permissions;
+        this.authContext = authContext;
         this.namespace = namespace;
     }
 
     @Override
     public void createTenant(String name, TenantDefinition tenantDefinition) {
-        tenantsRepository.upsertTenant(name, tenantDefinition);
+        canManageTenantOrThrowException(name);
+        tenantService.upsertTenantDefinition(name, tenantDefinition);
     }
 
     @Override
     public TenantDefinitionWithIdNamespace getTenant(String name) {
-        return TenantDefinitionWithIdNamespace.fromTenantDefinition(tenantsRepository.getTenantDefinition(name), namespace);
+        return TenantDefinitionWithIdNamespace.fromTenantDefinition(fallback(name, () -> tenantService.getTenantDefinition(name), TenantDefinition.defaultDefinition), namespace);
     }
 
     @Override
     public List<String> listTenants() {
-        return tenantsRepository.listTenants();
+        return tenantService.listTenants();
     }
 
     @Override
     public void setFont(String name, Font font) {
-        tenantsRepository.upsertFont(name, font);
+        canManageTenantOrThrowException(name);
+        tenantService.updateFont(name, font);
     }
 
     @Override
     public void setColorScheme(String name, ColorScheme colorScheme) {
-        tenantsRepository.upsertColorScheme(name, colorScheme);
+        canManageTenantOrThrowException(name);
+        tenantService.updateColorScheme(name, colorScheme);
     }
 
 
     @Override
     public void setCustomCSS(String name, String css) {
-        tenantsRepository.upsertCustomCSS(name, css);
+        canManageTenantOrThrowException(name);
+        tenantService.updateCustomCSS(name, css);
     }
 
     @Override
     public String getCSS(String name) {
-        return tenantsRepository.getCSS(name);
+        ColorScheme colorScheme = fallback(name, () -> tenantService.getColorScheme(name), ColorScheme.DEFAULT);
+        Font font = fallback(name, () -> tenantService.getFont(name), Font.DEFAULT);
+        String customCSS = fallback(name, () -> tenantService.getCustomCSS(name), "");
+        return font.toCSS() + "\n\n" + colorScheme.toCSS() + "\n\n" + customCSS;
     }
 
     @Override
     public ImageResult getFavicon(String name) {
-        return tenantsRepository.getFavicon(name);
+        Image favicon = fallback(name, () -> tenantService.getFavicon(name), getDefaultImage("marmotgraph_favicon.png", "image/png"));
+        return favicon != null ? favicon.toImageResult() : null;
     }
 
     @Override
     public void setFavicon(String name, MultipartFile file) {
         try {
-            tenantsRepository.upsertFavicon(name, file.getOriginalFilename(), file.getContentType(), file.getBytes());
+            canManageTenantOrThrowException(name);
+            tenantService.updateFavicon(name, new Image(file.getOriginalFilename(), file.getContentType(), file.getBytes()));
         }
         catch (IOException e) {
             throw new IllegalArgumentException("Was not able to upload the favicon", e);
         }
     }
 
-
     @Override
     public ImageResult getBackgroundImage(String name, boolean darkMode) {
-        return tenantsRepository.getBackgroundImage(name, darkMode);
+        Image backgroundImage = fallback(name, () -> tenantService.getBackgroundImage(name, darkMode), getDefaultImage(darkMode ? "background_dark.svg" : "background_bright.svg", "image/svg+xml"));
+        return backgroundImage != null ? backgroundImage.toImageResult() : null;
     }
 
     @Override
     public void setBackgroundImage(String name, MultipartFile file, boolean darkMode) {
         try {
-            tenantsRepository.upsertBackgroundImage(name, file.getOriginalFilename(), file.getContentType(), file.getBytes(), darkMode);
+            canManageTenantOrThrowException(name);
+            tenantService.updateBackgroundImage(name, new Image(file.getOriginalFilename(), file.getContentType(), file.getBytes()), darkMode);
         }
         catch (IOException e) {
             throw new IllegalArgumentException("Was not able to upload the background image", e);
@@ -118,17 +139,55 @@ public class TenantsAPI implements Tenants.Client {
 
     @Override
     public ImageResult getLogo(String name, boolean darkMode) {
-        return tenantsRepository.getLogo(name, darkMode);
+        Image logo = fallback(name, () -> tenantService.getLogo(name, darkMode), getDefaultImage(darkMode ? "marmotgraph_dark.svg" : "marmotgraph_bright.svg", "image/svg+xml"));
+        return logo != null ? logo.toImageResult() : null;
     }
 
     @Override
     public void setLogo(String name, MultipartFile file, boolean darkMode) {
         try {
-            tenantsRepository.upsertLogo(name, file.getOriginalFilename(), file.getContentType(), file.getBytes(), darkMode);
+            canManageTenantOrThrowException(name);
+            tenantService.updateLogo(name, new Image(file.getOriginalFilename(), file.getContentType(), file.getBytes()), darkMode);
         }
         catch (IOException e) {
             throw new IllegalArgumentException("Was not able to upload the logo", e);
         }
     }
 
+
+    private void canManageTenantOrThrowException(String name){
+        if (name.equals("default")) {
+            throw new IllegalArgumentException("You can not update the \"default\" tenant");
+        }
+        if (!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.TENANT_MANAGEMENT)) {
+            throw new UnauthorizedException("You don't have the right to manage tenants.");
+        }
+    }
+
+    private Image getDefaultImage(String fileName, String mediaType) {
+        try (InputStream resourceAsStream = getClass().getResourceAsStream(String.format("/defaultTheme/images/%s", fileName))) {
+            if (resourceAsStream != null) {
+                byte[] value = resourceAsStream.readAllBytes();
+                return new Image(fileName, mediaType, value);
+            }
+        } catch (IOException e) {
+            logger.error("Was not able to read default image {}", fileName, e);
+        }
+        return null;
+    }
+
+    private <T> T fallback(String name, Supplier<T> supplier, T fallback){
+        if (name.equals("default")) {
+            return fallback;
+        } else {
+            try {
+                T result = supplier.get();
+                return result == null ? fallback : result;
+            }
+            catch (Exception e) {
+                logger.error(e.getMessage(), e);
+                return fallback;
+            }
+        }
+    }
 }

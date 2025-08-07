@@ -22,7 +22,7 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.tenants.repository;
+package org.marmotgraph.tenants.service;
 
 import org.marmotgraph.tenants.model.Tenant;
 import org.springframework.data.jpa.repository.JpaRepository;
