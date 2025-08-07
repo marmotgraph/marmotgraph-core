@@ -192,6 +192,11 @@ public class EventController {
         data.setIndexTimestamp(event.getIndexedTimestamp());
         if (dataStage == DataStage.RELEASED) {
             final String indexTimestamp = ZonedDateTime.ofInstant(Instant.ofEpochMilli(event.getIndexedTimestamp()), ZoneId.systemDefault()).format(DateTimeFormatter.ISO_INSTANT);
+            /*
+              TODO - improve performance by materializing the first release event date as part of the releasing process
+               in the underlying entity. This would allow us to skip this (potentially) expensive lookup by adding a
+               small overhead to the first release procedure (since the "in progress" entity would have to be updated too).
+            */
             final String firstRelease = eventService.getFirstRelease(event.getDocumentId());
             data.getDoc().put(EBRAINSVocabulary.META_FIRST_RELEASED_AT, firstRelease == null ? indexTimestamp : firstRelease);
             data.getDoc().put(EBRAINSVocabulary.META_LAST_RELEASED_AT, indexTimestamp);
