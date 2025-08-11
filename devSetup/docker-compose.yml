@@ -32,6 +32,27 @@ services:
     volumes:
       - ./kc-config:/config
 
+  demo-data-upload:
+    image: python:3.12
+    working_dir: /demodata
+    command:
+      - /bin/bash
+      - -c
+      - |
+        pip install -r requirements.txt
+        python demodata_upload.py
+    depends_on:
+      - keycloak-config-cli
+    environment:
+      CORE_ENDPOINT: localhost:8000
+      UPLOADER_SERVICE_ACCOUNT_CLIENT_ID: demo-data-uploader
+      UPLOADER_SERVICE_ACCOUNT_CLIENT_SECRET: demoDataUpload
+      OIDC_CLIENT: kg
+    volumes:
+      - ./demodata:/demodata
+    extra_hosts:
+      - "localhost:172.17.0.1"
+
   postgres:
     image: postgres:17
     container_name: marmotgraph_postgres

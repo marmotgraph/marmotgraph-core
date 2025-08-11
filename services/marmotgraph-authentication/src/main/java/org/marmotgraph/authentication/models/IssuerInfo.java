@@ -22,47 +22,18 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.authentication.model;
-
+package org.marmotgraph.authentication.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
 
-public class Invitation {
+@Getter
+public class IssuerInfo {
 
-    public Invitation(){}
+    @JsonProperty("realm")
+    private String realm;
 
-    public Invitation(String instanceId, String userId){
-        this.key = String.format("%s_%s", instanceId, userId);
-        this.userId = userId;
-        this.instanceId = instanceId;
-    }
+    @JsonProperty("public_key")
+    private String publicKey;
 
-    @JsonProperty("_key")
-    private String key;
-    private String userId;
-    private String instanceId;
-
-    public String getKey() {
-        return key;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public String getInstanceId() {
-        return instanceId;
-    }
-
-    public void setInstanceId(String instanceId) {
-        this.instanceId = instanceId;
-    }
 }

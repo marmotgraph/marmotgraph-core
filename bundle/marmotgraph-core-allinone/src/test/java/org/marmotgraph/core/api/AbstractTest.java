@@ -71,10 +71,10 @@ public abstract class AbstractTest {
 
     protected void beAdmin() {
         User user = new User("bobEverythingGoes", "Admin", "fakeAdmin@ebrains.eu", "Bob Everything", "Goes", "admin");
-        final List<UUID> invitationRoles = testContext.getAuthenticationRepository().getInvitationRoles(USER_ID.toString());
+        final List<UUID> invitationRoles = testContext.getInvitationsService().getAllInvitationsForUserId(USER_ID.toString());
         UserWithRoles userWithRoles = new UserWithRoles(user, ADMIN_ROLE, ADMIN_CLIENT_ROLE, invitationRoles,"testClient");
         Mockito.doAnswer(a -> user).when(testContext.getAuthentication()).getMyUserInfo();
-        Mockito.doAnswer(a -> userWithRoles).when(testContext.getAuthentication()).getRoles(Mockito.anyBoolean());
+        Mockito.doAnswer(a -> userWithRoles).when(testContext.getAuthentication()).getRoles();
     }
 
     protected void beInCurrentRole() {
@@ -84,20 +84,20 @@ public abstract class AbstractTest {
             beAdmin();
         } else {
             User user = new User("alice", "Alice", "fakeAlice@ebrains.eu", "Alice", "User", USER_ID.toString());
-            final List<UUID> invitationRoles = testContext.getAuthenticationRepository().getInvitationRoles(USER_ID.toString());
+            final List<UUID> invitationRoles = testContext.getInvitationsService().getAllInvitationsForUserId(USER_ID.toString());
             UserWithRoles userWithRoles = new UserWithRoles(user, currentRoles.stream().filter(Objects::nonNull).map(Role::getName).collect(Collectors.toList()), ADMIN_CLIENT_ROLE, invitationRoles,"testClient");
             Mockito.doAnswer(a -> user).when(testContext.getAuthentication()).getMyUserInfo();
-            Mockito.doAnswer(a -> userWithRoles).when(testContext.getAuthentication()).getRoles(Mockito.anyBoolean());
+            Mockito.doAnswer(a -> userWithRoles).when(testContext.getAuthentication()).getRoles();
         }
     }
 
     protected void beUnauthorized() {
         User user = new User("joeCantDoAThing", "Joe Cant Do A Thing", "fakeUnauthorized@ebrains.eu", "Joe Cant Do A", "Thing",  USER_ID.toString());
         //It's the user not having any righexts - the client is still the same with full rights
-        final List<UUID> invitationRoles = testContext.getAuthenticationRepository().getInvitationRoles(USER_ID.toString());
+        final List<UUID> invitationRoles = testContext.getInvitationsService().getAllInvitationsForUserId(USER_ID.toString());
         UserWithRoles userWithRoles = new UserWithRoles(user, Collections.emptyList(), ADMIN_CLIENT_ROLE, invitationRoles,"testClient");
         Mockito.doAnswer(a -> user).when(testContext.getAuthentication()).getMyUserInfo();
-        Mockito.doAnswer(a -> userWithRoles).when(testContext.getAuthentication()).getRoles(Mockito.anyBoolean());
+        Mockito.doAnswer(a -> userWithRoles).when(testContext.getAuthentication()).getRoles();
     }
 
     protected abstract void setup();

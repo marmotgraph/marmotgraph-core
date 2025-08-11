@@ -22,9 +22,10 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.authentication.controller;
+package org.marmotgraph.authentication.service;
 
-import org.marmotgraph.authentication.model.InstanceScope;
+import lombok.AllArgsConstructor;
+import org.marmotgraph.authentication.models.InstanceScope;
 import org.marmotgraph.commons.api.GraphDBScopes;
 import org.marmotgraph.commons.api.Ids;
 import org.marmotgraph.commons.jsonld.InstanceId;
@@ -32,29 +33,22 @@ import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.ScopeElement;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
+@AllArgsConstructor
 @Component
-public class InvitationController {
-    private final AuthenticationRepository authenticationRepository;
-    private final GraphDBScopes.Client graphDBScopes;
-    private final Ids.Client ids;
+public class InstanceScopeService {
 
-    public InvitationController(AuthenticationRepository authenticationRepository, GraphDBScopes.Client graphDBScopes, Ids.Client ids) {
-        this.authenticationRepository = authenticationRepository;
-        this.graphDBScopes = graphDBScopes;
-        this.ids = ids;
-    }
+    private final InstanceScopeRepository repository;
+    private final Ids.Client ids;
+    private final GraphDBScopes.Client graphDBScopes;
 
     public void calculateInstanceScope(UUID id) {
         final InstanceId instance = this.ids.findInstanceByIdentifiers(id, new ArrayList<>(), DataStage.IN_PROGRESS);
         if(instance!=null) {
             final ScopeElement scopeForInstance = graphDBScopes.getScopeForInstance(instance.getSpace().getName(), id, DataStage.IN_PROGRESS, false);
             final Set<UUID> uuids = collectIds(scopeForInstance, new HashSet<>());
-            authenticationRepository.createOrUpdateInstanceScope(new InstanceScope(id.toString(), new ArrayList<>(uuids)));
+            repository.saveAndFlush(new InstanceScope(id, new HashSet<>(uuids)));
         }
     }
 

@@ -72,7 +72,7 @@ public class Tenant {
         if(tenantDefinition == null) {
             return null;
         }
-        Tenant tenant = null;
+        Tenant tenant;
         if(existingTenant.isPresent()) {
             tenant = existingTenant.get();
         }

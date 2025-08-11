@@ -42,7 +42,7 @@ import org.marmotgraph.commons.model.*;
 import org.marmotgraph.commons.params.ReleaseTreeScope;
 import org.marmotgraph.core.api.examples.InstancesExamples;
 import org.marmotgraph.core.controller.CoreInstanceController;
-import org.marmotgraph.core.controller.IdsController;
+import org.marmotgraph.core.controller.CoreIdsController;
 import org.marmotgraph.core.controller.VirtualSpaceController;
 import org.marmotgraph.core.model.ExposedStage;
 import io.swagger.v3.oas.annotations.Operation;
@@ -74,13 +74,13 @@ public class InstancesV3 {
     private final Release.Client release;
     private final AuthContext authContext;
     private final GraphDBInstances.Client graphDBInstances;
-    private final IdsController idsController;
+    private final CoreIdsController idsController;
     private final VirtualSpaceController virtualSpaceController;
     private final JsonLd.Client jsonLd;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public InstancesV3(CoreInstanceController instanceController, Release.Client release, AuthContext authContext, GraphDBInstances.Client graphDBInstances, IdsController idsController, VirtualSpaceController virtualSpaceController, JsonLd.Client jsonLd) {
+    public InstancesV3(CoreInstanceController instanceController, Release.Client release, AuthContext authContext, GraphDBInstances.Client graphDBInstances, CoreIdsController idsController, VirtualSpaceController virtualSpaceController, JsonLd.Client jsonLd) {
         this.instanceController = instanceController;
         this.release = release;
         this.authContext = authContext;

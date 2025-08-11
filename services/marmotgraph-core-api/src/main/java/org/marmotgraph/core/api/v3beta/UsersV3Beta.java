@@ -130,7 +130,7 @@ public class UsersV3Beta {
     @ExposesUserInfo
     @Extra
     public ResponseEntity<Result<UserWithRoles>> myRoles() {
-        final UserWithRoles roles = authentication.getRoles(false);
+        final UserWithRoles roles = authentication.getRoles();
         return roles!=null ? ResponseEntity.ok(Result.ok(roles)) : ResponseEntity.notFound().build();
     }
 
@@ -171,7 +171,8 @@ public class UsersV3Beta {
     @Simple
     @Deprecated(forRemoval = true)
     public ResponseEntity<TermsOfUseResult> getTermsOfUse() {
-       return ResponseEntity.ok(authentication.getTermsOfUse());
+        //Terms of use are no longer supported -> returning null
+       return ResponseEntity.ok(null);
     }
 
     @Operation(summary = "Accept the terms of use in the given version", hidden = true)
@@ -179,7 +180,7 @@ public class UsersV3Beta {
     @Simple
     @Deprecated(forRemoval = true)
     public void acceptTermsOfUse(@PathVariable("version") String version) {
-        authentication.acceptTermsOfUse(version);
+        //Terms of use are no longer supported -> we don't do anything
     }
 
     @Operation(summary = "Get a pictures for a list of users (only found ones are returned)", hidden = true)

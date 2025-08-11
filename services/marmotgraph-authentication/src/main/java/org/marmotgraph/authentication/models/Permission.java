@@ -22,40 +22,23 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.authentication.model;
+package org.marmotgraph.authentication.models;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.util.List;
+@Getter
+@Setter
+@Entity
+public class Permission {
 
-public class TermsOfUseAcceptance {
+    @Id
+    private String id;
 
-    @JsonProperty(ArangoVocabulary.KEY)
-    private String key;
+    @Column(columnDefinition = "TEXT")
+    private String claims;
 
-    private String userId;
-
-    private List<AcceptedTermsOfUse> acceptedTermsOfUse;
-
-    public TermsOfUseAcceptance() {
-    }
-
-    public TermsOfUseAcceptance(String key, String userId, List<AcceptedTermsOfUse> acceptedTermsOfUse) {
-        this.key = key;
-        this.userId = userId;
-        this.acceptedTermsOfUse = acceptedTermsOfUse;
-    }
-
-    public String getKey() {
-        return key;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public List<AcceptedTermsOfUse> getAcceptedTermsOfUse() {
-        return acceptedTermsOfUse;
-    }
 }

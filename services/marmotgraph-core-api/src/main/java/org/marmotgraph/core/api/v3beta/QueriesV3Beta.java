@@ -40,7 +40,7 @@ import org.marmotgraph.commons.model.*;
 import org.marmotgraph.commons.query.KgQuery;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.core.controller.CoreQueryController;
-import org.marmotgraph.core.controller.IdsController;
+import org.marmotgraph.core.controller.CoreIdsController;
 import org.marmotgraph.core.model.ExposedStage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -66,9 +66,9 @@ public class QueriesV3Beta {
 
     private final JsonLd.Client jsonLd;
 
-    private final IdsController ids;
+    private final CoreIdsController ids;
 
-    public QueriesV3Beta(CoreQueryController queryController, AuthContext authContext, JsonLd.Client jsonLd, IdsController ids) {
+    public QueriesV3Beta(CoreQueryController queryController, AuthContext authContext, JsonLd.Client jsonLd, CoreIdsController ids) {
         this.queryController = queryController;
         this.authContext = authContext;
         this.jsonLd = jsonLd;

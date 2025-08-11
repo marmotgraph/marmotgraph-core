@@ -64,7 +64,7 @@ public class AbstractGraphTest {
 
     @BeforeEach
     public void setup(){
-        Mockito.doAnswer(a -> UserFactory.globalAdmin().getUserWithRoles()).when(authClient).getRoles(Mockito.anyBoolean());
+        Mockito.doAnswer(a -> UserFactory.globalAdmin().getUserWithRoles()).when(authClient).getRoles();
         arangoDatabases.clearAll();
     }
 

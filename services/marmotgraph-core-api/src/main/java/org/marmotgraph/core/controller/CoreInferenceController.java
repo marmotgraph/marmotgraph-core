@@ -51,9 +51,9 @@ public class CoreInferenceController {
     private final GraphDBDocuments.Client graphDBDocuments;
     private final IdUtils idUtils;
     private final PrimaryStoreEvents.Client primaryStoreEvents;
-    private final IdsController ids;
+    private final CoreIdsController ids;
 
-    public CoreInferenceController(GraphDBInstances.Client graphDBInstances, GraphDBDocuments.Client graphDBDocuments, IdUtils idUtils, PrimaryStoreEvents.Client primaryStoreEvents, IdsController ids) {
+    public CoreInferenceController(GraphDBInstances.Client graphDBInstances, GraphDBDocuments.Client graphDBDocuments, IdUtils idUtils, PrimaryStoreEvents.Client primaryStoreEvents, CoreIdsController ids) {
         this.graphDBInstances = graphDBInstances;
         this.graphDBDocuments = graphDBDocuments;
         this.idUtils = idUtils;

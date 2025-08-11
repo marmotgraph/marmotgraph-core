@@ -54,9 +54,19 @@ clients:
     serviceAccountsEnabled: false
     frontchannelLogout: true
     attributes:
-      pkce.code.challenge.method: S256
       oauth2.device.authorization.grant.enabled: "true"
       frontchannel.logout.session.required: "true"
+  - clientId: demo-data-uploader
+    description: This is a service account to upload demo data to the knowledge graph
+    enabled: true
+    secret: demoDataUpload
+    publicClient: false
+    protocol: openid-connect
+    standardFlowEnabled: false
+    directAccessGrantsEnabled: false
+    implicitFlowEnabled: false
+    serviceAccountsEnabled: true
+
 groups:
   - name: marmotgraph-admins
 users:

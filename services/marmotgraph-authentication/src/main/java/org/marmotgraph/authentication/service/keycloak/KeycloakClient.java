@@ -22,14 +22,14 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.authentication.keycloak;
+package org.marmotgraph.authentication.service.keycloak;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import jakarta.annotation.PostConstruct;
-import org.marmotgraph.authentication.model.IssuerInfo;
-import org.marmotgraph.authentication.model.OpenIdConfig;
+import org.marmotgraph.authentication.models.IssuerInfo;
+import org.marmotgraph.authentication.models.OpenIdConfig;
 import org.marmotgraph.commons.JsonAdapter;
 import org.marmotgraph.commons.exception.UnauthorizedException;
 import org.slf4j.Logger;
@@ -88,9 +88,8 @@ public class KeycloakClient {
         return openIdConfig.getIssuer().split("/realms")[0];
     }
 
-    private final int maxTries = 10;
-
     private <X> X loadWithRetry(int currentTry, Function<Integer, X> function) {
+        int maxTries = 10;
         if (maxTries > currentTry) {
             try {
                 return function.apply(currentTry);

@@ -24,51 +24,49 @@
 
 package org.marmotgraph.authentication.api;
 
-import org.marmotgraph.authentication.controller.AuthenticationRepository;
-import org.marmotgraph.authentication.controller.InvitationController;
-import org.marmotgraph.authentication.model.Invitation;
+import lombok.AllArgsConstructor;
+import org.marmotgraph.authentication.models.Invitation;
+import org.marmotgraph.authentication.service.InstanceScopeService;
+import org.marmotgraph.authentication.service.InvitationsService;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+@AllArgsConstructor
 @Component
 public class InvitationAPI implements org.marmotgraph.commons.api.Invitation.Client {
 
-    private final AuthenticationRepository authenticationRepository;
-    private final InvitationController invitationController;
-    public InvitationAPI(AuthenticationRepository authenticationRepository, InvitationController invitationController) {
-        this.authenticationRepository = authenticationRepository;
-        this.invitationController = invitationController;
-    }
+    private final InvitationsService invitationsService;
+    private final InstanceScopeService instanceScopeService;
 
     @Override
     public void inviteUserForInstance(UUID id, UUID userId) {
-        authenticationRepository.createInvitation(new Invitation(id.toString(), userId.toString()));
-        this.invitationController.calculateInstanceScope(id);
+        invitationsService.createInvitation(new Invitation(new Invitation.CompositeId(id.toString(), userId)));
+        this.instanceScopeService.calculateInstanceScope(id);
     }
 
     @Override
     public void revokeUserInvitation(UUID id, UUID userId) {
-        authenticationRepository.deleteInvitation(new Invitation(id.toString(), userId.toString()));
+        invitationsService.deleteInvitation(new Invitation.CompositeId(id.toString(), userId));
     }
 
     @Override
     public List<String> listInvitedUserIds(UUID id) {
-        if(id!=null){
-            return authenticationRepository.getAllInvitationsByInstanceId(id.toString()).stream().map(Invitation::getUserId).toList();
+        if (id != null) {
+            return invitationsService.getAllInvitedUsersByInstanceId(id);
         }
         return Collections.emptyList();
     }
 
     @Override
     public List<UUID> listInstances() {
-        return authenticationRepository.getAllInstancesWithInvitation();
+        return invitationsService.getAllInstancesWithInvitation();
     }
 
     @Override
     public void calculateInstanceScope(UUID id) {
-        this.invitationController.calculateInstanceScope(id);
+        this.instanceScopeService.calculateInstanceScope(id);
     }
 }

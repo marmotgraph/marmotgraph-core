@@ -67,9 +67,7 @@ public class CacheV3 {
         if (keys.contains("*") || keys.isEmpty() || keys.contains("all")) {
             return this.cacheController.clearAllKeys();
         }
-
         return this.cacheController.clearKeys(keys);
     }
-
 
 }

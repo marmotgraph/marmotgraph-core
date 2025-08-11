@@ -1,0 +1,11 @@
+{
+  "@context": { "@vocab": "https://marmotgraph.org/properties/" },
+  "@type": "https://marmotgraph.org/types/Species",
+  "@id": "https://marmotgraph.org/instances/species/MarmotaMarmota",
+  "name": "Marmota marmota",
+  "vernacularName": "Alpine marmot",
+  "image": "https://commons.wikimedia.org/wiki/Category:Marmota_marmota#/media/File:Marmota_marmota_Alpes2.jpg",
+  "occurrences": [
+    {"@id":  "https://marmotgraph.org/instances/mountainRanges/Alps"}
+  ]
+}

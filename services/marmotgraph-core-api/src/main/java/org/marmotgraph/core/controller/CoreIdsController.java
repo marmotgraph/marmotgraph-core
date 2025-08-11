@@ -41,12 +41,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
-public class IdsController {
+public class CoreIdsController {
 
     private final Ids.Client api;
     private final IdUtils idUtils;
 
-    public IdsController(Ids.Client idsAPI, IdUtils idUtils) {
+    public CoreIdsController(Ids.Client idsAPI, IdUtils idUtils) {
         this.api = idsAPI;
         this.idUtils = idUtils;
     }

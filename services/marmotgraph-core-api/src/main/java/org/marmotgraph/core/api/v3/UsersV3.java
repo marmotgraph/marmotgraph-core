@@ -65,7 +65,7 @@ public class UsersV3 {
     @ExposesUserInfo
     @Extra
     public ResponseEntity<Result<UserWithRoles>> myRoles() {
-        final UserWithRoles roles = authentication.getRoles(false);
+        final UserWithRoles roles = authentication.getRoles();
         return roles!=null ? ResponseEntity.ok(Result.ok(roles)) : ResponseEntity.notFound().build();
     }
 

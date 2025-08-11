@@ -1,0 +1,38 @@
+{
+  "@context": { "@vocab": "https://marmotgraph.org/properties/" },
+  "@type": "https://marmotgraph.org/types/LanguageExample",
+  "@id": "https://marmotgraph.org/instances/languageExamples/GoodMorning",
+  "name": "Good morning",
+  "translations": [
+    {
+      "@type":  "https://marmotgraph.org/types/Translation",
+      "language": {"@id":  "https://marmotgraph.org/instances/languages/French"},
+      "value": "Bonjour"
+    },
+    {
+      "@type":  "https://marmotgraph.org/types/Translation",
+      "language": {"@id":  "https://marmotgraph.org/instances/languages/Italian"},
+      "value": "Buongiorno"
+    },
+    {
+      "@type":  "https://marmotgraph.org/types/Translation",
+      "language": {"@id":  "https://marmotgraph.org/instances/languages/German"},
+      "value": "Guten Morgen"
+    },
+    {
+      "@type":  "https://marmotgraph.org/types/Translation",
+      "language": {"@id":  "https://marmotgraph.org/instances/languages/Romansh"},
+      "value": "Bun di"
+    },
+    {
+      "@type":  "https://marmotgraph.org/types/Translation",
+      "language": {"@id":  "https://marmotgraph.org/instances/languages/Slovenian"},
+      "value": "Dobro jutro"
+    },
+    {
+      "@type":  "https://marmotgraph.org/types/Translation",
+      "language": {"@id":  "https://marmotgraph.org/instances/languages/SwissGerman"},
+      "value": "Guete morge"
+    }
+  ]
+}

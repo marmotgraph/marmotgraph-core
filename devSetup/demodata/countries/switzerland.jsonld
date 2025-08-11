@@ -1,0 +1,16 @@
+{
+  "@context": { "@vocab": "https://marmotgraph.org/properties/" },
+  "@type": "https://marmotgraph.org/types/Country",
+  "@id": "https://marmotgraph.org/instances/countries/Switzerland",
+  "name": "Switzerland",
+  "officialLanguages": [
+    { "@id":  "https://marmotgraph.org/instances/languages/German" },
+    { "@id":  "https://marmotgraph.org/instances/languages/French" },
+    { "@id":  "https://marmotgraph.org/instances/languages/Italian" },
+    { "@id":  "https://marmotgraph.org/instances/languages/Romansh" }
+  ],
+  "otherLanguages": [
+    {"@id": "https://marmotgraph.org/instances/languages/SwissGerman"}
+  ]
+
+}

@@ -22,36 +22,12 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.commons.api;
+package org.marmotgraph.authentication.service;
 
-import org.marmotgraph.commons.jsonld.JsonLdDoc;
-import org.marmotgraph.commons.model.User;
-import org.marmotgraph.commons.models.UserWithRoles;
-import org.marmotgraph.commons.permission.roles.RoleMapping;
+import org.marmotgraph.authentication.models.Invitation;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Map;
-
-public interface Authentication {
-
-    interface Client extends Authentication {}
-
-    String openIdConfigUrl();
-
-    String loginClientId();
-
-    String authEndpoint();
-
-    String tokenEndpoint();
-
-    User getMyUserInfo();
-
-    UserWithRoles getRoles();
-
-    JsonLdDoc updateClaimForRole(RoleMapping role, String space, Map<String, Object> claimPattern, boolean removeClaim);
-
-    JsonLdDoc getClaimForRole(RoleMapping role, String space);
-
-    List<JsonLdDoc> getAllRoleDefinitions();
-
+@Repository
+public interface InvitationsRepository extends JpaRepository<Invitation, Invitation.CompositeId> {
 }

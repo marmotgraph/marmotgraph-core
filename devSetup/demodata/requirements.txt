@@ -1,0 +1,2 @@
+ebrains-kg-core
+requests

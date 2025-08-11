@@ -62,7 +62,7 @@ public class CoreInstanceController {
 
     private final GraphDBInstances.Client graphDBInstances;
     private final GraphDBScopes.Client graphDBScopes;
-    private final IdsController ids;
+    private final CoreIdsController ids;
     private final AuthContext authContext;
     private final IdUtils idUtils;
     private final PrimaryStoreEvents.Client primaryStoreEvents;
@@ -72,7 +72,7 @@ public class CoreInstanceController {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public CoreInstanceController(GraphDBInstances.Client graphDBInstances, GraphDBScopes.Client graphDBScopes, IdsController ids, AuthContext authContext, IdUtils idUtils, PrimaryStoreEvents.Client primaryStoreEvents, Invitation.Client invitation, Permissions permissions) {
+    public CoreInstanceController(GraphDBInstances.Client graphDBInstances, GraphDBScopes.Client graphDBScopes, CoreIdsController ids, AuthContext authContext, IdUtils idUtils, PrimaryStoreEvents.Client primaryStoreEvents, Invitation.Client invitation, Permissions permissions) {
         this.graphDBInstances = graphDBInstances;
         this.graphDBScopes = graphDBScopes;
         this.ids = ids;

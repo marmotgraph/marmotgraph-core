@@ -24,24 +24,16 @@
 
 package org.marmotgraph.commons.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
 public class TermsOfUse {
 
     private String version;
     private String data;
 
-    public TermsOfUse() {
-    }
-
-    public TermsOfUse(String version, String data) {
-        this.version = version;
-        this.data = data;
-    }
-
-    public String getVersion() {
-        return version;
-    }
-
-    public String getData() {
-        return data;
-    }
 }

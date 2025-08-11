@@ -22,30 +22,12 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.authentication.model;
+package org.marmotgraph.authentication.service;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import org.marmotgraph.authentication.models.Permission;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public class OpenIdConfig {
-
-    @JsonProperty("issuer")
-    private String issuer;
-
-    @JsonProperty("token_endpoint")
-    private String tokenEndpoint;
-
-    @JsonProperty("userinfo_endpoint")
-    private String userInfoEndpoint;
-
-    public String getTokenEndpoint() {
-        return tokenEndpoint;
-    }
-
-    public String getUserInfoEndpoint() {
-        return userInfoEndpoint;
-    }
-
-    public String getIssuer() {
-        return issuer;
-    }
+@Repository
+public interface PermissionsRepository extends JpaRepository<Permission, String> {
 }

@@ -22,31 +22,20 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.authentication.model;
+package org.marmotgraph.authentication.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
-import org.marmotgraph.commons.model.TermsOfUse;
+import lombok.Getter;
 
-public class ArangoTermsOfUse extends TermsOfUse {
+@Getter
+public class OpenIdConfig {
 
+    @JsonProperty("issuer")
+    private String issuer;
 
-    @JsonProperty(ArangoVocabulary.KEY)
-    private String key;
+    @JsonProperty("token_endpoint")
+    private String tokenEndpoint;
 
-    private ArangoTermsOfUse() {
-        super();
-    }
-
-    public ArangoTermsOfUse(String version, String terms, String key) {
-        super(version, terms);
-        this.key = key;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
-    }
-    public String getKey() {
-        return key;
-    }
+    @JsonProperty("userinfo_endpoint")
+    private String userInfoEndpoint;
 }

@@ -27,9 +27,9 @@ package org.marmotgraph.core.api.testutils;
 import org.marmotgraph.MarmotGraphCoreAllInOne;
 import org.marmotgraph.arango.commons.model.ArangoDatabaseProxy;
 import org.marmotgraph.authentication.api.AuthenticationAPI;
-import org.marmotgraph.authentication.controller.AuthenticationRepository;
-import org.marmotgraph.authentication.keycloak.KeycloakClient;
-import org.marmotgraph.authentication.keycloak.KeycloakController;
+import org.marmotgraph.authentication.service.InvitationsService;
+import org.marmotgraph.authentication.service.keycloak.KeycloakClient;
+import org.marmotgraph.authentication.service.keycloak.KeycloakController;
 import org.marmotgraph.commons.AuthTokenContext;
 import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.SetupLogic;
@@ -40,9 +40,9 @@ import org.marmotgraph.commons.permission.roles.RoleMapping;
 import org.marmotgraph.core.api.instances.TestContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cache.CacheManager;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
 
@@ -59,20 +59,20 @@ public abstract class AbstractSystemTest {
 
     protected String type = "https://marmotgraph.org/TestPayload";
 
-    @MockBean
+    @MockitoBean
     protected AuthTokenContext authTokenContext;
 
-    @MockBean
+    @MockitoBean
     protected AuthenticationAPI authenticationAPI;
 
 
     //We mock the keycloak controller bean to prevent it to initialize
-    @MockBean
+    @MockitoBean
     protected KeycloakController keycloakController;
 
 
     //We mock the keycloak client bean to prevent it to initialize
-    @MockBean
+    @MockitoBean
     protected KeycloakClient keycloakClient;
 
     @Autowired
@@ -88,15 +88,15 @@ public abstract class AbstractSystemTest {
     protected CacheManager cacheManager;
 
     @Autowired
-    private AuthenticationRepository authenticationRepository;
+    private InvitationsService invitationsService;
 
 
     protected TestContext ctx(RoleMapping... roles){
-        return new TestContext(idUtils, arangoDatabaseProxyList, authenticationAPI, roles, setupLogics, authenticationRepository, cacheManager);
+        return new TestContext(idUtils, arangoDatabaseProxyList, authenticationAPI, roles, setupLogics, invitationsService, cacheManager);
     }
 
     protected TestContext ctx(List<List<Role>> roleCollections){
-        return new TestContext(idUtils, arangoDatabaseProxyList, authenticationAPI, roleCollections, setupLogics, authenticationRepository, cacheManager);
+        return new TestContext(idUtils, arangoDatabaseProxyList, authenticationAPI, roleCollections, setupLogics, invitationsService, cacheManager);
     }
 
 }

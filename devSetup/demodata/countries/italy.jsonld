@@ -1,0 +1,10 @@
+{
+  "@context": { "@vocab": "https://marmotgraph.org/properties/" },
+  "@type": "https://marmotgraph.org/types/Country",
+  "@id": "https://marmotgraph.org/instances/countries/Italy",
+  "name": "Italy",
+  "officialLanguages": [
+    { "@id":  "https://marmotgraph.org/instances/languages/Italian" }
+  ]
+
+}

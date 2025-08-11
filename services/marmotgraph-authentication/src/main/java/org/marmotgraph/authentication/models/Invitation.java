@@ -22,40 +22,34 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.authentication.model;
+package org.marmotgraph.authentication.models;
 
+import jakarta.persistence.*;
+import lombok.*;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.List;
+import java.io.Serializable;
 import java.util.UUID;
 
-public class InstanceScope {
+@Entity
+@Table(name = "invitation")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class Invitation {
 
-    public InstanceScope(){}
-
-    public InstanceScope(String instanceId, List<UUID> relatedIds){
-        this.key =  instanceId;
-        this.relatedIds = relatedIds;
+    @Embeddable
+    @Getter
+    @Setter
+    @EqualsAndHashCode
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class CompositeId implements Serializable {
+        private String userId;
+        private UUID instanceId;
     }
 
-    @JsonProperty("_key")
-    private String key;
-    private List<UUID> relatedIds;
+    @EmbeddedId
+    CompositeId compositeId;
 
-    public String getKey() {
-        return key;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
-    }
-
-    public List<UUID> getRelatedIds() {
-        return relatedIds;
-    }
-
-    public void setRelatedIds(List<UUID> relatedIds) {
-        this.relatedIds = relatedIds;
-    }
 }

@@ -1,0 +1,16 @@
+{
+  "@context": { "@vocab": "https://marmotgraph.org/properties/" },
+  "@type": "https://marmotgraph.org/types/MountainRange",
+  "@id": "https://marmotgraph.org/instances/mountainRanges/Alps",
+  "name": "Alps",
+  "countries": [
+    {"@id": "https://marmotgraph.org/instances/countries/Austria"},
+    {"@id": "https://marmotgraph.org/instances/countries/France"},
+    {"@id": "https://marmotgraph.org/instances/countries/Germany"},
+    {"@id": "https://marmotgraph.org/instances/countries/Italy"},
+    {"@id": "https://marmotgraph.org/instances/countries/Liechtenstein"},
+    {"@id": "https://marmotgraph.org/instances/countries/Monaco"},
+    {"@id": "https://marmotgraph.org/instances/countries/Slovenia"},
+    {"@id": "https://marmotgraph.org/instances/countries/Switzerland"}
+  ]
+}

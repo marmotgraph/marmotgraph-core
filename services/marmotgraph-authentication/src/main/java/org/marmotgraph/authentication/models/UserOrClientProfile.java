@@ -22,25 +22,13 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.authentication.keycloak;
+package org.marmotgraph.authentication.models;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
+import com.auth0.jwt.interfaces.Claim;
 
-@Configuration
-public class KeycloakConfig {
+import java.util.List;
+import java.util.Map;
 
-    @Value("${org.marmotgraph.authentication.keycloak.configUrl}")
-    String configUrl;
+public record UserOrClientProfile(Map<String, Claim> claims, List<String> roleNames) {
 
-    @Value("${org.marmotgraph.login.client}")
-    String loginClientId;
-
-    public String getConfigUrl() {
-        return configUrl;
-    }
-
-    public String getLoginClientId() {
-        return loginClientId;
-    }
 }

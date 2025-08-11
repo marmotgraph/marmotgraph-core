@@ -1,0 +1,7 @@
+{
+  "@context": { "@vocab": "https://marmotgraph.org/properties/" },
+  "@type": "https://marmotgraph.org/types/Language",
+  "@id": "https://marmotgraph.org/instances/languages/SwissGerman",
+  "name": "Swiss German",
+  "dialectOf": {"@id":  "https://marmotgraph.org/instances/languages/German"}
+}

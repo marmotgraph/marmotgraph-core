@@ -56,7 +56,7 @@ public class SetupV3Beta {
     @Deprecated(forRemoval = true)
     @Admin
     public void registerTermsOfUse(@RequestBody TermsOfUse termsOfUse){
-        authentication.registerTermsOfUse(termsOfUse);
+        //We no longer support the registration of the terms of use - to ensure compatibility, we just don't do anything when called
     }
 
     @PatchMapping("/permissions/{role}")

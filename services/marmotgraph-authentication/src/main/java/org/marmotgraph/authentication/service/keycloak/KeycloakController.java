@@ -22,20 +22,18 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.authentication.keycloak;
+package org.marmotgraph.authentication.service.keycloak;
 
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.Claim;
-import org.marmotgraph.authentication.model.UserOrClientProfile;
+import org.marmotgraph.authentication.models.UserOrClientProfile;
 import org.marmotgraph.commons.AuthTokenContext;
 import org.marmotgraph.commons.AuthTokens;
 import org.marmotgraph.commons.exception.UnauthorizedException;
 import org.marmotgraph.commons.model.User;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Map;
 
@@ -45,31 +43,17 @@ public class KeycloakController {
 
     private static final String PREFERRED_USERNAME = "preferred_username";
 
-    private final KeycloakClient keycloakClient;
-
     private final AuthTokenContext authTokenContext;
 
     private final JWTVerifier jwtVerifier;
 
-    private final UserInfoMapping userInfoMapping;
+    private final UserInfoService userInfoMapping;
 
 
-    public KeycloakController(KeycloakClient keycloakClient, AuthTokenContext authTokenContext, UserInfoMapping userInfoMapping) {
-        this.keycloakClient = keycloakClient;
+    public KeycloakController(KeycloakClient keycloakClient, AuthTokenContext authTokenContext, UserInfoService userInfoMapping) {
         this.authTokenContext = authTokenContext;
         this.jwtVerifier = keycloakClient.getJWTVerifier(); // Reusable verifier instance
         this.userInfoMapping = userInfoMapping;
-    }
-
-    public String authenticate(String clientId, String clientSecret) {
-        Map<?, ?> result = WebClient.builder().build().post().uri(keycloakClient.getTokenEndpoint()).body(BodyInserters.fromFormData("grant_type", "client_credentials").with("client_id", clientId).with("client_secret", clientSecret)).retrieve().bodyToMono(Map.class).block();
-        if (result != null) {
-            Object access_token = result.get("access_token");
-            if (access_token != null) {
-                return access_token.toString();
-            }
-        }
-        return null;
     }
 
     public UserOrClientProfile getClientProfile(boolean fetchRoles) {

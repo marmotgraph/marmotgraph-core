@@ -22,23 +22,14 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.authentication.model;
+package org.marmotgraph.authentication.service;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import org.marmotgraph.authentication.models.InstanceScope;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public class IssuerInfo {
+import java.util.UUID;
 
-    @JsonProperty("realm")
-    private String realm;
-
-    @JsonProperty("public_key")
-    private String publicKey;
-
-    public String getRealm() {
-        return realm;
-    }
-
-    public String getPublicKey() {
-        return publicKey;
-    }
+@Repository
+public interface InstanceScopeRepository extends JpaRepository<InstanceScope, UUID> {
 }

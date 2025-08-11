@@ -22,29 +22,30 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.authentication.model;
+package org.marmotgraph.authentication.models;
 
-import java.util.Date;
 
-public class AcceptedTermsOfUse {
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-    private String version;
-    private Date date;
+import java.util.Set;
+import java.util.UUID;
 
-    // For serialization
-    public AcceptedTermsOfUse() {
-    }
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Entity
+public class InstanceScope {
 
-    public AcceptedTermsOfUse(String version, Date date) {
-        this.version = version;
-        this.date = date;
-    }
+    @Id
+    private UUID instanceId;
 
-    public String getVersion() {
-        return version;
-    }
-
-    public Date getDate() {
-        return date;
-    }
+    @ElementCollection
+    private Set<UUID> relatedIds;
 }
