@@ -39,7 +39,6 @@
         <module>libs/marmotgraph-microservice-commons</module>
         <module>libs-4-test/marmotgraph-test-factory</module>
         <module>libs-4-test/marmotgraph-test-utils</module>
-        <module>libs/marmotgraph-arango-commons</module>
         <module>config/marmotgraph-microservice</module>
         <module>services/marmotgraph-ids</module>
         <module>services/marmotgraph-authentication</module>

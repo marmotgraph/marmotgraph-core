@@ -37,7 +37,6 @@ import org.marmotgraph.commons.model.PaginatedStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.Objects;
 import java.util.function.Function;

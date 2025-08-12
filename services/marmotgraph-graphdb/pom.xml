@@ -37,15 +37,25 @@
     <name>marmotgraph-graphdb</name>
 
     <dependencies>
-        <dependency>
-            <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-arango-commons</artifactId>
-            <version>4.0</version>
-        </dependency>
-        <dependency>
+         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
             <version>4.5.14</version>
+        </dependency>
+        <dependency>
+            <groupId>com.arangodb</groupId>
+            <artifactId>arangodb-java-driver</artifactId>
+            <version>7.20.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.arangodb</groupId>
+            <artifactId>jackson-dataformat-velocypack</artifactId>
+            <version>4.5.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>1.10.0</version>
         </dependency>
     </dependencies>
 </project>
