@@ -35,14 +35,6 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>marmotgraph-core-api</artifactId>
     <version>4.0</version>
-    <dependencies>
-        <dependency>
-            <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-arango-commons</artifactId>
-            <version>4.0</version>
-        </dependency>
-    </dependencies>
-
 
 
 </project>

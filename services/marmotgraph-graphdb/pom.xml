@@ -32,9 +32,9 @@
         <version>4.0</version>
         <relativePath>../../config/marmotgraph-microservice</relativePath>
     </parent>
-    <artifactId>marmotgraph-graphdb-sync</artifactId>
+    <artifactId>marmotgraph-graphdb</artifactId>
     <version>4.0</version>
-    <name>marmotgraph-graphdb-sync</name>
+    <name>marmotgraph-graphdb</name>
 
     <dependencies>
         <dependency>

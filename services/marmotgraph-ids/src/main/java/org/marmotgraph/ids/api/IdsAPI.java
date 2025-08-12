@@ -23,15 +23,15 @@
  */
 
 package org.marmotgraph.ids.api;
+
 import org.marmotgraph.commons.api.Ids;
 import org.marmotgraph.commons.exception.AmbiguousException;
 import org.marmotgraph.commons.exception.AmbiguousIdException;
 import org.marmotgraph.commons.jsonld.InstanceId;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.IdWithAlternatives;
-import org.marmotgraph.commons.model.SpaceName;
+import org.marmotgraph.ids.model.RegisteredId;
 import org.marmotgraph.ids.service.IdService;
-import org.marmotgraph.ids.model.PersistedId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -56,11 +56,11 @@ public class IdsAPI implements Ids.Client {
     public void createOrUpdateId(IdWithAlternatives idWithAlternatives,  DataStage stage) {
         if (idWithAlternatives != null && idWithAlternatives.getId() != null) {
             logger.debug(String.format("Updating id %s%s", idWithAlternatives.getId(), idWithAlternatives.getAlternatives() != null ? "with alternatives " + String.join(", ", idWithAlternatives.getAlternatives()) : ""));
-            PersistedId persistedId = new PersistedId();
-            persistedId.setUUID(idWithAlternatives.getId());
-            persistedId.setSpace(new SpaceName(idWithAlternatives.getSpace()));
-            persistedId.setAlternativeIds(idWithAlternatives.getAlternatives());
-            idRepository.upsert(stage, persistedId);
+            RegisteredId registeredId = new RegisteredId();
+            registeredId.setCompositeId(new RegisteredId.CompositeId(idWithAlternatives.getId(), stage));
+            registeredId.setSpace(idWithAlternatives.getSpace());
+            registeredId.setAlternativeIds(idWithAlternatives.getAlternatives());
+            idRepository.upsert(stage, registeredId);
         }
         else {
             throw new IllegalArgumentException("Invalid payload");
@@ -69,10 +69,7 @@ public class IdsAPI implements Ids.Client {
 
     @Override
     public void removeId(DataStage stage, UUID id) {
-        PersistedId foundId = idRepository.getId(id, stage);
-        if(foundId!=null) {
-            idRepository.remove(stage, foundId);
-        }
+        idRepository.getId(id, stage).ifPresent(idRepository::remove);
     }
 
     @Override

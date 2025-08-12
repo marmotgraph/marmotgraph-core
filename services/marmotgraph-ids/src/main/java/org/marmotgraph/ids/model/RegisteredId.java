@@ -59,24 +59,6 @@ public class RegisteredId {
 
     private String space;
 
-    public static RegisteredId fromPersistedId(PersistedId persistedId, DataStage stage){
-        if(persistedId==null){
-            return null;
-        }
-        RegisteredId result = new RegisteredId();
-        result.setCompositeId(new CompositeId(persistedId.getUUID(), stage));
-        result.setAlternativeIds(persistedId.getAlternativeIds());
-        result.setSpace(persistedId.getSpace().toString());
-        return result;
-    }
-
-    public PersistedId toPersistedId() {
-        PersistedId result = new PersistedId();
-        result.setUUID(compositeId.getUuid());
-        result.setSpace(SpaceName.fromString(getSpace()));
-        result.setAlternativeIds(getAlternativeIds());
-        return result;
-    }
 
     public InstanceId toInstanceId(){
         return new InstanceId(compositeId.getUuid(), SpaceName.fromString(getSpace()));

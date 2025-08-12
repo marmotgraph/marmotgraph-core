@@ -58,7 +58,7 @@
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-graphdb-sync</artifactId>
+            <artifactId>marmotgraph-graphdb</artifactId>
             <version>4.0</version>
             <classifier>library</classifier>
         </dependency>
@@ -113,11 +113,6 @@
 
 
         <!-- we need to explicitly specify the dependency to ensure the JaCoCo report covers this key library too -->
-        <dependency>
-            <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-arango-commons</artifactId>
-            <version>4.0</version>
-        </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-commons</artifactId>

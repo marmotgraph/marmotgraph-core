@@ -34,7 +34,6 @@ import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.IdWithAlternatives;
 import org.marmotgraph.commons.model.SpaceName;
-import org.marmotgraph.ids.model.PersistedId;
 import org.marmotgraph.ids.model.RegisteredId;
 import org.marmotgraph.ids.repository.IdRepository;
 import org.springframework.stereotype.Component;
@@ -52,9 +51,8 @@ public class IdService {
 
     private final EntityManager entityManager;
 
-    public PersistedId getId(UUID uuid, DataStage stage) {
-        Optional<RegisteredId> byId = idRepository.findById(new RegisteredId.CompositeId(uuid, stage));
-        return byId.map(RegisteredId::toPersistedId).orElse(null);
+    public Optional<RegisteredId> getId(UUID uuid, DataStage stage) {
+        return idRepository.findById(new RegisteredId.CompositeId(uuid, stage));
     }
 
     public IdService(IdRepository idRepository, IdUtils idUtils, EntityManager entityManager) {
@@ -63,17 +61,17 @@ public class IdService {
         this.entityManager = entityManager;
     }
 
-    public void remove(DataStage stage, PersistedId id) {
-        this.idRepository.deleteById(new RegisteredId.CompositeId(id.getUUID(), stage));
+    public void remove(RegisteredId id) {
+        this.idRepository.deleteById(id.getCompositeId());
     }
 
-    public void upsert(DataStage stage, PersistedId id) {
+    public void upsert(DataStage stage, RegisteredId id) {
         if (stage == DataStage.IN_PROGRESS) {
-            Optional<RegisteredId> existingId = this.idRepository.findById(new RegisteredId.CompositeId(id.getUUID(), stage));
+            Optional<RegisteredId> existingId = this.idRepository.findById(id.getCompositeId());
             if (existingId.isPresent()) {
                 RegisteredId registeredId = existingId.get();
                 //It could happen that identifiers disappear during updates. We need to make sure that the old identifiers are not lost though (getting rid of them is called "splitting" and is a separate process).
-                if(!CollectionUtils.isEmpty(registeredId.getAlternativeIds())){
+                if (!CollectionUtils.isEmpty(registeredId.getAlternativeIds())) {
                     JsonLdId instanceId = idUtils.buildAbsoluteUrl(registeredId.getCompositeId().getUuid());
                     List<String> alternativeIds = new ArrayList<>(id.getAlternativeIds());
                     alternativeIds.addAll(registeredId.getAlternativeIds());
@@ -83,8 +81,8 @@ public class IdService {
         }
         //Add the id in its fully qualified form as an alternative
         id.setAlternativeIds(new HashSet<>(id.getAlternativeIds() != null ? id.getAlternativeIds() : Collections.emptySet()));
-        id.getAlternativeIds().add(idUtils.buildAbsoluteUrl(id.getUUID()).getId());
-        this.idRepository.saveAndFlush(RegisteredId.fromPersistedId(id, stage));
+        id.getAlternativeIds().add(idUtils.buildAbsoluteUrl(id.getCompositeId().getUuid()).getId());
+        this.idRepository.saveAndFlush(id);
     }
 
     /**
@@ -96,9 +94,9 @@ public class IdService {
      * @return
      * @throws AmbiguousException
      */
-    public InstanceId findInstanceByIdentifiers(DataStage stage, UUID uuid, Collection<String> identifiers) throws AmbiguousException{
+    public InstanceId findInstanceByIdentifiers(DataStage stage, UUID uuid, Collection<String> identifiers) throws AmbiguousException {
         Set<String> alternativeIdentifiers = new HashSet<>(identifiers);
-        if(uuid!=null){
+        if (uuid != null) {
             Optional<RegisteredId> byId = idRepository.findById(new RegisteredId.CompositeId(uuid, stage));
             if (byId.isPresent()) {
                 return byId.get().toInstanceId();
