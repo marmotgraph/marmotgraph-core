@@ -109,8 +109,11 @@
             <artifactId>aspectjweaver</artifactId>
             <version>1.9.6</version>
         </dependency>
-
-
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jakarta-jsonp</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
 
         <!-- we need to explicitly specify the dependency to ensure the JaCoCo report covers this key library too -->
         <dependency>
@@ -121,11 +124,6 @@
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-microservice-commons</artifactId>
-            <version>4.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-graphdb-commons</artifactId>
             <version>4.0</version>
         </dependency>
     </dependencies>

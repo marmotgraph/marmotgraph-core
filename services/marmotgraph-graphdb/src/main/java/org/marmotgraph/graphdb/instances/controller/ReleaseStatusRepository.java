@@ -33,7 +33,6 @@ import org.marmotgraph.arango.commons.model.ArangoCollectionReference;
 import org.marmotgraph.arango.commons.model.ArangoDocumentReference;
 import org.marmotgraph.arango.commons.model.InternalSpace;
 import org.marmotgraph.commons.AuthContext;
-import org.marmotgraph.commons.JsonAdapter;
 import org.marmotgraph.commons.TypeUtils;
 import org.marmotgraph.commons.exception.ForbiddenException;
 import org.marmotgraph.commons.jsonld.DynamicJson;

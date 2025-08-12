@@ -31,8 +31,6 @@ import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.arango.commons.model.*;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.IdUtils;
-import org.marmotgraph.commons.exception.InvalidRequestException;
-import org.marmotgraph.commons.exception.LimitExceededException;
 import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.jsonld.IndexedJsonLdDoc;
 import org.marmotgraph.commons.jsonld.InstanceId;
