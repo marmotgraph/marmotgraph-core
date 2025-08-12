@@ -58,7 +58,7 @@
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-graphdb</artifactId>
+            <artifactId>marmotgraph-graphdb-arango</artifactId>
             <version>4.0</version>
             <classifier>library</classifier>
         </dependency>

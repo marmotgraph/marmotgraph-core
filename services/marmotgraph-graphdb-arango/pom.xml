@@ -32,7 +32,7 @@
         <version>4.0</version>
         <relativePath>../../config/marmotgraph-microservice</relativePath>
     </parent>
-    <artifactId>marmotgraph-graphdb</artifactId>
+    <artifactId>marmotgraph-graphdb-arango</artifactId>
     <version>4.0</version>
     <name>marmotgraph-graphdb</name>
 

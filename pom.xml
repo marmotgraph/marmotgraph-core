@@ -44,7 +44,7 @@
         <module>services/marmotgraph-authentication</module>
         <module>services/marmotgraph-core-api</module>
         <module>services/marmotgraph-tenants</module>
-        <module>services/marmotgraph-graphdb</module>
+        <module>services/marmotgraph-graphdb-arango</module>
         <module>services/marmotgraph-indexing</module>
         <module>services/marmotgraph-inference</module>
         <module>services/marmotgraph-jsonld</module>
