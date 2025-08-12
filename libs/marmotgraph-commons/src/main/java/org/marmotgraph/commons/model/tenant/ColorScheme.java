@@ -72,14 +72,14 @@ public class ColorScheme {
         private String grey900;
 
         public static final Greys DEFAULT = new Greys(
-                "#414042",
-                "#414042",
-                "#414042",
-                "#414042",
-                "#414042",
-                "#414042",
-                "#414042",
-                "#414042"
+                "#e9ecef",
+                "#dee2e6",
+                "#ced4da",
+                "#adb5bd",
+                "#6c757d",
+                "#495057",
+                "#343a40",
+                "#212529"
         );
 
     }
@@ -90,10 +90,18 @@ public class ColorScheme {
     @Setter
     public static class Blacks {
         private String black05;
+        private String black06;
+        private String black07;
+        private String black08;
         private String black09;
+        private String black10;
         public static final Blacks DEFAULT = new Blacks(
-                "#80414042",
-                "#E6414042"
+                "#0f121980",
+                "#0f121999",
+                "#0f1219b3",
+                "#0f1219cc",
+                "#0f1219e6",
+                "#0f1219"
         );
 
     }
@@ -108,10 +116,10 @@ public class ColorScheme {
         private String success;
         private String error;
         public static final StateColors DEFAULT = new StateColors(
-                "#414042",
-                "#414042",
-                "#414042",
-                "#414042"
+                "#ffc107",
+                "#0dcaf0",
+                "#198754",
+                "#dc3545"
         );
 
     }
@@ -128,11 +136,11 @@ public class ColorScheme {
         private String hoverColor;
 
         public static final LinkColors DEFAULT = new LinkColors(
-                "#E67634",
-                "#E67634",
-                "#E67634",
-                "#B2B1B2",
-                "#E67634"
+                "#0a58ca",
+                "#0a58ca",
+                "#0a58ca",
+                "#565e64",
+                "#6610f2"
         );
     }
 
@@ -141,37 +149,41 @@ public class ColorScheme {
     public String toCSS(){
         return String.format("""
                 :root {
-                  --brand-primary: "%s";
-                  --brand-seconday: "%s";
-                  --brand-tertiary: "%s";
+                  --brand-primary: %s;
+                  --brand-seconday: %s;
+                  --brand-tertiary: %s;
                 
-                  --grey-200: "%s";
-                  --grey-300: "%s";
-                  --grey-400: "%s";
-                  --grey-500: "%s";
-                  --grey-600: "%s";
-                  --grey-700: "%s";
-                  --grey-800: "%s";
-                  --grey-900: "%s";
+                  --grey-200: %s;
+                  --grey-300: %s;
+                  --grey-400: %s;
+                  --grey-500: %s;
+                  --grey-600: %s;
+                  --grey-700: %s;
+                  --grey-800: %s;
+                  --grey-900: %s;
                 
-                  --black-05: "%s";
-                  --black-09: "%s";
+                  --black-05: %s;
+                  --black-06: %s;
+                  --black-07: %s;
+                  --black-08: %s;
+                  --black-09: %s;
+                  --black-10: %s;
                 
-                  --state-warning: "%s";
-                  --state-info: "%s";
-                  --state-success: "%s";
-                  --state-error: "%s";
+                  --state-warning: %s;
+                  --state-info: %s;
+                  --state-success: %s;
+                  --state-error: %s;
                 
-                  --link-default: "%s";
-                  --link-active: "%s";
-                  --link-visited: "%s";
-                  --link-disabled: "%s";
-                  --link-hover: "%s";
+                  --link-default: %s;
+                  --link-active: %s;
+                  --link-visited: %s;
+                  --link-disabled: %s;
+                  --link-hover: %s;
                 }
                 """,
                 brandColors.primary, brandColors.secondary, brandColors.tertiary,
                 greys.grey200, greys.grey300, greys.grey400, greys.grey500, greys.grey600, greys.grey700, greys.grey800, greys.grey900,
-                blacks.black05, blacks.black09,
+                blacks.black05, blacks.black06, blacks.black07, blacks.black08, blacks.black09, blacks.black10,
                 stateColors.warning, stateColors.info, stateColors.success, stateColors.error,
                 linkColors.defaultColor, linkColors.activeColor, linkColors.visitedColor, linkColors.disabledColor, linkColors.hoverColor
         );

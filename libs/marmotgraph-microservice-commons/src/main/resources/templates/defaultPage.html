@@ -27,85 +27,117 @@
 <head>
 
     <meta charset="utf-8">
-    <link rel="apple-touch-icon" href="https://docs.kg.ebrains.eu/assets/apple-touch-icon.png" sizes="180x180">
-    <link rel="icon" type="image/png" href="https://docs.kg.ebrains.eu/assets/favicon-32x32.png" sizes="32x32">
-    <link rel="icon" type="image/png" href="https://docs.kg.ebrains.eu/assets/favicon-16x16.png" sizes="16x16">
     <meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1">
+    <link rel="icon" type="image/png" href="/v3/tenants/default/theme/favicon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
-    <link rel="stylesheet" href="https://docs.kg.ebrains.eu/assets/prism.css">
-    <link rel="stylesheet" href="https://docs.kg.ebrains.eu/assets/style.css">
+    <link rel="stylesheet" href="/v3/tenants/default/theme/css">
     <title>MarmotGraph API</title>
+    <style>
+        #root {
+            color: var(--grey-200);
+            height: 100vh;
+            display: grid;
+            overflow: hidden;
+            grid-template-rows: auto 1fr 50px;
+            grid-template-columns: 1fr;
+            line-height: 2em;
+        }
+
+        header {
+            padding: 0.5em;
+            background-color: var(--black-10);
+        }
+
+        .content {
+            background-color: var(--black-09);
+            padding: 2em;
+        }
+
+        footer {
+            padding: 0.5em;
+            background-color: var(--black-10);
+            display: grid;
+            grid-template-rows: 3fr;
+            grid-template-columns: 1fr  auto 1fr;
+        }
+
+        nav {
+            display: grid;
+            grid-template-rows: 2fr;
+            grid-template-columns: 1fr 1fr auto;
+        }
+
+        .acknowledgement {
+            margin-left: 3em;
+            height:35px
+        }
+
+        .row {
+            margin-top: 2em;
+        }
+
+        li {
+            margin-top: 1.2em;
+        }
+    </style>
+
 </head>
 <body>
-<style>
-    li {
-        margin-top: 1em;
-        margin-bottom: 1em;
-    }
-
-    .btn {
-        margin-right: 0;
-    }
-</style>
-<div class="viewport">
-    <div class="transparent titlebar">
-        <div style="padding: 10px;">
-            <img src="https://docs.kg.ebrains.eu/assets/ebrains.svg" alt="" style="vertical-align: middle;" height="30">
-            <span style="border-left: 1px solid rgb(89, 93, 97); font-size: 0.9em; margin-left: 10px; padding-left:10px;">The MarmotGraph API</span>
-        </div>
-    </div>
-    <div style="display:grid; flex:1; overflow:hidden; grid-template-rows: 1fr auto;">
-        <div id="main" class="main_panel">
-            <div class="container">
-                <h1>The MarmotGraph API</h1>
-            </div>
-            <div class="container">
-                <div class="row">
-                    <div class="col-sm align-self-center ">
+<div id="root">
+    <header>
+        <div><img src="/v3/tenants/default/theme/logo?darkMode=true" alt="MarmotGraph" style="height: 40px; padd"></div>
+        <nav></nav>
+    </header>
+    <div class="content">
+        <div style="display:grid; flex:1; overflow:hidden; grid-template-rows: 1fr auto;">
+            <div id="main" class="main_panel">
+                <div class="container">
+                    <h1><span>The </span><img src="/v3/tenants/default/theme/logo?darkMode=true" alt="MarmotGraph" style="height: 2.2em; position:relative; top:-0.2em;"><span> API</span></h1>
+                </div>
+                <div class="container">
+                    <div class="row">
                         <h3>Resources</h3>
                         <div>Please find the following resources describing the MarmotGraph:
                             <ul>
                                 <li>The <a href="https://docs.kg.ebrains.eu"
                                            class="btn btn-outline-light">documentation</a> of the MarmotGraph
                                 </li>
-                                <li>The <a href="./swagger-ui.html" class="btn btn-outline-light">API reference</a> of
+                                <li>The <a href="./swagger-ui.html" class="btn btn-outline-light">API
+                                    reference</a> of
                                     the MarmotGraph
                                 </li>
                             </ul>
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-sm align-self-center ">
-                            <h3>Contact</h3>
-                            <div>If you have any questions, bug reports or suggestions, please contact <a
-                                    href="mailto:kg@ebrains.eu" class="btn btn-outline-light">kg@ebrains.eu</a></div>
+                        <h3>Contact</h3>
+                        <div>If you have any questions, bug reports or suggestions, please contact <a
+                                href="mailto:support@marmotgraph.org" class="btn btn-outline-light">support@marmotgraph.org</a>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="container">
-                <div class="acknowledgement" style="max-width:80%; margin-top: 5em;">
-                    This open source software code was developed in part or in whole in the Human Brain Project, funded
-                    from
-                    the European Union's Horizon 2020 Framework Programme for Research and Innovation under Specific
-                    Grant
-                    Agreements No. 720270, No. 785907 and No. 945539 (Human Brain Project SGA1, SGA2 and SGA3).
-                    <div style="text-align:right"><img alt="Co-funded by the European Union"
-                                                       src="https://docs.kg.ebrains.eu/assets/eu_funded.png"
-                                                       style="height:3em; margin-top: 1em;"></div>
+                <div class="container">
+
                 </div>
             </div>
         </div>
-        <div class="footer">
-
-            <div class="copyright">©2019-<span id="thisYear"></span> ebrains.eu</div>
-        </div>
     </div>
+    <footer class="footer-0-1-14">
+        <div>   <a href="https://cscs.ch"><img class="acknowledgement" src="cscs.png"/></a><a href="https://ethz.ch"><img class="acknowledgement" src="ethz.png"/></a>
+            <img class="acknowledgement" alt="Co-funded by the European Union" src="eu_funded.png"
+                 title="This open source software code was developed in part or in whole in the Human Brain Project, funded from the European Union's Horizon 2020 Framework Programme for Research and Innovation under Specific Grant Agreements No. 720270, No. 785907 and No. 945539 (Human Brain Project SGA1, SGA2 and SGA3)."
+            />
+        </div>
+        <div class="copyright">Copyright © <span id="thisYear"></span> ETH Zurich</div>
+        <div style="text-align: right;"><span>build: <i>unknown</i></span></div>
+    </footer>
     <script>
       document.getElementById("thisYear").innerText = new Date().getFullYear();
     </script>
+
+
 </div>
 </body>
 </html>

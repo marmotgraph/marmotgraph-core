@@ -37,8 +37,14 @@ def upload():
     client = kg(host=endpoint).with_credentials(sa_client_id, sa_client_secret).build()
     for testdata in glob.glob("**/*.jsonld"):
         with open(testdata, "r") as testdata_file:
-            result = client.instances.create_new(json.load(testdata_file), "demo")
-            print(result, flush=True)
+            data = json.load(testdata_file)
+            result = client.instances.create_new(data, "demo")
+            if result.error and result.error.code == 409:
+                result = client.instances.contribute_to_full_replacement(data, result.error.uuid)
+            if result.error:
+                print(f"Wasn't able to upload the instance {testdata} - error: {e}")
+            else:
+                print(f"Upload of {testdata} was successful", flush=True)
 
 
 endpoint_with_protocol = f"http://{endpoint}" if endpoint.startswith("172.") or endpoint.startswith("localhost") else f"https://{endpoint}"
@@ -49,14 +55,14 @@ while current_try<number_of_retries:
     try:
         response = requests.get(endpoint_with_protocol)
         if response.status_code==200:
+            print(f"I've found KG at {endpoint_with_protocol}! I'm going to upload the demo data now!", flush=True)
             upload()
             success = True
             break
     except ConnectionError as e:
-        print(e, flush=True)
         pass
     current_try += 1
-    print(f"Wasn't able to connect to KG yet - waiting for {current_try*2} seconds", flush=True)
+    print(f"Wasn't able to connect to KG yet. I'm expecting it at {endpoint_with_protocol}. Did you forget to start your local server? I'm waiting for {current_try*2} seconds...", flush=True)
     sleep(current_try*2)
 if not success:
     print("Wasn't able to connect to KG in time", flush=True)
