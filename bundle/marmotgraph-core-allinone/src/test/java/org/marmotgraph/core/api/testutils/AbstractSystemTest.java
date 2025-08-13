@@ -25,7 +25,7 @@
 package org.marmotgraph.core.api.testutils;
 
 import org.marmotgraph.MarmotGraphCoreAllInOne;
-import org.marmotgraph.arango.commons.model.ArangoDatabaseProxy;
+import org.marmotgraph.graphdb.arango.model.ArangoDatabaseProxy;
 import org.marmotgraph.authentication.api.AuthenticationAPI;
 import org.marmotgraph.authentication.service.InvitationsService;
 import org.marmotgraph.authentication.service.keycloak.KeycloakClient;

@@ -34,7 +34,7 @@
     </parent>
     <artifactId>marmotgraph-graphdb-arango</artifactId>
     <version>4.0</version>
-    <name>marmotgraph-graphdb</name>
+    <name>marmotgraph-graphdb-arango</name>
 
     <dependencies>
          <dependency>

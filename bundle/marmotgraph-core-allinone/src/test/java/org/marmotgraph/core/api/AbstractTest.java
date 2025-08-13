@@ -24,7 +24,7 @@
 
 package org.marmotgraph.core.api;
 
-import org.marmotgraph.arango.commons.model.ArangoDatabaseProxy;
+import org.marmotgraph.graphdb.arango.model.ArangoDatabaseProxy;
 import org.marmotgraph.commons.SetupLogic;
 import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
