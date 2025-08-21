@@ -24,7 +24,8 @@
 
 package org.marmotgraph.core.controller;
 
-import org.marmotgraph.commons.api.Tenants;
+import lombok.AllArgsConstructor;
+import org.marmotgraph.commons.api.tenants.Tenants;
 import org.marmotgraph.commons.model.tenant.ColorScheme;
 import org.marmotgraph.commons.model.tenant.Font;
 import org.marmotgraph.commons.model.tenant.ImageResult;
@@ -38,14 +39,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+@AllArgsConstructor
 @Component
 public class CoreTenantsController {
 
     private final Tenants.Client client;
-
-    public CoreTenantsController(Tenants.Client client) {
-        this.client = client;
-    }
 
     public void createTenant(String name, TenantDefinition tenantDefinition) {
         this.client.createTenant(name, tenantDefinition);

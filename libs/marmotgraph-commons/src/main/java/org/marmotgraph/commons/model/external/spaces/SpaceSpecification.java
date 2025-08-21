@@ -26,12 +26,16 @@ package org.marmotgraph.commons.model.external.spaces;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.Setter;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.internal.spaces.Space;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 
+@Setter
+@Getter
 public class SpaceSpecification {
 
     @JsonProperty(SchemaOrgVocabulary.NAME)
@@ -51,54 +55,6 @@ public class SpaceSpecification {
 
     @JsonProperty(EBRAINSVocabulary.META_SCOPE_RELEVANT_SPACE)
     private Boolean scopeRelevant;
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getIdentifier() {
-        return identifier;
-    }
-
-    public void setIdentifier(String identifier) {
-        this.identifier = identifier;
-    }
-
-    public Boolean getAutoRelease() {
-        return autoRelease;
-    }
-
-    public void setAutoRelease(Boolean autoRelease) {
-        this.autoRelease = autoRelease;
-    }
-
-    public Boolean getClientSpace() {
-        return clientSpace;
-    }
-
-    public void setClientSpace(Boolean clientSpace) {
-        this.clientSpace = clientSpace;
-    }
-
-    public Boolean getDeferCache() {
-        return deferCache;
-    }
-
-    public void setDeferCache(Boolean deferCache) {
-        this.deferCache = deferCache;
-    }
-
-    public Boolean getScopeRelevant() {
-        return scopeRelevant;
-    }
-
-    public void setScopeRelevant(Boolean scopeRelevant) {
-        this.scopeRelevant = scopeRelevant;
-    }
 
     @JsonIgnore
     public Space toSpace(){

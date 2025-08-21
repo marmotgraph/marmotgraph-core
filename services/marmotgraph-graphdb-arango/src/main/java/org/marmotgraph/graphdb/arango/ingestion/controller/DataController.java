@@ -30,7 +30,7 @@ import org.marmotgraph.graphdb.arango.model.ArangoDocumentReference;
 import org.marmotgraph.graphdb.arango.model.InternalSpace;
 import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.TypeUtils;
-import org.marmotgraph.commons.api.Ids;
+import org.marmotgraph.commons.api.primaryStore.Ids;
 import org.marmotgraph.commons.jsonld.InstanceId;
 import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;

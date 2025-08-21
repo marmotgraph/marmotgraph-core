@@ -24,6 +24,8 @@
 
 package org.marmotgraph.commons.jsonld;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 
 import java.util.List;
@@ -34,6 +36,14 @@ public class InferredJsonLdDoc {
     public static final String INFERENCE_OF = "_inferenceOf";
 
     private final IndexedJsonLdDoc indexedJsonLdDoc;
+
+    @Setter
+    @Getter
+    private JsonLdDoc alternatives;
+
+    @Getter
+    @Setter
+    private List<String> inferenceOf;
 
     protected InferredJsonLdDoc(IndexedJsonLdDoc document) {
         this.indexedJsonLdDoc = document;
@@ -57,18 +67,6 @@ public class InferredJsonLdDoc {
 
     public static boolean isInferenceOfKey(String key){
         return INFERENCE_OF.equals(key);
-    }
-
-    public List<JsonLdId> getInferenceOf(){
-        return indexedJsonLdDoc.getDoc().getAsListOf(INFERENCE_OF, String.class).stream().filter(Objects::nonNull).map(JsonLdId::new).toList();
-    }
-
-    public void setInferenceOf(List<String> jsonLdIds){
-        indexedJsonLdDoc.getDoc().addProperty(INFERENCE_OF, jsonLdIds);
-    }
-
-    public void setAlternatives(JsonLdDoc alternatives){
-        indexedJsonLdDoc.getDoc().addProperty(EBRAINSVocabulary.META_ALTERNATIVE, alternatives);
     }
 
     public boolean hasTypes(){

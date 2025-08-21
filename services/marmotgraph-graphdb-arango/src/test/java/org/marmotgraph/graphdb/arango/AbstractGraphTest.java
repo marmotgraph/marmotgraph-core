@@ -28,9 +28,9 @@ import jakarta.validation.constraints.NotNull;
 import org.marmotgraph.graphdb.arango.model.ArangoCollectionReference;
 import org.marmotgraph.graphdb.arango.model.ArangoDocumentReference;
 import org.marmotgraph.commons.JsonAdapter;
-import org.marmotgraph.commons.api.Authentication;
-import org.marmotgraph.commons.api.Ids;
-import org.marmotgraph.commons.api.PrimaryStoreUsers;
+import org.marmotgraph.commons.api.authentication.Authentication;
+import org.marmotgraph.commons.api.primaryStore.Ids;
+import org.marmotgraph.commons.api.primaryStore.Users;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.SpaceName;
@@ -72,7 +72,7 @@ public class AbstractGraphTest {
     protected Ids.Client ids;
 
     @MockitoBean
-    protected PrimaryStoreUsers.Client primaryStoreUsers;
+    protected Users.Client primaryStoreUsers;
 
     protected ArangoDocumentReference upsert(SpaceName spaceName, NormalizedJsonLd payload, DataStage stage){
         return upsert(spaceName, UUID.randomUUID(), payload, stage);

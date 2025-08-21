@@ -26,11 +26,10 @@ package org.marmotgraph.authentication.service;
 
 import jakarta.persistence.EntityManager;
 import lombok.AllArgsConstructor;
-import org.marmotgraph.authentication.models.InstanceScope;
 import org.marmotgraph.authentication.models.Invitation;
+import org.marmotgraph.commons.api.primaryStore.Scopes;
 import org.springframework.stereotype.Component;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -41,6 +40,7 @@ public class InvitationsService {
 
     private final EntityManager em;
     private final InvitationsRepository repository;
+    private final Scopes.Client scopes;
 
     public List<String> getAllInvitedUsersByInstanceId(UUID instanceId){
         return em.createQuery("select i.compositeId.userId from Invitation i where i.compositeId.instanceId = :instanceId", String.class).setParameter("instanceId", instanceId).getResultList();
@@ -52,8 +52,8 @@ public class InvitationsService {
 
     public List<UUID> getAllInvitationsForUserId(String userId) {
         List<UUID> instanceIds = em.createQuery("select i.compositeId.instanceId from Invitation i where i.compositeId.userId = :userId", UUID.class).setParameter("userId", userId).getResultList();
-        List<InstanceScope> relatedInstanceScopes = em.createQuery("select s from InstanceScope s where s.instanceId IN :instanceIds", InstanceScope.class).setParameter("instanceIds", instanceIds).getResultList();
-        return Stream.concat(instanceIds.stream(), relatedInstanceScopes.stream().map(InstanceScope::getRelatedIds).flatMap(Collection::stream)).distinct().toList();
+        List<UUID> relatedInstances = scopes.relatedInstancesByScope(instanceIds);
+        return Stream.concat(instanceIds.stream(), relatedInstances.stream()).distinct().toList();
     }
 
     public void createInvitation(Invitation invitation) {

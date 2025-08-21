@@ -25,37 +25,27 @@
 package org.marmotgraph.core.controller;
 
 import org.marmotgraph.commons.IdUtils;
-import org.marmotgraph.commons.api.GraphDBDocuments;
-import org.marmotgraph.commons.api.GraphDBInstances;
-import org.marmotgraph.commons.api.PrimaryStoreEvents;
-import org.marmotgraph.commons.exception.UnauthorizedException;
-import org.marmotgraph.commons.jsonld.*;
-import org.marmotgraph.commons.model.DataStage;
+import org.marmotgraph.commons.api.primaryStore.Events;
+import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.model.SpaceName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
+
 /**
  * The inference controller contains the orchestration logic for the inference operations
  */
 @Component
 public class CoreInferenceController {
 
-    private final GraphDBInstances.Client graphDBInstances;
-    private final GraphDBDocuments.Client graphDBDocuments;
     private final IdUtils idUtils;
-    private final PrimaryStoreEvents.Client primaryStoreEvents;
+    private final Events.Client primaryStoreEvents;
     private final CoreIdsController ids;
 
-    public CoreInferenceController(GraphDBInstances.Client graphDBInstances, GraphDBDocuments.Client graphDBDocuments, IdUtils idUtils, PrimaryStoreEvents.Client primaryStoreEvents, CoreIdsController ids) {
-        this.graphDBInstances = graphDBInstances;
-        this.graphDBDocuments = graphDBDocuments;
+    public CoreInferenceController(IdUtils idUtils, Events.Client primaryStoreEvents, CoreIdsController ids) {
         this.idUtils = idUtils;
         this.primaryStoreEvents = primaryStoreEvents;
         this.ids = ids;
@@ -69,41 +59,43 @@ public class CoreInferenceController {
     }
 
     public void triggerInference(SpaceName space, String identifier) {
-        List<UUID> uuids;
-        if(space == null){
-            throw new IllegalArgumentException("No space provided");
-        }
-        if (identifier == null) {
-            uuids = graphDBDocuments.getDocumentIdsBySpace(space.getName()).stream().map(UUID::fromString).collect(Collectors.toList());
-        } else {
-            uuids = graphDBInstances.getInstancesByIdentifier(identifier, space.getName(), DataStage.NATIVE).stream().map(d -> IndexedJsonLdDoc.from(d).getDocumentId()).collect(Collectors.toList());
-            if (uuids.isEmpty()) {
-                //We can't find any uuids - it could be that the passed identifier is the id of the IN_PROGRESS stage -> we therefore have to try to look it up...
-                UUID uuid = extractInternalUUID(identifier);
-                if (uuid != null) {
-                    InstanceId instanceId = ids.resolveId(DataStage.IN_PROGRESS, uuid);
-                    if (instanceId != null) {
-                        NormalizedJsonLd instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), DataStage.IN_PROGRESS,  false, false, false, null, false);
-                        List<JsonLdId> inferenceOf = InferredJsonLdDoc.from(instance).getInferenceOf();
-                        //To be sure, we re-infer all of the previous sources...
-                        uuids = inferenceOf.stream().map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toList());
-                    }
-                }
-            }
-        }
-
-        for (UUID documentId : uuids) {
-            try {
-                logger.info(String.format("Inferring document with UUID %s in space %s", documentId, space.getName()));
-                primaryStoreEvents.infer(space.getName(), documentId);
-            } catch (Exception e) {
-                logger.error(String.format("Was not able to infer document with UUID %s", documentId), e);
-                if (e instanceof UnauthorizedException) {
-                    //Since an unauthorized exception is not recoverable - we can stop here...
-                    throw e;
-                }
-            }
-        }
+        // FIXME reimplement
+//
+//        List<UUID> uuids;
+//        if(space == null){
+//            throw new IllegalArgumentException("No space provided");
+//        }
+//        if (identifier == null) {
+//            uuids = graphDBDocuments.getDocumentIdsBySpace(space.getName()).stream().map(UUID::fromString).collect(Collectors.toList());
+//        } else {
+//            uuids = graphDBInstances.getInstancesByIdentifier(identifier, space.getName(), DataStage.NATIVE).stream().map(d -> IndexedJsonLdDoc.from(d).getDocumentId()).collect(Collectors.toList());
+//            if (uuids.isEmpty()) {
+//                //We can't find any uuids - it could be that the passed identifier is the id of the IN_PROGRESS stage -> we therefore have to try to look it up...
+//                UUID uuid = extractInternalUUID(identifier);
+//                if (uuid != null) {
+//                    InstanceId instanceId = ids.resolveId(DataStage.IN_PROGRESS, uuid);
+//                    if (instanceId != null) {
+//                        NormalizedJsonLd instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), DataStage.IN_PROGRESS,  false, false, false, null, false);
+//                        List<JsonLdId> inferenceOf = InferredJsonLdDoc.from(instance).getInferenceOf();
+//                        //To be sure, we re-infer all of the previous sources...
+//                        uuids = inferenceOf.stream().map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toList());
+//                    }
+//                }
+//            }
+//        }
+//
+//        for (UUID documentId : uuids) {
+//            try {
+//                logger.info(String.format("Inferring document with UUID %s in space %s", documentId, space.getName()));
+//                primaryStoreEvents.infer(space.getName(), documentId);
+//            } catch (Exception e) {
+//                logger.error(String.format("Was not able to infer document with UUID %s", documentId), e);
+//                if (e instanceof UnauthorizedException) {
+//                    //Since an unauthorized exception is not recoverable - we can stop here...
+//                    throw e;
+//                }
+//            }
+//        }
     }
 
     private UUID extractInternalUUID(String identifier) {

@@ -25,7 +25,7 @@
 package org.marmotgraph.tenants.api;
 
 import org.marmotgraph.commons.AuthContext;
-import org.marmotgraph.commons.api.Tenants;
+import org.marmotgraph.commons.api.tenants.Tenants;
 import org.marmotgraph.commons.exception.UnauthorizedException;
 import org.marmotgraph.commons.model.tenant.*;
 import org.marmotgraph.commons.permission.Functionality;

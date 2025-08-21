@@ -29,7 +29,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.marmotgraph.commons.Version;
-import org.marmotgraph.commons.api.GraphDBTypes;
+import org.marmotgraph.commons.api.primaryStore.Types;
 import org.marmotgraph.commons.config.openApiGroups.Admin;
 import org.marmotgraph.commons.exception.InstanceNotFoundException;
 import org.marmotgraph.commons.exception.NoContentException;
@@ -53,9 +53,9 @@ import java.nio.charset.StandardCharsets;
 @RestController
 @RequestMapping(Version.V3)
 public class PropertiesV3 {
-    private final GraphDBTypes.Client graphDBTypes;
+    private final Types.Client graphDBTypes;
 
-    public PropertiesV3(GraphDBTypes.Client graphDBTypes) {
+    public PropertiesV3(Types.Client graphDBTypes) {
         this.graphDBTypes = graphDBTypes;
     }
 

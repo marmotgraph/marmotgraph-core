@@ -25,29 +25,27 @@
 package org.marmotgraph.graphdb.arango.ingestion.controller;
 
 import jakarta.validation.constraints.NotNull;
-import org.marmotgraph.graphdb.arango.model.ArangoCollectionReference;
-import org.marmotgraph.graphdb.arango.model.ArangoDocumentReference;
-import org.marmotgraph.commons.IdUtils;
-import org.marmotgraph.commons.jsonld.InferredJsonLdDoc;
-import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.SpaceName;
-import org.marmotgraph.commons.model.TodoItem;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.graphdb.arango.commons.controller.ArangoRepositoryCommons;
-import org.marmotgraph.graphdb.arango.commons.model.ArangoDocument;
 import org.marmotgraph.graphdb.arango.commons.model.ArangoInstance;
 import org.marmotgraph.graphdb.arango.ingestion.model.DBOperation;
 import org.marmotgraph.graphdb.arango.ingestion.model.EdgeResolutionOperation;
 import org.marmotgraph.graphdb.arango.ingestion.model.RemoveReleaseStateOperation;
+import org.marmotgraph.graphdb.arango.model.ArangoCollectionReference;
+import org.marmotgraph.graphdb.arango.model.ArangoDocumentReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
+
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.UUID;
 
+@Profile("arango")
 @Component
 public class TodoListProcessor {
 
@@ -55,65 +53,39 @@ public class TodoListProcessor {
 
     private final StructureSplitter splitter;
 
-    private final MainEventTracker eventTracker;
-
     private final DataController dataController;
-
-    private final IdUtils idUtils;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final ReleasingController releasingController;
 
 
-    public TodoListProcessor(ArangoRepositoryCommons repository, StructureSplitter splitter, MainEventTracker eventTracker, IdUtils idUtils, DataController dataController, ReleasingController releasingController) {
+    public TodoListProcessor(ArangoRepositoryCommons repository, StructureSplitter splitter, DataController dataController, ReleasingController releasingController) {
         this.repository = repository;
         this.splitter = splitter;
-        this.eventTracker = eventTracker;
-        this.idUtils = idUtils;
         this.dataController = dataController;
         this.releasingController = releasingController;
     }
 
-    public void doProcessTodoList(List<TodoItem> todoList, DataStage stage) {
-        for (TodoItem todoItem : todoList) {
-            ArangoDocumentReference rootDocumentReference = ArangoCollectionReference.fromSpace(todoItem.getSpace()).doc(todoItem.getDocumentId());
-            switch (todoItem.getType()) {
-                case UPDATE, INSERT -> {
-                    logger.info("Upserting a document");
-                    upsertDocument(rootDocumentReference, todoItem.getPayload(), stage, todoItem.getSpace());
-                }
-                case DELETE -> {
-                    logger.info("Removing an instance");
-                    //Since we're going to do a "hard" delete, we also have to remove all instances that have been contributing to it.
-                    final List<ArangoDocumentReference> nativeDocumentsByInferredInstance = getNativeDocumentsByInferredInstance(rootDocumentReference);
-                    repository.executeTransactional(DataStage.NATIVE, dataController.createDeleteOperations(nativeDocumentsByInferredInstance));
-                    deleteDocument(DataStage.IN_PROGRESS, rootDocumentReference);
-                }
-                case UNRELEASE -> {
-                    logger.info("Unreleasing a document");
-                    unreleaseDocument(rootDocumentReference);
-                }
-                case RELEASE -> {
-                    logger.info("Releasing a document");
-                    releaseDocument(rootDocumentReference, todoItem.getPayload(), todoItem.getSpace());
-                }
-            }
-            logger.debug("Updating last seen event id");
-            eventTracker.updateLastSeenEventId(stage, todoItem.getEventId());
-        }
+
+    public void delete(UUID instanceId, SpaceName spaceName, DataStage stage) {
+        deleteDocument(stage, new ArangoDocumentReference(ArangoCollectionReference.fromSpace(spaceName), instanceId));
     }
 
-    private List<ArangoDocumentReference> getNativeDocumentsByInferredInstance(ArangoDocumentReference rootDocumentReference) {
-        final ArangoDocument document = repository.getDocument(DataStage.IN_PROGRESS, rootDocumentReference);
-        if(document!=null){
-            final NormalizedJsonLd doc = document.asIndexedDoc().getDoc();
-            final List<String> inferenceSourceDocs = doc.getAsListOf(InferredJsonLdDoc.INFERENCE_OF, String.class);
-            return inferenceSourceDocs.stream().map(inferenceSourceDoc -> new ArangoDocumentReference(document.getReference().getArangoCollectionReference(), idUtils.getUUID(new JsonLdId(inferenceSourceDoc)))).collect(Collectors.toList());
-        }
-        return Collections.emptyList();
+    public void upsert(UUID instanceId, SpaceName spaceName, NormalizedJsonLd payload, DataStage stage){
+        upsertDocument(new ArangoDocumentReference(ArangoCollectionReference.fromSpace(spaceName), instanceId), payload, stage, spaceName);
     }
 
+    public void unrelease(UUID instanceId, SpaceName spaceName){
+        unreleaseDocument(new ArangoDocumentReference(ArangoCollectionReference.fromSpace(spaceName), instanceId));
+    }
+
+    public void release(UUID instanceId, SpaceName spaceName){
+        NormalizedJsonLd payload = null;
+        //FIXME - we need to
+
+        releaseDocument(new ArangoDocumentReference(ArangoCollectionReference.fromSpace(spaceName), instanceId), payload, spaceName);
+    }
 
     private void unreleaseDocument(ArangoDocumentReference rootDocumentReference) {
         deleteDocument(DataStage.RELEASED, rootDocumentReference);
@@ -125,7 +97,6 @@ public class TodoListProcessor {
         upsertDocument(rootDocumentReference, payload, DataStage.RELEASED, spaceName);
         repository.executeTransactional(DataStage.IN_PROGRESS, Collections.singletonList(releasingController.getReleaseStatusUpdateOperation(rootDocumentReference, true)));
     }
-
 
     private boolean hasChangedReleaseStatus(DataStage stage, ArangoDocumentReference documentReference) {
         //TODO analyze payload for change by comparison with current instance - ignore alternatives

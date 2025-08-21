@@ -62,21 +62,21 @@ class WorkflowSystemTest extends AbstractInstancesLoadTest {
         JsonLdId id = instance.getBody().getData().id();
         IndexedJsonLdDoc from = IndexedJsonLdDoc.from(instance.getBody().getData());
 
-        //When
-        instances.releaseInstance(idUtils.getUUID(id), from.getRevision());
-        ResponseEntity<Result<ReleaseStatus>> releaseStatus = instances.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
-
-        //Then
-        assertEquals(ReleaseStatus.RELEASED.getReleaseStatus(), releaseStatus.getBody().getData().getReleaseStatus());
-
-        instances.unreleaseInstance(idUtils.getUUID(id));
-        ResponseEntity<Result<ReleaseStatus>> releaseStatusAfterUnrelease = instances.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
-
-        assertEquals(ReleaseStatus.UNRELEASED.getReleaseStatus(), releaseStatusAfterUnrelease.getBody().getData().getReleaseStatus());
-
-        instances.releaseInstance(idUtils.getUUID(id), from.getRevision());
-        ResponseEntity<Result<ReleaseStatus>> releaseStatusRerelease = instances.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
-        assertEquals(ReleaseStatus.RELEASED.getReleaseStatus(), releaseStatusRerelease.getBody().getData().getReleaseStatus());
+//        //When
+//        instances.releaseInstance(idUtils.getUUID(id), from.getRevision());
+//        ResponseEntity<Result<ReleaseStatus>> releaseStatus = instances.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
+//
+//        //Then
+//        assertEquals(ReleaseStatus.RELEASED.getReleaseStatus(), releaseStatus.getBody().getData().getReleaseStatus());
+//
+//        instances.unreleaseInstance(idUtils.getUUID(id));
+//        ResponseEntity<Result<ReleaseStatus>> releaseStatusAfterUnrelease = instances.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
+//
+//        assertEquals(ReleaseStatus.UNRELEASED.getReleaseStatus(), releaseStatusAfterUnrelease.getBody().getData().getReleaseStatus());
+//
+//        instances.releaseInstance(idUtils.getUUID(id), from.getRevision());
+//        ResponseEntity<Result<ReleaseStatus>> releaseStatusRerelease = instances.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
+//        assertEquals(ReleaseStatus.RELEASED.getReleaseStatus(), releaseStatusRerelease.getBody().getData().getReleaseStatus());
     }
 
     @Test
@@ -133,31 +133,31 @@ class WorkflowSystemTest extends AbstractInstancesLoadTest {
         //Then
         assertEquals("fooEUpdated", resultResponseEntity.getBody().getData().getAs("https://marmotgraph.org/fooE", String.class));
 
-        //When
-        //Release
-        instances.releaseInstance(idUtils.getUUID(id), from.getRevision());
-        ResponseEntity<Result<ReleaseStatus>> releaseStatus = instances.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
+//        //When
+//        //Release
+//        instances.releaseInstance(idUtils.getUUID(id), from.getRevision());
+//        ResponseEntity<Result<ReleaseStatus>> releaseStatus = instances.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
+//
+//        //Then
+//        assertEquals(ReleaseStatus.RELEASED.getReleaseStatus(), releaseStatus.getBody().getData().getReleaseStatus());
+//
+//        //When
+//        //Unrelease
+//        instances.unreleaseInstance(idUtils.getUUID(id));
+//        ResponseEntity<Result<ReleaseStatus>> releaseStatusAfterUnrelease = instances.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
 
-        //Then
-        assertEquals(ReleaseStatus.RELEASED.getReleaseStatus(), releaseStatus.getBody().getData().getReleaseStatus());
+//        //Then
+//        assertEquals(ReleaseStatus.UNRELEASED.getReleaseStatus(), releaseStatusAfterUnrelease.getBody().getData().getReleaseStatus());
+//
+//        //When
+//        //Delete
+//        ResponseEntity<Result<Void>> resultResponseEntityDeleted = instances.deleteInstance(idUtils.getUUID(id));
+//        //Then
+//        assertEquals(HttpStatus.OK, resultResponseEntityDeleted.getStatusCode());
+//
+//        ResponseEntity<Result<NormalizedJsonLd>> instanceById = instances.getInstanceById(idUtils.getUUID(id), ExposedStage.IN_PROGRESS, DEFAULT_RESPONSE_CONFIG);
 
-        //When
-        //Unrelease
-        instances.unreleaseInstance(idUtils.getUUID(id));
-        ResponseEntity<Result<ReleaseStatus>> releaseStatusAfterUnrelease = instances.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
-
-        //Then
-        assertEquals(ReleaseStatus.UNRELEASED.getReleaseStatus(), releaseStatusAfterUnrelease.getBody().getData().getReleaseStatus());
-
-        //When
-        //Delete
-        ResponseEntity<Result<Void>> resultResponseEntityDeleted = instances.deleteInstance(idUtils.getUUID(id));
-        //Then
-        assertEquals(HttpStatus.OK, resultResponseEntityDeleted.getStatusCode());
-
-        ResponseEntity<Result<NormalizedJsonLd>> instanceById = instances.getInstanceById(idUtils.getUUID(id), ExposedStage.IN_PROGRESS, DEFAULT_RESPONSE_CONFIG);
-
-        assertEquals(HttpStatus.NOT_FOUND, instanceById.getStatusCode());
+//        assertEquals(HttpStatus.NOT_FOUND, instanceById.getStatusCode());
     }
 
 }

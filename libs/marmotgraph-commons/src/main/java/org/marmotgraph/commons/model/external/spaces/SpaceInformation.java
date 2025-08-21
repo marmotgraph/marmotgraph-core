@@ -64,4 +64,5 @@ public class SpaceInformation extends DynamicJson {
     public void setPermissions(List<Functionality> permissions) {
         this.put(EBRAINSVocabulary.META_PERMISSIONS, permissions);
     }
+
 }

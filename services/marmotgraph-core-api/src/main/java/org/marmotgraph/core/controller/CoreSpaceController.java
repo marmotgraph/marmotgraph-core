@@ -24,87 +24,54 @@
 
 package org.marmotgraph.core.controller;
 
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.AuthContext;
-import org.marmotgraph.commons.api.GraphDBSpaces;
-import org.marmotgraph.commons.api.PrimaryStoreEvents;
+import org.marmotgraph.commons.api.primaryStore.Spaces;
+import org.marmotgraph.commons.api.primaryStore.Events;
 import org.marmotgraph.commons.model.Paginated;
 import org.marmotgraph.commons.model.PaginationParam;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.external.spaces.SpaceInformation;
 import org.marmotgraph.commons.model.external.spaces.SpaceSpecification;
-import org.marmotgraph.commons.model.internal.spaces.Space;
-import org.marmotgraph.commons.models.UserWithRoles;
-import org.marmotgraph.commons.permission.Functionality;
-import org.marmotgraph.commons.permission.FunctionalityInstance;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
+@AllArgsConstructor
 @Component
 public class CoreSpaceController {
 
-    private final GraphDBSpaces.Client graphDBSpaces;
+    private final Spaces.Client spaces;
     private final AuthContext authContext;
 
-    public CoreSpaceController(GraphDBSpaces.Client graphDBSpaces, PrimaryStoreEvents.Client primaryStoreEvents, AuthContext authContext) {
-        this.graphDBSpaces = graphDBSpaces;
-        this.authContext = authContext;
-    }
-
-    SpaceInformation translateSpaceToSpaceInformation(Space space, boolean permissions) {
-        final SpaceInformation spaceInformation = space.toSpaceInformation();
-        if (permissions) {
-            UserWithRoles userWithRoles = authContext.getUserWithRoles();
-            String spaceIdentifier = spaceInformation.getIdentifier();
-            if (spaceIdentifier != null) {
-                final SpaceName internalSpaceName = SpaceName.getInternalSpaceName(spaceIdentifier, userWithRoles.getPrivateSpace());
-                List<Functionality> applyingFunctionalities = userWithRoles.getPermissions().stream().
-                        filter(f -> (f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.INSTANCE
-                                || f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.TYPES) && f.appliesTo(internalSpaceName, null)
-                        ).map(FunctionalityInstance::getFunctionality).distinct().collect(Collectors.toList());
-                spaceInformation.setPermissions(applyingFunctionalities);
-            }
-        }
-        return spaceInformation;
-    }
-
-
     public Paginated<SpaceInformation> listSpaces(PaginationParam pagination, boolean permissions) {
-        Paginated<Space> sp = graphDBSpaces.listSpaces(pagination);
-        final List<SpaceInformation> spaceInformations = sp.getData().stream().map(s -> translateSpaceToSpaceInformation(s, permissions)).collect(Collectors.toList());
-        return new Paginated<>(spaceInformations, sp.getTotalResults(), sp.getSize(), sp.getFrom());
+        return spaces.listSpaces(pagination);
     }
-
 
     public SpaceInformation getSpace(SpaceName space, boolean permissions) {
-        Space sp = graphDBSpaces.getSpace(space);
-        return sp != null ? translateSpaceToSpaceInformation(sp, permissions) : null;
+        return spaces.getSpace(space, permissions);
     }
 
     public SpaceSpecification getSpaceSpecification(String space) {
-        return graphDBSpaces.getSpaceSpecification(new SpaceName(space));
+        return spaces.getSpaceSpecification(new SpaceName(space));
     }
 
-
     public void createSpaceSpecification(SpaceSpecification spaceSpec) {
-        graphDBSpaces.specifySpace(spaceSpec);
+        spaces.specifySpace(spaceSpec);
     }
 
     public void removeSpaceSpecification(SpaceName space) {
-        graphDBSpaces.removeSpaceSpecification(space);
+        spaces.removeSpaceSpecification(space);
     }
 
     public boolean checkTypeInSpace(SpaceName space, String type) {
-        return graphDBSpaces.checkTypeInSpace(space, type);
+        return spaces.checkTypeInSpace(space, type);
     }
 
     public void addTypeToSpace(SpaceName space, String type) {
-        graphDBSpaces.addTypeToSpace(space, type);
+        spaces.addTypeToSpace(space, type);
     }
 
     public void removeTypeFromSpace(SpaceName space, String type) {
-        graphDBSpaces.removeTypeFromSpace(space, type);
+        spaces.removeTypeFromSpace(space, type);
     }
 
 }

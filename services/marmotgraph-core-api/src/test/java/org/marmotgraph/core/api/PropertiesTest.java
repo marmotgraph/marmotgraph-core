@@ -24,7 +24,7 @@
 
 package org.marmotgraph.core.api;
 
-import org.marmotgraph.commons.api.GraphDBTypes;
+import org.marmotgraph.commons.api.primaryStore.Types;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.core.api.v3.PropertiesV3;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 class PropertiesTest {
-    PropertiesV3 instance = new PropertiesV3(Mockito.mock(GraphDBTypes.Client.class));
+    PropertiesV3 instance = new PropertiesV3(Mockito.mock(Types.Client.class));
 
     @BeforeEach
     public void init(){

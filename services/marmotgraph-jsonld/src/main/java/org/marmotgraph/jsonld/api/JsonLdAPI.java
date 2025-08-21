@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 @Component
-public class JsonLdAPI implements org.marmotgraph.commons.api.JsonLd.Client {
+public class JsonLdAPI implements org.marmotgraph.commons.api.jsonld.JsonLd.Client {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 

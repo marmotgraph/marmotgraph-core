@@ -26,7 +26,7 @@ package org.marmotgraph.core.api.v3beta;
 
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.Version;
-import org.marmotgraph.commons.api.JsonLd;
+import org.marmotgraph.commons.api.jsonld.JsonLd;
 import org.marmotgraph.commons.config.openApiGroups.Simple;
 import org.marmotgraph.commons.exception.InstanceNotFoundException;
 import org.marmotgraph.commons.jsonld.InstanceId;
@@ -136,15 +136,8 @@ public class QueriesV3Beta {
     @Operation(summary = "Remove a query specification")
     @DeleteMapping("/{queryId}")
     @WritesData
-    public ResponseEntity<Void> removeQuery(@PathVariable("queryId") UUID queryId) {
-        InstanceId resolveId = ids.resolveId(DataStage.IN_PROGRESS, queryId);
-        if(resolveId!=null) {
-            queryController.deleteQuery(resolveId);
-            return ResponseEntity.ok().build();
-        }
-        else {
-            return ResponseEntity.notFound().build();
-        }
+    public void removeQuery(@PathVariable("queryId") UUID queryId) {
+        queryController.deleteQuery(queryId);
     }
 
     @Operation(summary = "Create or save a query specification")

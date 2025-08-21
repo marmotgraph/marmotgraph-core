@@ -24,12 +24,14 @@
 
 package org.marmotgraph.core.controller;
 
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.IdUtils;
-import org.marmotgraph.commons.api.GraphDBInstances;
-import org.marmotgraph.commons.api.GraphDBScopes;
-import org.marmotgraph.commons.api.Invitation;
-import org.marmotgraph.commons.api.PrimaryStoreEvents;
+import org.marmotgraph.commons.api.authentication.Invitation;
+import org.marmotgraph.commons.api.graphDB.GraphDB;
+import org.marmotgraph.commons.api.primaryStore.Events;
+import org.marmotgraph.commons.api.primaryStore.Instances;
+import org.marmotgraph.commons.api.primaryStore.Scopes;
 import org.marmotgraph.commons.exception.ForbiddenException;
 import org.marmotgraph.commons.exception.InstanceNotFoundException;
 import org.marmotgraph.commons.exception.UnauthorizedException;
@@ -37,8 +39,9 @@ import org.marmotgraph.commons.jsonld.InstanceId;
 import org.marmotgraph.commons.jsonld.JsonLdConsts;
 import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.model.*;
+import org.marmotgraph.commons.models.UserWithRoles;
+import org.marmotgraph.commons.params.ReleaseTreeScope;
 import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permission.FunctionalityInstance;
 import org.marmotgraph.commons.permissions.controller.Permissions;
@@ -57,31 +60,22 @@ import java.util.stream.Collectors;
 /**
  * The instance controller contains the orchestration logic for the instance operations
  */
+@AllArgsConstructor
 @Component
 public class CoreInstanceController {
 
-    private final GraphDBInstances.Client graphDBInstances;
-    private final GraphDBScopes.Client graphDBScopes;
+    private final GraphDB.Client graphDB;
     private final CoreIdsController ids;
     private final AuthContext authContext;
     private final IdUtils idUtils;
-    private final PrimaryStoreEvents.Client primaryStoreEvents;
+    private final Events.Client events;
+    private final Instances.Client instances;
+    private final Scopes.Client scopes;
     private final Invitation.Client invitation;
     private final Permissions permissions;
 
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-
-    public CoreInstanceController(GraphDBInstances.Client graphDBInstances, GraphDBScopes.Client graphDBScopes, CoreIdsController ids, AuthContext authContext, IdUtils idUtils, PrimaryStoreEvents.Client primaryStoreEvents, Invitation.Client invitation, Permissions permissions) {
-        this.graphDBInstances = graphDBInstances;
-        this.graphDBScopes = graphDBScopes;
-        this.ids = ids;
-        this.authContext = authContext;
-        this.idUtils = idUtils;
-        this.primaryStoreEvents = primaryStoreEvents;
-        this.invitation = invitation;
-        this.permissions = permissions;
-    }
 
     public void createInvitation(UUID instanceId, UUID userId) {
         //TODO move permission check to authentication module
@@ -94,7 +88,7 @@ public class CoreInstanceController {
 
     private InstanceId resolveIdOrThrowException(UUID instanceId) {
         final InstanceId resolvedInstanceId = ids.resolveId(DataStage.IN_PROGRESS, instanceId);
-        if(resolvedInstanceId == null) {
+        if (resolvedInstanceId == null) {
             throw new InstanceNotFoundException(String.format("Instance %s not found", instanceId));
         }
         return resolvedInstanceId;
@@ -130,40 +124,43 @@ public class CoreInstanceController {
         if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.UPDATE_INVITATIONS, resolvedInstanceId.getSpace(), instanceId)) {
             throw new UnauthorizedException("You don't have the right to recalculate the invitation scope for this instance");
         }
-        this.invitation.calculateInstanceScope(instanceId);
+        this.scopes.calculateInstanceScope(instanceId);
     }
 
     public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(NormalizedJsonLd normalizedJsonLd, UUID id, SpaceName s, ExtendedResponseConfiguration responseConfiguration) {
         ids.checkIdForExistence(id, normalizedJsonLd.allIdentifiersIncludingId());
         normalizedJsonLd.defineFieldUpdateTimes(normalizedJsonLd.keySet().stream().collect(Collectors.toMap(k -> k, k -> ZonedDateTime.now())));
         Event upsertEvent = createUpsertEvent(id, normalizedJsonLd, s);
-        Set<InstanceId> ids = primaryStoreEvents.postEvent(upsertEvent);
-        return handleIngestionResponse(responseConfiguration, ids);
+        InstanceId instanceId = events.postEvent(upsertEvent);
+        return handleIngestionResponse(responseConfiguration, Collections.singleton(instanceId));
     }
 
 
     public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(NormalizedJsonLd normalizedJsonLd, InstanceId instanceId, boolean removeNonDeclaredProperties, ResponseConfiguration responseConfiguration) {
         normalizedJsonLd = patchInstance(instanceId, normalizedJsonLd, removeNonDeclaredProperties);
         Event upsertEvent = createUpsertEvent(instanceId.getUuid(), normalizedJsonLd, instanceId.getSpace());
-        Set<InstanceId> ids = primaryStoreEvents.postEvent(upsertEvent);
-        return handleIngestionResponse(responseConfiguration, ids);
+        InstanceId updatedInstanceId = events.postEvent(upsertEvent);
+        return handleIngestionResponse(responseConfiguration, Collections.singleton(updatedInstanceId));
     }
 
 
-    public Set<InstanceId> deleteInstance(InstanceId instanceId) {
-        Event deleteEvent = Event.createDeleteEvent(instanceId.getSpace(), instanceId.getUuid(), idUtils.buildAbsoluteUrl(instanceId.getUuid()));
-        return primaryStoreEvents.postEvent(deleteEvent);
+    public void deleteInstance(UUID uuid) {
+        events.postEvent(Event.createDeleteEvent(uuid));
     }
 
-    public ResponseEntity<Result<NormalizedJsonLd>> moveInstance(InstanceId instanceId, SpaceName targetSpace, ExtendedResponseConfiguration responseConfiguration) {
-        NormalizedJsonLd instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), DataStage.IN_PROGRESS, true, false, false, null, true);
+    public ResponseEntity<Result<NormalizedJsonLd>> moveInstance(UUID id, SpaceName targetSpace, ExtendedResponseConfiguration responseConfiguration) {
+        ReleaseStatus releaseStatus = getReleaseStatus(id, ReleaseTreeScope.TOP_INSTANCE_ONLY);
+        if (releaseStatus != null && releaseStatus != ReleaseStatus.UNRELEASED) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), "Was not able to move an instance because it is released still", id));
+        }
+        NormalizedJsonLd instance = instances.getInstanceById(id, DataStage.IN_PROGRESS, true);
         if (instance == null) {
-            throw new InstanceNotFoundException(String.format("Instance %s not found", instanceId.getUuid()));
+            throw new InstanceNotFoundException(id);
         } else {
             if (permissions.hasPermission(authContext.getUserWithRoles(), Functionality.CREATE, targetSpace)) {
                 //FIXME make this transactional.
-                deleteInstance(instanceId);
-                return createNewInstance(instance, instanceId.getUuid(), targetSpace, responseConfiguration);
+                deleteInstance(id);
+                return createNewInstance(instance, id, targetSpace, responseConfiguration);
             } else {
                 throw new ForbiddenException(String.format("You are not allowed to move an instance to the space %s", targetSpace));
             }
@@ -177,8 +174,7 @@ public class CoreInstanceController {
 
 
     private NormalizedJsonLd patchInstance(InstanceId instanceId, NormalizedJsonLd normalizedJsonLd, boolean removeNonDefinedKeys) {
-        InstanceId nativeId = new InstanceId(idUtils.getDocumentIdForUserAndInstance(authContext.getUserId(), instanceId.getUuid()), instanceId.getSpace());
-        NormalizedJsonLd instance = graphDBInstances.getInstanceById(nativeId.getSpace().getName(), nativeId.getUuid(), DataStage.NATIVE, true, false, false, null, true);
+        NormalizedJsonLd instance = instances.getNativeInstanceById(instanceId.getUuid(), authContext.getUserId());
         if (instance == null) {
             Map<String, ZonedDateTime> updateTimes = new HashMap<>();
             normalizedJsonLd.keySet().forEach(k -> updateTimes.put(k, ZonedDateTime.now()));
@@ -223,7 +219,7 @@ public class CoreInstanceController {
         idsAfterResolution.stream().filter(InstanceId::isUnresolved).forEach(id -> result.put(id.getUuid().toString(), Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase())));
         final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
         if (responseConfiguration.isReturnPayload()) {
-            Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(idsAfterResolution.stream().filter(i -> !i.isUnresolved()).map(InstanceId::serialize).collect(Collectors.toList()), stage, typeRestriction, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
+            Map<UUID, Result<NormalizedJsonLd>> instancesByIds = instances.getInstancesByIds(idsAfterResolution.stream().filter(i -> !i.isUnresolved()).map(InstanceId::serialize).collect(Collectors.toList()), stage, typeRestriction, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
             instancesByIds.forEach((k, v) -> {
                 result.put(k.toString(), v);
             });
@@ -245,9 +241,8 @@ public class CoreInstanceController {
                     idPayload.setId(idUtils.buildAbsoluteUrl(uuid));
                     idPayload.addProperty(EBRAINSVocabulary.META_SPACE, idAfterResolution.getSpace().getName());
                     result.put(uuid.toString(), Result.ok(idPayload));
-                }
-                else {
-                    NormalizedJsonLd idPayload = graphDBInstances.getInstanceByIdWithoutPayload(idAfterResolution.getSpace().getName(), idAfterResolution.getUuid(), stage, responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
+                } else {
+                    NormalizedJsonLd idPayload = instances.getInstanceByIdWithoutPayload(idAfterResolution.getSpace().getName(), idAfterResolution.getUuid(), stage, responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
                     result.put(idAfterResolution.getUuid().toString(), Result.ok(idPayload));
                 }
             });
@@ -261,7 +256,7 @@ public class CoreInstanceController {
     }
 
     public Paginated<NormalizedJsonLd> getInstances(DataStage stage, Type type, SpaceName space, String searchByLabel, String filterProperty, String filterValue, ResponseConfiguration responseConfiguration, PaginationParam paginationParam) {
-	Paginated<NormalizedJsonLd> instancesByType = graphDBInstances.getInstancesByType(stage, type != null ? type.getName() : null, space != null ? space.getName() : null, searchByLabel, filterProperty, filterValue, responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnEmbedded(), paginationParam);
+        Paginated<NormalizedJsonLd> instancesByType = instances.getInstancesByType(stage, type != null ? type.getName() : null, space != null ? space.getName() : null, searchByLabel, filterProperty, filterValue, responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnEmbedded(), paginationParam);
         Paginated<NormalizedJsonLd> result;
         if (responseConfiguration.isReturnPayload()) {
             if (responseConfiguration.isReturnAlternatives()) {
@@ -295,7 +290,7 @@ public class CoreInstanceController {
         Result<NormalizedJsonLd> result;
         final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
         if (responseConfiguration.isReturnPayload()) {
-            Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(instanceIds.stream().map(InstanceId::serialize).collect(Collectors.toList()),
+            Map<UUID, Result<NormalizedJsonLd>> instancesByIds = instances.getInstancesByIds(instanceIds.stream().map(InstanceId::serialize).collect(Collectors.toList()),
                     DataStage.IN_PROGRESS, null,
                     responseConfiguration.isReturnEmbedded(),
                     responseConfiguration.isReturnAlternatives(),
@@ -325,7 +320,7 @@ public class CoreInstanceController {
             return null;
         }
         final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
-        final Paginated<NormalizedJsonLd> incomingLinks = graphDBInstances.getIncomingLinks(instanceId.getSpace().getName(), instanceId.getUuid(), stage, property, type.getName(), pagination);
+        final Paginated<NormalizedJsonLd> incomingLinks = graphDB.getIncomingLinks(instanceId.getSpace().getName(), instanceId.getUuid(), stage, property, type.getName(), pagination);
         incomingLinks.getData().forEach(d -> d.renameSpace(privateSpaceName, isInvited(d)));
         return incomingLinks;
     }
@@ -338,7 +333,7 @@ public class CoreInstanceController {
         }
         NormalizedJsonLd instance;
         if (responseConfiguration.isReturnPayload()) {
-            instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), stage, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize(), true);
+            instance = instances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), stage, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize(), true);
             if (responseConfiguration.isReturnAlternatives()) {
                 resolveAlternatives(stage, Collections.singletonList(instance));
             }
@@ -348,10 +343,10 @@ public class CoreInstanceController {
                 instance.setId(idUtils.buildAbsoluteUrl(instanceId.getUuid()));
                 instance.addProperty(EBRAINSVocabulary.META_SPACE, instanceId.getSpace().getName());
             } else {
-                instance = graphDBInstances.getInstanceByIdWithoutPayload(instanceId.getSpace().getName(), instanceId.getUuid(), stage, responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
+                instance = instances.getInstanceByIdWithoutPayload(instanceId.getSpace().getName(), instanceId.getUuid(), stage, responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
             }
         }
-        if(instance!=null) {
+        if (instance != null) {
             instance.renameSpace(privateSpaceName, isInvited(instance));
             if (responseConfiguration.isReturnPermissions()) {
                 enrichWithPermissionInformation(stage, Collections.singletonList(Result.ok(instance)));
@@ -359,12 +354,13 @@ public class CoreInstanceController {
         }
         return instance;
     }
+
     public boolean isInvited(NormalizedJsonLd normalizedJsonLd) {
         final UUID uuid = idUtils.getUUID(normalizedJsonLd.id());
         if (authContext.getUserWithRolesWithoutTermsCheck().getInvitations().contains(uuid)) {
             //The user is invited for this instance
             final String space = normalizedJsonLd.getAs(EBRAINSVocabulary.META_SPACE, String.class, null);
-            if(space!=null){
+            if (space != null) {
                 return !permissions.hasPermission(authContext.getUserWithRolesWithoutTermsCheck(), Functionality.READ, SpaceName.fromString(space));
             }
         }
@@ -410,7 +406,7 @@ public class CoreInstanceController {
                 }
             });
         });
-        Map<UUID, String> labels = graphDBInstances.getLabels(instanceIds.stream().map(InstanceId::serialize).collect(Collectors.toList()), stage);
+        Map<UUID, String> labels = instances.getLabels(instanceIds.stream().map(InstanceId::getUuid).collect(Collectors.toList()), stage);
         for (UUID uuid : labels.keySet()) {
             updatedObjects.get(uuid).forEach(o -> o.put(SchemaOrgVocabulary.NAME, labels.get(uuid)));
         }
@@ -456,7 +452,7 @@ public class CoreInstanceController {
     public ScopeElement getScopeForInstance(UUID id, DataStage stage, boolean returnPermissions, boolean applyRestrictions) {
         InstanceId instanceId = ids.resolveId(stage, id);
         if (instanceId != null) {
-            ScopeElement scope = graphDBScopes.getScopeForInstance(instanceId.getSpace().getName(), instanceId.getUuid(), stage, applyRestrictions);
+            ScopeElement scope = graphDB.getScopeForInstance(instanceId.getSpace().getName(), instanceId.getUuid(), stage, applyRestrictions);
             if (returnPermissions) {
                 enrichWithPermissionInformation(stage, scope, authContext.getUserWithRoles().getPermissions());
             }
@@ -468,8 +464,26 @@ public class CoreInstanceController {
     public GraphEntity getNeighbors(UUID id, DataStage stage) {
         InstanceId instanceId = ids.resolveId(stage, id);
         if (instanceId != null) {
-            return graphDBInstances.getNeighbors(instanceId.getSpace().getName(), instanceId.getUuid(), stage);
+            return graphDB.getNeighbors(instanceId.getSpace().getName(), instanceId.getUuid(), stage);
         }
         return null;
     }
+
+    public void release(UUID uuid){
+        events.postEvent(Event.createReleaseEvent(uuid));
+    }
+
+
+    public void unrelease(UUID uuid){
+        events.postEvent(Event.createUnreleaseEvent(uuid));
+    }
+
+    public ReleaseStatus getReleaseStatus(UUID uuid, ReleaseTreeScope releaseTreeScope){
+        return instances.getReleaseStatus(uuid,releaseTreeScope);
+    }
+
+    public Map<UUID, ReleaseStatus> getReleaseStatus(List<UUID> ids, ReleaseTreeScope releaseTreeScope){
+        return instances.getReleaseStatus(ids, releaseTreeScope);
+    }
+
 }

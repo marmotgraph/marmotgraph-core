@@ -25,7 +25,7 @@
 package org.marmotgraph.core.api.v3beta;
 
 import org.marmotgraph.commons.Version;
-import org.marmotgraph.commons.api.Authentication;
+import org.marmotgraph.commons.api.authentication.Authentication;
 import org.marmotgraph.commons.config.openApiGroups.Admin;
 import org.marmotgraph.commons.config.openApiGroups.Simple;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;

@@ -24,8 +24,9 @@
 
 package org.marmotgraph.core.controller;
 
-import org.marmotgraph.commons.api.GraphDBInstances;
-import org.marmotgraph.commons.api.GraphDBQueries;
+import lombok.AllArgsConstructor;
+import org.marmotgraph.commons.api.graphDB.GraphDB;
+import org.marmotgraph.commons.api.primaryStore.Instances;
 import org.marmotgraph.commons.jsonld.InstanceId;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
@@ -35,25 +36,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 
 /**
  * The query controller contains the orchestration logic for the query operations
  */
+@AllArgsConstructor
 @Component
 public class CoreQueryController {
 
-    private final GraphDBInstances.Client graphDBInstances;
-    private final GraphDBQueries.Client graphDBQueries;
+    private final Instances.Client instances;
+    private final GraphDB.Client graphDB;
     private final CoreInstanceController instanceController;
-
-    public CoreQueryController(GraphDBInstances.Client graphDBInstances, GraphDBQueries.Client graphDBQueries, CoreInstanceController instanceController) {
-        this.graphDBInstances = graphDBInstances;
-        this.graphDBQueries = graphDBQueries;
-        this.instanceController = instanceController;
-    }
 
     public ResponseEntity<Result<NormalizedJsonLd>> createNewQuery(NormalizedJsonLd query, UUID queryId, SpaceName space) {
         return instanceController.createNewInstance(query, queryId, space, new ExtendedResponseConfiguration());
@@ -64,22 +59,22 @@ public class CoreQueryController {
     }
 
     public Paginated<NormalizedJsonLd> listQueries(String search, PaginationParam paginationParam) {
-        return graphDBInstances.getQueriesByType(DataStage.IN_PROGRESS, search, false, false, paginationParam, null);
+        return instances.getQueriesByType(DataStage.IN_PROGRESS, search, false, false, paginationParam, null);
     }
 
     public Paginated<NormalizedJsonLd> listQueriesPerRootType(String search, Type type, PaginationParam paginationParam) {
-        return graphDBInstances.getQueriesByType(DataStage.IN_PROGRESS, search, false, false, paginationParam, type.getName());
+        return instances.getQueriesByType(DataStage.IN_PROGRESS, search, false, false, paginationParam, type.getName());
     }
 
     public NormalizedJsonLd fetchQueryById(InstanceId instanceId) {
         if (instanceId != null) {
-            return graphDBInstances.getQueryById(instanceId.getSpace().getName(), instanceId.getUuid());
+            return instances.getQueryById(instanceId.getSpace().getName(), instanceId.getUuid());
         }
         return null;
     }
 
     public PaginatedStream<? extends JsonLdDoc> executeQuery(KgQuery query, Map<String, String> params, PaginationParam paginationParam) {
-        StreamedQueryResult paginatedQueryResult = graphDBQueries.executeQuery(query, params, paginationParam);
+        StreamedQueryResult paginatedQueryResult = graphDB.executeQuery(query, params, paginationParam);
         if (paginatedQueryResult != null) {
             if (paginatedQueryResult.getResponseVocab() != null) {
                 final String responseVocab = paginatedQueryResult.getResponseVocab();
@@ -91,8 +86,8 @@ public class CoreQueryController {
         return null;
     }
 
-    public Set<InstanceId> deleteQuery(InstanceId instanceId) {
-        return instanceController.deleteInstance(instanceId);
+    public void deleteQuery(UUID id) {
+        instanceController.deleteInstance(id);
     }
 
     public boolean isInvited(NormalizedJsonLd normalizedJsonLd) {

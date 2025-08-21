@@ -40,7 +40,7 @@ public class TodoItem {
     }
 
     public static TodoItem fromEvent(PersistedEvent event){
-        return new TodoItem(event.getEventId(), event.getDocumentId(), event.getSpaceName(), event.getType(), event.getData());
+        return new TodoItem(event.getEventId(), event.getInstanceId(), event.getSpaceName(), event.getType(), event.getData());
     }
 
     public TodoItem(String eventId, UUID documentId, SpaceName space, Event.Type type, NormalizedJsonLd payload) {

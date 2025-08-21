@@ -70,19 +70,7 @@
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-ids</artifactId>
-            <version>4.0</version>
-            <classifier>library</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-tenants</artifactId>
-            <version>4.0</version>
-            <classifier>library</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-indexing</artifactId>
             <version>4.0</version>
             <classifier>library</classifier>
         </dependency>
@@ -94,19 +82,7 @@
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-inference</artifactId>
-            <version>4.0</version>
-            <classifier>library</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-primarystore</artifactId>
-            <version>4.0</version>
-            <classifier>library</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-releasing</artifactId>
             <version>4.0</version>
             <classifier>library</classifier>
         </dependency>
@@ -116,11 +92,11 @@
             <version>1.9.6</version>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jakarta-jsonp</artifactId>
-            <version>${jackson.version}</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+            <version>3.6.1</version>
+            <scope>test</scope>
         </dependency>
-
         <!-- we need to explicitly specify the dependency to ensure the JaCoCo report covers this key library too -->
         <dependency>
             <groupId>org.marmotgraph</groupId>
@@ -132,6 +108,8 @@
             <artifactId>marmotgraph-microservice-commons</artifactId>
             <version>4.0</version>
         </dependency>
+
+
     </dependencies>
 
     <build>

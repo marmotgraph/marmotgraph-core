@@ -30,7 +30,7 @@ import org.marmotgraph.graphdb.arango.aqlbuilder.AQL;
 import org.marmotgraph.graphdb.arango.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.graphdb.arango.model.InternalSpace;
 import org.marmotgraph.commons.IdUtils;
-import org.marmotgraph.commons.api.PrimaryStoreUsers;
+import org.marmotgraph.commons.api.primaryStore.Users;
 import org.marmotgraph.commons.jsonld.*;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.ReducedUserInformation;
@@ -49,12 +49,12 @@ import java.util.stream.Collectors;
 public class EmbeddedAndAlternativesRepository {
     private static final Logger logger = LoggerFactory.getLogger(EmbeddedAndAlternativesRepository.class);
 
-    private final PrimaryStoreUsers.Client primaryStoreUsers;
+    private final Users.Client primaryStoreUsers;
     private final IdUtils idUtils;
     private final ArangoDatabases databases;
     private final GraphDBArangoUtils graphDBArangoUtils;
 
-    public EmbeddedAndAlternativesRepository(PrimaryStoreUsers.Client primaryStoreUsers, IdUtils idUtils, ArangoDatabases databases, GraphDBArangoUtils graphDBArangoUtils) {
+    public EmbeddedAndAlternativesRepository(Users.Client primaryStoreUsers, IdUtils idUtils, ArangoDatabases databases, GraphDBArangoUtils graphDBArangoUtils) {
         this.primaryStoreUsers = primaryStoreUsers;
         this.idUtils = idUtils;
         this.databases = databases;

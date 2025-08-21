@@ -27,6 +27,7 @@ package org.marmotgraph.primaryStore.api;
 import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.Event;
+import org.marmotgraph.primaryStore.events.api.EventsAPI;
 import org.marmotgraph.test.Simpsons;
 import org.marmotgraph.test.TestCategories;
 import org.junit.jupiter.api.Disabled;
@@ -44,7 +45,7 @@ import java.util.UUID;
 public class PrimaryStoreTest {
 
     @Autowired
-    PrimaryStoreEventsAPI primaryStore;
+    EventsAPI primaryStore;
 
     @Test
     @Disabled("This is an integration test - make sure you wrap it with the docker-compose context it needs.")
@@ -52,7 +53,7 @@ public class PrimaryStoreTest {
         NormalizedJsonLd data = new NormalizedJsonLd();
         data.addProperty("name", "test");
         data.setId(new JsonLdId("https://kg.ebrains.eu/api/instances/foo/bar"));
-        Event e = new Event(Simpsons.SPACE_NAME, UUID.randomUUID(), data, Event.Type.INSERT, new Date());
+        Event e = new Event(Simpsons.SPACE_NAME, UUID.randomUUID(), data, Event.Type.INSERT, new Date().getTime());
         primaryStore.postEvent(e);
     }
 

@@ -25,7 +25,7 @@
 package org.marmotgraph.core.controller;
 
 import org.marmotgraph.commons.IdUtils;
-import org.marmotgraph.commons.api.Ids;
+import org.marmotgraph.commons.api.primaryStore.Ids;
 import org.marmotgraph.commons.exception.AmbiguousException;
 import org.marmotgraph.commons.exception.CancelProcessException;
 import org.marmotgraph.commons.jsonld.InstanceId;

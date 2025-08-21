@@ -24,7 +24,7 @@
 
 package org.marmotgraph.commons;
 
-import org.marmotgraph.commons.api.Authentication;
+import org.marmotgraph.commons.api.authentication.Authentication;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.internal.spaces.Space;
 import org.marmotgraph.commons.models.UserWithRoles;

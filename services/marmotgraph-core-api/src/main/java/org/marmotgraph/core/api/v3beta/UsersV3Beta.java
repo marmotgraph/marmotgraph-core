@@ -28,8 +28,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.Version;
-import org.marmotgraph.commons.api.Authentication;
-import org.marmotgraph.commons.api.PrimaryStoreUsers;
+import org.marmotgraph.commons.api.authentication.Authentication;
+import org.marmotgraph.commons.api.primaryStore.Users;
 import org.marmotgraph.commons.config.openApiGroups.Advanced;
 import org.marmotgraph.commons.config.openApiGroups.Extra;
 import org.marmotgraph.commons.config.openApiGroups.Simple;
@@ -61,9 +61,9 @@ public class UsersV3Beta {
 
     private static final String ENDPOINT = "endpoint";
     private final Authentication.Client authentication;
-    private final PrimaryStoreUsers.Client primaryStoreUsers;
+    private final Users.Client primaryStoreUsers;
 
-    public UsersV3Beta(Authentication.Client authentication, PrimaryStoreUsers.Client primaryStoreUsers) {
+    public UsersV3Beta(Authentication.Client authentication, Users.Client primaryStoreUsers) {
         this.authentication = authentication;
         this.primaryStoreUsers = primaryStoreUsers;
     }

@@ -1,0 +1,53 @@
+/*
+ * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2024 EBRAINS AISBL
+ * Copyright 2024 - 2025 ETH Zurich
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0.
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *  This open source software code was developed in part or in whole in the
+ *  Human Brain Project, funded from the European Union's Horizon 2020
+ *  Framework Programme for Research and Innovation under
+ *  Specific Grant Agreements No. 720270, No. 785907, and No. 945539
+ *  (Human Brain Project SGA1, SGA2 and SGA3).
+ */
+
+package org.marmotgraph.primaryStore.indexing.service;
+
+import lombok.AllArgsConstructor;
+import org.marmotgraph.commons.api.graphDB.GraphDB;
+import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
+import org.marmotgraph.commons.model.DataStage;
+import org.marmotgraph.commons.model.SpaceName;
+import org.springframework.stereotype.Component;
+
+import java.util.UUID;
+
+/**
+ * This class seems to be overhead since it currently uses the graph db - however, it could be extended to support other indexing mechanisms to other storage systems.
+ */
+@AllArgsConstructor
+@Component
+public class IndexingService {
+
+    private final GraphDB.Client graphDB;
+
+
+    public void delete(UUID instanceId, SpaceName spaceName, DataStage stage) {
+        graphDB.delete(instanceId, spaceName, stage);
+    }
+
+    public void upsert(UUID instanceId, SpaceName spaceName, NormalizedJsonLd payload, DataStage stage) {
+        graphDB.upsert(instanceId, spaceName, payload, stage);
+    }
+}

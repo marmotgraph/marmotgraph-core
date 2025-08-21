@@ -25,7 +25,7 @@
 package org.marmotgraph.core.api.v3beta;
 
 import org.marmotgraph.commons.Version;
-import org.marmotgraph.commons.api.GraphDBTypes;
+import org.marmotgraph.commons.api.primaryStore.Types;
 import org.marmotgraph.commons.config.openApiGroups.Admin;
 import org.marmotgraph.commons.config.openApiGroups.Advanced;
 import org.marmotgraph.commons.config.openApiGroups.Simple;
@@ -59,9 +59,9 @@ import java.util.Map;
 @RequestMapping(Version.V3_BETA)
 public class TypesV3Beta {
 
-    private final GraphDBTypes.Client graphDBTypes;
+    private final Types.Client graphDBTypes;
 
-    public TypesV3Beta(GraphDBTypes.Client graphDBTypes) {
+    public TypesV3Beta(Types.Client graphDBTypes) {
         this.graphDBTypes = graphDBTypes;
     }
 

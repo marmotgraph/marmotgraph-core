@@ -24,11 +24,17 @@
 
 package org.marmotgraph.core.api.v3beta;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.Version;
-import org.marmotgraph.commons.api.GraphDBInstances;
-import org.marmotgraph.commons.api.JsonLd;
-import org.marmotgraph.commons.api.Release;
+import org.marmotgraph.commons.api.jsonld.JsonLd;
+import org.marmotgraph.commons.api.primaryStore.Instances;
 import org.marmotgraph.commons.config.openApiGroups.Admin;
 import org.marmotgraph.commons.config.openApiGroups.Advanced;
 import org.marmotgraph.commons.config.openApiGroups.Extra;
@@ -41,16 +47,10 @@ import org.marmotgraph.commons.markers.*;
 import org.marmotgraph.commons.model.*;
 import org.marmotgraph.commons.params.ReleaseTreeScope;
 import org.marmotgraph.core.api.examples.InstancesExamples;
-import org.marmotgraph.core.controller.CoreInstanceController;
 import org.marmotgraph.core.controller.CoreIdsController;
+import org.marmotgraph.core.controller.CoreInstanceController;
 import org.marmotgraph.core.controller.VirtualSpaceController;
 import org.marmotgraph.core.model.ExposedStage;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
@@ -68,35 +68,24 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping(Version.V3_BETA)
+@AllArgsConstructor
 public class InstancesV3Beta {
     private final CoreInstanceController instanceController;
-    private final Release.Client release;
     private final AuthContext authContext;
-    private final GraphDBInstances.Client graphDBInstances;
+    private final Instances.Client graphDBInstances;
     private final CoreIdsController idsController;
     private final VirtualSpaceController virtualSpaceController;
     private final JsonLd.Client jsonLd;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public InstancesV3Beta(CoreInstanceController instanceController, Release.Client release, AuthContext authContext, GraphDBInstances.Client graphDBInstances, CoreIdsController idsController, VirtualSpaceController virtualSpaceController, JsonLd.Client jsonLd) {
-        this.instanceController = instanceController;
-        this.release = release;
-        this.authContext = authContext;
-        this.graphDBInstances = graphDBInstances;
-        this.idsController = idsController;
-        this.virtualSpaceController = virtualSpaceController;
-        this.jsonLd = jsonLd;
-    }
-
-
     @Operation(
             summary = "Create new instance with a system generated id",
             description = """
-            The invocation of this endpoint causes the ingestion of the payload (if valid) in the MarmotGraph by assigning a new "@id" to it.
-                        
-            Please note that any "@id" specified in the payload will be interpreted as an additional identifier and therefore added to the "http://schema.org/identifier" array.
-            """)
+                    The invocation of this endpoint causes the ingestion of the payload (if valid) in the MarmotGraph by assigning a new "@id" to it.
+                    
+                    Please note that any "@id" specified in the payload will be interpreted as an additional identifier and therefore added to the "http://schema.org/identifier" array.
+                    """)
     @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(examples = {
             @ExampleObject(name = InstancesExamples.PAYLOAD_MINIMAL_NAME, description = InstancesExamples.PAYLOAD_MINIMAL_DESC, value = InstancesExamples.PAYLOAD_MINIMAL),
             @ExampleObject(name = InstancesExamples.PAYLOAD_WITH_PROPERTY_NAME, description = InstancesExamples.PAYLOAD_WITH_PROPERTY_DESC, value = InstancesExamples.PAYLOAD_WITH_PROPERTY),
@@ -114,10 +103,10 @@ public class InstancesV3Beta {
     @Operation(
             summary = "Create new instance with a client defined id",
             description = """
-            The invocation of this endpoint causes the ingestion of the payload (if valid) in the MarmotGraph by using the specified UUID
-            
-            Please note that any "@id" specified in the payload will be interpreted as an additional identifier and therefore added to the "http://schema.org/identifier" array.
-            """)
+                    The invocation of this endpoint causes the ingestion of the payload (if valid) in the MarmotGraph by using the specified UUID
+                    
+                    Please note that any "@id" specified in the payload will be interpreted as an additional identifier and therefore added to the "http://schema.org/identifier" array.
+                    """)
     @PostMapping("/instances/{id}")
     @ExposesData
     @WritesData
@@ -290,16 +279,7 @@ public class InstancesV3Beta {
     @ExposesIds
     @Simple
     public ResponseEntity<Result<NormalizedJsonLd>> moveInstance(@PathVariable("id") UUID id, @PathVariable("space") String targetSpace, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
-        InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
-        if (instanceId == null) {
-            return ResponseEntity.notFound().build();
-        } else {
-            ReleaseStatus releaseStatus = release.getReleaseStatus(instanceId.getSpace().getName(), instanceId.getUuid(), ReleaseTreeScope.TOP_INSTANCE_ONLY);
-            if (releaseStatus != null && releaseStatus != ReleaseStatus.UNRELEASED) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), "Was not able to move an instance because it is released still", instanceId.getUuid()));
-            }
-            return instanceController.moveInstance(instanceId, authContext.resolveSpaceName(targetSpace), responseConfiguration);
-        }
+        return instanceController.moveInstance(id, authContext.resolveSpaceName(targetSpace), responseConfiguration);
     }
 
 
@@ -311,17 +291,8 @@ public class InstancesV3Beta {
     @Simple
     public ResponseEntity<Result<Void>> deleteInstance(@PathVariable("id") UUID id) {
         Date startTime = new Date();
-        InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
-        if (instanceId == null) {
-            return ResponseEntity.notFound().build();
-        } else {
-            ReleaseStatus releaseStatus = release.getReleaseStatus(instanceId.getSpace().getName(), instanceId.getUuid(), ReleaseTreeScope.TOP_INSTANCE_ONLY);
-            if (releaseStatus != null && releaseStatus != ReleaseStatus.UNRELEASED) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), "Was not able to remove instance because it is released still", instanceId.getUuid()));
-            }
-            instanceController.deleteInstance(instanceId);
-            return ResponseEntity.ok(Result.<Void>ok().setExecutionDetails(startTime, new Date()));
-        }
+        instanceController.deleteInstance(id);
+        return ResponseEntity.ok(Result.<Void>ok().setExecutionDetails(startTime, new Date()));
     }
 
 
@@ -334,11 +305,7 @@ public class InstancesV3Beta {
     @Simple
     public ResponseEntity<Result<Void>> releaseInstance(@PathVariable("id") UUID id, @RequestParam(value = "revision", required = false) String revision) {
         Date startTime = new Date();
-        InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
-        if (instanceId == null) {
-            return ResponseEntity.notFound().build();
-        }
-        release.releaseInstance(instanceId.getSpace().getName(), instanceId.getUuid(), revision);
+        instanceController.release(id);
         return ResponseEntity.ok(Result.<Void>ok().setExecutionDetails(startTime, new Date()));
     }
 
@@ -351,11 +318,7 @@ public class InstancesV3Beta {
     @Simple
     public ResponseEntity<Result<Void>> unreleaseInstance(@PathVariable("id") UUID id) {
         Date startTime = new Date();
-        InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
-        if (instanceId == null) {
-            return ResponseEntity.notFound().build();
-        }
-        release.unreleaseInstance(instanceId.getSpace().getName(), instanceId.getUuid());
+        instanceController.unrelease(id);
         return ResponseEntity.ok(Result.<Void>ok().setExecutionDetails(startTime, new Date()));
     }
 
@@ -368,13 +331,8 @@ public class InstancesV3Beta {
     @ExposesIds
     @ExposesReleaseStatus
     @Simple
-    public ResponseEntity<Result<ReleaseStatus>> getReleaseStatus(@PathVariable("id") UUID id, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope) {
-        InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
-        if (instanceId == null) {
-            return ResponseEntity.notFound().build();
-        }
-        ReleaseStatus releaseStatus = release.getReleaseStatus(instanceId.getSpace().getName(), instanceId.getUuid(), releaseTreeScope);
-        return ResponseEntity.ok(Result.ok(releaseStatus));
+    public Result<ReleaseStatus> getReleaseStatus(@PathVariable("id") UUID id, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope) {
+        return Result.ok(instanceController.getReleaseStatus(id, releaseTreeScope));
     }
 
     @Operation(summary = "Get the release status for multiple instances")
@@ -387,11 +345,8 @@ public class InstancesV3Beta {
     @ExposesReleaseStatus
     @Advanced
     public Result<Map<UUID, Result<ReleaseStatus>>> getReleaseStatusByIds(@RequestBody List<UUID> listOfIds, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope) {
-        List<InstanceId> instanceIds = idsController.resolveIdsByUUID(DataStage.IN_PROGRESS, listOfIds, false);
-        Map<UUID, Result<ReleaseStatus>> result = new HashMap<>();
-        final Map<UUID, ReleaseStatus> releaseStatus = release.getIndividualReleaseStatus(instanceIds, releaseTreeScope);
-        releaseStatus.keySet().forEach(id -> result.put(id, Result.ok(releaseStatus.get(id))));
-        return Result.ok(result);
+        final Map<UUID, ReleaseStatus> result = instanceController.getReleaseStatus(listOfIds, releaseTreeScope);
+        return Result.ok(result.keySet().stream().collect(Collectors.toMap(k -> k, v -> Result.ok(result.get(v)))));
     }
 
 

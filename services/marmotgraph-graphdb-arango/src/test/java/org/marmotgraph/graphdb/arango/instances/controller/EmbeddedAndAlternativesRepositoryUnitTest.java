@@ -26,7 +26,7 @@ package org.marmotgraph.graphdb.arango.instances.controller;
 
 import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.JsonAdapter;
-import org.marmotgraph.commons.api.PrimaryStoreUsers;
+import org.marmotgraph.commons.api.primaryStore.Users;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.graphdb.arango.commons.controller.ArangoDatabases;
 import org.marmotgraph.graphdb.arango.commons.controller.GraphDBArangoUtils;
@@ -44,7 +44,7 @@ public class EmbeddedAndAlternativesRepositoryUnitTest {
     @Test
     public void mergeEmbeddedDocuments() {
         //Given
-        EmbeddedAndAlternativesRepository repository = new EmbeddedAndAlternativesRepository(Mockito.mock(PrimaryStoreUsers.Client.class), Mockito.mock(IdUtils.class), Mockito.mock(ArangoDatabases.class), Mockito.mock(GraphDBArangoUtils.class));
+        EmbeddedAndAlternativesRepository repository = new EmbeddedAndAlternativesRepository(Mockito.mock(Users.Client.class), Mockito.mock(IdUtils.class), Mockito.mock(ArangoDatabases.class), Mockito.mock(GraphDBArangoUtils.class));
         JsonAdapter jsonAdapter = new JsonAdapter4Test();
         String originalDoc = """
            {

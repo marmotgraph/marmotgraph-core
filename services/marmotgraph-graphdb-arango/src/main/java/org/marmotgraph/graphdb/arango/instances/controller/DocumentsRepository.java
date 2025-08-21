@@ -31,7 +31,7 @@ import org.marmotgraph.graphdb.arango.aqlbuilder.AQL;
 import org.marmotgraph.graphdb.arango.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.graphdb.arango.model.*;
 import org.marmotgraph.commons.*;
-import org.marmotgraph.commons.api.Ids;
+import org.marmotgraph.commons.api.primaryStore.Ids;
 import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.permissions.controller.Permissions;
 import org.marmotgraph.commons.JsonAdapter;
@@ -208,16 +208,16 @@ public class DocumentsRepository extends  AbstractRepository{
     }
 
     @ExposesData
-    public List<NormalizedJsonLd> getDocumentsBySharedIdentifiers(DataStage stage, SpaceName space, UUID id, boolean embedded, boolean alternatives) {
-        ArangoDatabase db = databases.getByStage(stage);
+    public List<NormalizedJsonLd> getNativeDocumentsByInstanceId(SpaceName space, UUID id) {
+        ArangoDatabase db = databases.getByStage(DataStage.NATIVE);
         ArangoCollectionReference collectionReference = ArangoCollectionReference.fromSpace(space);
         if (db.collection(collectionReference.getCollectionName()).exists()) {
             //Because Arango doesn't support indexed filtering of array in array search, we expand the (very limited) list of identifiers of the root document and state them explicitly as individual filter elements. This way, the index applies and we profit from more speed.
             NormalizedJsonLd rootDocument = db.collection(collectionReference.getCollectionName()).getDocument(id.toString(), NormalizedJsonLd.class);
             if (rootDocument != null) {
-                List<NormalizedJsonLd> result = doGetDocumentsByIdentifiers(rootDocument.allIdentifiersIncludingId(), stage, space);
+                List<NormalizedJsonLd> result = doGetDocumentsByIdentifiers(rootDocument.allIdentifiersIncludingId(), DataStage.NATIVE, space);
                 if (result != null) {
-                    embeddedAndAlternatives.handleAlternativesAndEmbedded(result, stage, alternatives, embedded);
+                    embeddedAndAlternatives.handleAlternativesAndEmbedded(result, DataStage.NATIVE, false, true);
                     return result;
                 }
             }

@@ -26,18 +26,20 @@ package org.marmotgraph.commons.model;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.marmotgraph.commons.model.internal.spaces.Space;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Date;
 import java.util.UUID;
 
+@Getter
+@Setter
 public class PersistedEvent extends Event implements EventId {
     private String userId;
     private Long indexedTimestamp;
     private String eventId;
-    private DataStage dataStage;
     private boolean suggestion;
-    private Space space;
+
 
     @JsonProperty("_key")
     private String key;
@@ -46,49 +48,12 @@ public class PersistedEvent extends Event implements EventId {
         super();
     }
 
-    public PersistedEvent(Event event, DataStage dataStage, User user, Space space) {
-        super(event.getSpaceName(), event.getDocumentId(), event.getData(), event.getType(), event.getReportedTimeStampInMs());
+    public PersistedEvent(Event event, User user, SpaceName spaceName) {
+        super(spaceName, event.getInstanceId(), event.getData(), event.getType(), event.getReportedTimeStampInMs());
+        this.instanceId = event.getInstanceId();
         this.userId = user.getNativeId();
         this.indexedTimestamp = new Date().getTime();
         this.eventId = UUID.randomUUID().toString();
         this.key = this.eventId;
-        this.dataStage = dataStage;
-        this.space = space;
-    }
-
-    public String getKey() {
-        return key;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public boolean isSuggestion() {
-        return suggestion;
-    }
-
-    public Long getIndexedTimestamp() {
-        return indexedTimestamp;
-    }
-
-    public String getEventId() {
-        return eventId;
-    }
-
-    public DataStage getDataStage() {
-        return dataStage;
-    }
-
-    public void setSuggestion(boolean suggestion) {
-        this.suggestion = suggestion;
-    }
-
-    public Space getSpace() {
-        return space;
-    }
-
-    public void setSpace(Space space) {
-        this.space = space;
     }
 }

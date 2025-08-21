@@ -24,27 +24,31 @@
 
 package org.marmotgraph.commons.model;
 
-import org.marmotgraph.commons.jsonld.JsonLdId;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 
 import java.util.Date;
 import java.util.UUID;
 
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Event {
+
+    @Getter
     public enum Type{
-        INSERT(DataStage.NATIVE), UPDATE(DataStage.NATIVE), DELETE(DataStage.IN_PROGRESS), RELEASE(DataStage.RELEASED), UNRELEASE(DataStage.RELEASED);
-        DataStage stage;
+        INSERT(DataStage.NATIVE), UPDATE(DataStage.NATIVE), DELETE(DataStage.IN_PROGRESS), MOVE(DataStage.IN_PROGRESS), RELEASE(DataStage.RELEASED), UNRELEASE(DataStage.RELEASED);
+        final DataStage stage;
         Type(DataStage targetStage){
             this.stage = targetStage;
-        }
-        public DataStage getStage() {
-            return stage;
         }
     }
 
     protected SpaceName spaceName;
 
-    protected UUID documentId;
+    protected UUID instanceId;
 
     protected NormalizedJsonLd data;
 
@@ -53,54 +57,21 @@ public class Event {
     private Long reportedTimeStampInMs;
 
 
-    public Event() {
+    public static Event createUpsertEvent(SpaceName space, UUID instanceId, Event.Type type, NormalizedJsonLd payload){
+        return new Event(space, instanceId, payload, type, new Date().getTime());
     }
 
-    public Event(SpaceName spaceName, UUID documentId, NormalizedJsonLd data, Type type, Date timeStamp) {
-        this(spaceName, documentId, data, type, timeStamp!=null ? timeStamp.getTime() : null);
+
+    public static Event createDeleteEvent(UUID instanceId){
+        return new Event(null, instanceId, null, Event.Type.DELETE, new Date().getTime());
     }
 
-    protected Event(SpaceName spaceName, UUID documentId, NormalizedJsonLd data, Type type, Long timeStampInMs) {
-        this.spaceName = spaceName;
-        this.documentId = documentId;
-        this.data = data;
-        this.type = type;
-        this.reportedTimeStampInMs = timeStampInMs;
+    public static Event createReleaseEvent(UUID instanceId){
+        return new Event(null, instanceId,null, Type.RELEASE, new Date().getTime());
     }
 
-    public NormalizedJsonLd getData() {
-        return data;
-    }
-
-    public Type getType() {
-        return type;
-    }
-
-    public Long getReportedTimeStampInMs() {
-        return reportedTimeStampInMs;
-    }
-
-    public static Event createDeleteEvent(SpaceName space, UUID id, JsonLdId absoluteId){
-        NormalizedJsonLd normalizedJsonLd = new NormalizedJsonLd();
-        normalizedJsonLd.setId(absoluteId);
-        return new Event(space, id, normalizedJsonLd, Event.Type.DELETE, new Date().getTime());
-    }
-
-    public static Event createUpsertEvent(SpaceName space, UUID id, Event.Type type, NormalizedJsonLd payload){
-        return new Event(space, id, payload, type, new Date().getTime());
-    }
-
-    public void setInstance(SpaceName space, UUID uuid){
-        this.spaceName = space;
-        this.documentId = uuid;
-    }
-
-    public SpaceName getSpaceName() {
-        return spaceName;
-    }
-
-    public UUID getDocumentId() {
-        return documentId;
+    public static Event createUnreleaseEvent(UUID instanceId){
+        return new Event(null, instanceId, null, Type.UNRELEASE, new Date().getTime());
     }
 
 }

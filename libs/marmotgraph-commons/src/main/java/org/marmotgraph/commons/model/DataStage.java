@@ -24,19 +24,27 @@
 
 package org.marmotgraph.commons.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@Getter
+@AllArgsConstructor
 public enum DataStage {
 
     /**
      * The native space is the space containing the individual instances in their original state. No additional logic is applied.
      **/
-    NATIVE,
+    NATIVE("ntv"),
     /**
      * The in_progress space is built based on the native space by applying inference logic (e.g. merging instances which contribute to the same entity)
      **/
-    IN_PROGRESS,
+    IN_PROGRESS("ipr"),
     /**
      * The released space contains instances looking similar to the inferred, but "copied-away" in the specific released revision. Typically, data is moved from the inferred to the released stage when its content has been validated.
      */
-    RELEASED
+    RELEASED("rel");
+
+    private final String abbreviation;
+
 
 }

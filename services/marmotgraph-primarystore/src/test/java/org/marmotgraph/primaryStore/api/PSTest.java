@@ -28,6 +28,7 @@ import org.marmotgraph.commons.JsonAdapter;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.Event;
 import org.marmotgraph.commons.model.SpaceName;
+import org.marmotgraph.primaryStore.events.api.EventsAPI;
 import org.marmotgraph.test.Simpsons;
 import org.marmotgraph.test.TestCategories;
 import org.junit.jupiter.api.Disabled;
@@ -45,7 +46,7 @@ import java.util.UUID;
 public class PSTest {
 
     @Autowired
-    PrimaryStoreEventsAPI primaryStore;
+    EventsAPI primaryStore;
 
     @Autowired
     JsonAdapter jsonAdapter;
@@ -56,7 +57,7 @@ public class PSTest {
     public void postInsertionEvent() {
         //Given
         NormalizedJsonLd carl = jsonAdapter.fromJson(Simpsons.Characters.CARL_WITH_EXTERNAL_ID, NormalizedJsonLd.class);
-        Event event = new Event(space, UUID.randomUUID(), carl, Event.Type.INSERT, new Date());
+        Event event = new Event(space, UUID.randomUUID(), carl, Event.Type.INSERT, new Date().getTime());
 
         //When
         primaryStore.postEvent(event);

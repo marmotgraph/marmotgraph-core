@@ -33,7 +33,7 @@ import org.marmotgraph.authentication.service.keycloak.KeycloakClient;
 import org.marmotgraph.authentication.service.keycloak.KeycloakConfig;
 import org.marmotgraph.authentication.service.keycloak.KeycloakController;
 import org.marmotgraph.commons.JsonAdapter;
-import org.marmotgraph.commons.api.Authentication;
+import org.marmotgraph.commons.api.authentication.Authentication;
 import org.marmotgraph.commons.exception.UnauthorizedException;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.model.SpaceName;

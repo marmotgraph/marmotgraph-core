@@ -24,7 +24,13 @@
 
 package org.marmotgraph.commons.exception;
 
+import java.util.UUID;
+
 public class InstanceNotFoundException extends RuntimeException {
+
+    public InstanceNotFoundException(UUID uuid) {
+        this(String.format("Instance %s not found", uuid));
+    }
 
     public InstanceNotFoundException(String message) {
         super(message);

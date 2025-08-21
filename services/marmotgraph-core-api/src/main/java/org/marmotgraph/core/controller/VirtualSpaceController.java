@@ -24,6 +24,7 @@
 
 package org.marmotgraph.core.controller;
 
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.*;
@@ -35,21 +36,16 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@AllArgsConstructor
 @Component
 public class VirtualSpaceController {
 
     private final CoreInstanceController instanceController;
     private final AuthContext authContext;
 
-    public VirtualSpaceController(CoreInstanceController instanceController, AuthContext authContext) {
-        this.instanceController = instanceController;
-        this.authContext = authContext;
-    }
-
     public boolean isVirtualSpace(String spaceName){
         return SpaceName.REVIEW_SPACE.equals(spaceName);
     }
-
 
     public List<NormalizedJsonLd> getInstancesByInvitation(ResponseConfiguration responseConfiguration, DataStage stage, String type){
         final ExtendedResponseConfiguration r = new ExtendedResponseConfiguration();
@@ -61,6 +57,5 @@ public class VirtualSpaceController {
         final Map<String, Result<NormalizedJsonLd>> instancesByIds = instanceController.getInstancesByIds(invitationIds, stage, r, type);
         return instancesByIds.values().stream().map(Result::getData).filter(Objects::nonNull).collect(Collectors.toList());
     }
-
 
 }

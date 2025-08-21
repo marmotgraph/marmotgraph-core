@@ -30,10 +30,14 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.external.spaces.SpaceInformation;
+import org.marmotgraph.commons.permission.Functionality;
+import org.marmotgraph.commons.permission.FunctionalityInstance;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class Space extends DynamicJson {
 
@@ -165,18 +169,6 @@ public class Space extends DynamicJson {
     @JsonSetter(EBRAINSVocabulary.META_DEFER_CACHE_SPACE)
     public void setDeferCache(Boolean deferCache) {
         this.put(EBRAINSVocabulary.META_DEFER_CACHE_SPACE, deferCache);
-    }
-
-    @JsonIgnore
-    public SpaceInformation toSpaceInformation(){
-        SpaceInformation information = new SpaceInformation();
-        information.setName(getName() != null ? getName().getName() : null);
-        information.setIdentifier(getIdentifier());
-        keySet().stream().filter(k -> k.startsWith(String.format("%s/", EBRAINSVocabulary.META_SPACE))).forEach(k -> {
-            information.put(k, get(k));
-        });
-        return information;
-
     }
 
 

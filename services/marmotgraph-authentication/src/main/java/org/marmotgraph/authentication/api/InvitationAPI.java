@@ -26,8 +26,9 @@ package org.marmotgraph.authentication.api;
 
 import lombok.AllArgsConstructor;
 import org.marmotgraph.authentication.models.Invitation;
-import org.marmotgraph.authentication.service.InstanceScopeService;
 import org.marmotgraph.authentication.service.InvitationsService;
+import org.marmotgraph.commons.api.primaryStore.Instances;
+import org.marmotgraph.commons.api.primaryStore.Scopes;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -36,37 +37,33 @@ import java.util.UUID;
 
 @AllArgsConstructor
 @Component
-public class InvitationAPI implements org.marmotgraph.commons.api.Invitation.Client {
+public class InvitationAPI implements org.marmotgraph.commons.api.authentication.Invitation.Client {
 
-    private final InvitationsService invitationsService;
-    private final InstanceScopeService instanceScopeService;
+    private final InvitationsService invitations;
+    private final Scopes.Client scopes;
 
     @Override
     public void inviteUserForInstance(UUID id, UUID userId) {
-        invitationsService.createInvitation(new Invitation(new Invitation.CompositeId(id.toString(), userId)));
-        this.instanceScopeService.calculateInstanceScope(id);
+        invitations.createInvitation(new Invitation(new Invitation.CompositeId(id.toString(), userId)));
+        this.scopes.calculateInstanceScope(id);
     }
 
     @Override
     public void revokeUserInvitation(UUID id, UUID userId) {
-        invitationsService.deleteInvitation(new Invitation.CompositeId(id.toString(), userId));
+        invitations.deleteInvitation(new Invitation.CompositeId(id.toString(), userId));
     }
 
     @Override
     public List<String> listInvitedUserIds(UUID id) {
         if (id != null) {
-            return invitationsService.getAllInvitedUsersByInstanceId(id);
+            return invitations.getAllInvitedUsersByInstanceId(id);
         }
         return Collections.emptyList();
     }
 
     @Override
     public List<UUID> listInstances() {
-        return invitationsService.getAllInstancesWithInvitation();
+        return invitations.getAllInstancesWithInvitation();
     }
 
-    @Override
-    public void calculateInstanceScope(UUID id) {
-        this.instanceScopeService.calculateInstanceScope(id);
-    }
 }

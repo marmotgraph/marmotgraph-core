@@ -25,7 +25,7 @@
 package org.marmotgraph.core.api.v3beta;
 
 import org.marmotgraph.commons.Version;
-import org.marmotgraph.commons.api.JsonLd;
+import org.marmotgraph.commons.api.jsonld.JsonLd;
 import org.marmotgraph.commons.config.openApiGroups.Simple;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;

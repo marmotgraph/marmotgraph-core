@@ -27,12 +27,9 @@ package org.marmotgraph.core.api.v3;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.cache.CacheConstant;
 import org.marmotgraph.commons.config.openApiGroups.Admin;
-import org.marmotgraph.commons.markers.WritesData;
-import org.marmotgraph.core.api.examples.InstancesExamples;
 import org.marmotgraph.core.controller.CoreCacheController;
 import org.springframework.web.bind.annotation.*;
 
