@@ -32,9 +32,7 @@ import org.marmotgraph.commons.api.graphDB.GraphDB;
 import org.marmotgraph.commons.api.primaryStore.Events;
 import org.marmotgraph.commons.api.primaryStore.Instances;
 import org.marmotgraph.commons.api.primaryStore.Scopes;
-import org.marmotgraph.commons.exception.ForbiddenException;
-import org.marmotgraph.commons.exception.InstanceNotFoundException;
-import org.marmotgraph.commons.exception.UnauthorizedException;
+import org.marmotgraph.commons.exception.*;
 import org.marmotgraph.commons.jsonld.InstanceId;
 import org.marmotgraph.commons.jsonld.JsonLdConsts;
 import org.marmotgraph.commons.jsonld.JsonLdId;
@@ -65,7 +63,6 @@ import java.util.stream.Collectors;
 public class CoreInstanceController {
 
     private final GraphDB.Client graphDB;
-    private final CoreIdsController ids;
     private final AuthContext authContext;
     private final IdUtils idUtils;
     private final Events.Client events;
@@ -77,6 +74,63 @@ public class CoreInstanceController {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
+    public Map<UUID, InstanceId> resolveIds(List<IdWithAlternatives> idWithAlternatives) {
+        return instances.resolveIds(idWithAlternatives);
+    }
+
+    public InstanceId resolveId(UUID id) {
+        if(id!=null) {
+            List<InstanceId> documentIds = resolveIdsByUUID(Collections.singletonList(id), false);
+            if (documentIds != null && documentIds.size() == 1) {
+                return documentIds.get(0);
+            }
+        }
+        return null;
+    }
+
+
+    public List<InstanceId> resolveIdsByUUID(List<UUID> ids, boolean returnUnresolved) {
+        List<IdWithAlternatives> idWithAlternatives = ids.stream().map(id -> new IdWithAlternatives().setId(id).setAlternatives(Collections.singleton(idUtils.buildAbsoluteUrl(id).getId()))).collect(Collectors.toList());
+        return resolveIds(idWithAlternatives, returnUnresolved);
+    }
+
+
+    private List<InstanceId> resolveIds(List<IdWithAlternatives> idWithAlternatives, boolean returnUnresolved) {
+        List<InstanceId> resultList;
+        Map<UUID, InstanceId> result = resolveIds(idWithAlternatives);
+        if (result != null) {
+            resultList = idWithAlternatives.stream().map(idWithAlternative -> {
+                idWithAlternative.setFound(result.containsKey(idWithAlternative.getId()));
+                return result.get(idWithAlternative.getId());
+            }).filter(Objects::nonNull).collect(Collectors.toList());
+        }
+        else{
+            resultList = new ArrayList<>();
+        }
+        if (returnUnresolved) {
+            List<InstanceId> unresolvedIds = idWithAlternatives.stream().filter(idWithAlternative -> !idWithAlternative.isFound()).map(idWithAlternative ->
+                    {
+                        InstanceId instanceId = new InstanceId(idWithAlternative.getId(), null);
+                        instanceId.setUnresolved(true);
+                        return instanceId;
+                    }
+            ).toList();
+            resultList.addAll(unresolvedIds);
+        }
+        return resultList;
+    }
+
+
+    public InstanceId findId(UUID uuid, Set<String> identifiers) {
+        try {
+            return this.instances.findInstanceByIdentifiers(uuid, new ArrayList<>(identifiers));
+        } catch (AmbiguousException e) {
+            final Result<?> nok = Result.nok(HttpStatus.CONFLICT.value(), String.format("The payload you're providing contains a shared identifier of the instances %s. Please merge those instances if they are reflecting the same entity.", e.getMessage()));
+            throw new CancelProcessException(nok, HttpStatus.CONFLICT.value());
+        }
+    }
+
+
     public void createInvitation(UUID instanceId, UUID userId) {
         //TODO move permission check to authentication module
         final InstanceId resolvedInstanceId = resolveIdOrThrowException(instanceId);
@@ -87,7 +141,7 @@ public class CoreInstanceController {
     }
 
     private InstanceId resolveIdOrThrowException(UUID instanceId) {
-        final InstanceId resolvedInstanceId = ids.resolveId(DataStage.IN_PROGRESS, instanceId);
+        final InstanceId resolvedInstanceId = resolveId(instanceId);
         if (resolvedInstanceId == null) {
             throw new InstanceNotFoundException(String.format("Instance %s not found", instanceId));
         }
@@ -127,10 +181,28 @@ public class CoreInstanceController {
         this.scopes.calculateInstanceScope(instanceId);
     }
 
-    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(NormalizedJsonLd normalizedJsonLd, UUID id, SpaceName s, ExtendedResponseConfiguration responseConfiguration) {
-        ids.checkIdForExistence(id, normalizedJsonLd.allIdentifiersIncludingId());
+    private void checkIdForExistence(UUID uuid, Set<String> identifiers){
+        final InstanceId id = findId(uuid, identifiers);
+        if(id!=null){
+            final Result<?> nok = Result.nok(HttpStatus.CONFLICT.value(), String.format("The payload you're providing is pointing to the instance %s (either by the %s or the %s field it contains). Please do a PUT or a PATCH to the mentioned id instead.", id.serialize(), JsonLdConsts.ID, SchemaOrgVocabulary.IDENTIFIER), id.getUuid());
+            throw new CancelProcessException(nok, HttpStatus.CONFLICT.value());
+        }
+    }
+
+    /**
+     * Creates a new instance in the "in progress" section.
+     * @param normalizedJsonLd
+     * @param id
+     * @param spaceName
+     * @param responseConfiguration
+     * @return
+     *
+     * @throws CancelProcessException in case an instance with the same id (or one of the given identifiers in http://schema.org/identifier) already exists in the DB
+     */
+    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(NormalizedJsonLd normalizedJsonLd, UUID id, SpaceName spaceName, ExtendedResponseConfiguration responseConfiguration) {
+        checkIdForExistence(id, normalizedJsonLd.allIdentifiersIncludingId());
         normalizedJsonLd.defineFieldUpdateTimes(normalizedJsonLd.keySet().stream().collect(Collectors.toMap(k -> k, k -> ZonedDateTime.now())));
-        Event upsertEvent = createUpsertEvent(id, normalizedJsonLd, s);
+        Event upsertEvent = createUpsertEvent(id, normalizedJsonLd, spaceName);
         InstanceId instanceId = events.postEvent(upsertEvent);
         return handleIngestionResponse(responseConfiguration, Collections.singleton(instanceId));
     }
@@ -215,7 +287,7 @@ public class CoreInstanceController {
                 return null;
             }
         }).filter(Objects::nonNull).collect(Collectors.toList());
-        List<InstanceId> idsAfterResolution = this.ids.resolveIdsByUUID(stage, validUUIDs, true);
+        List<InstanceId> idsAfterResolution = resolveIdsByUUID(validUUIDs, true);
         idsAfterResolution.stream().filter(InstanceId::isUnresolved).forEach(id -> result.put(id.getUuid().toString(), Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase())));
         final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
         if (responseConfiguration.isReturnPayload()) {
@@ -315,7 +387,7 @@ public class CoreInstanceController {
     }
 
     public Paginated<NormalizedJsonLd> getIncomingLinks(UUID id, DataStage stage, String property, Type type, PaginationParam pagination) {
-        InstanceId instanceId = ids.resolveId(stage, id);
+        InstanceId instanceId = resolveId(id);
         if (instanceId == null) {
             return null;
         }
@@ -326,7 +398,7 @@ public class CoreInstanceController {
     }
 
     public NormalizedJsonLd getInstanceById(UUID id, DataStage stage, ExtendedResponseConfiguration responseConfiguration) {
-        InstanceId instanceId = ids.resolveId(stage, id);
+        InstanceId instanceId = resolveId(id);
         final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
         if (instanceId == null) {
             return null;
@@ -390,7 +462,7 @@ public class CoreInstanceController {
         List<IdWithAlternatives> idWithAlternatives = requestToIdentifier.keySet().stream()
                 .map(k -> new IdWithAlternatives(k, null, Collections.singleton(requestToIdentifier.get(k))))
                 .collect(Collectors.toList());
-        Map<UUID, InstanceId> resolvedIds = ids.resolveIds(stage, idWithAlternatives);
+        Map<UUID, InstanceId> resolvedIds = resolveIds(idWithAlternatives);
         Map<UUID, Set<Map<String, Object>>> updatedObjects = new HashMap<>();
         Set<InstanceId> instanceIds = new HashSet<>();
         Map<String, InstanceId> instanceIdByIdentifier = new HashMap<>();
@@ -450,7 +522,7 @@ public class CoreInstanceController {
     }
 
     public ScopeElement getScopeForInstance(UUID id, DataStage stage, boolean returnPermissions, boolean applyRestrictions) {
-        InstanceId instanceId = ids.resolveId(stage, id);
+        InstanceId instanceId = resolveId(id);
         if (instanceId != null) {
             ScopeElement scope = graphDB.getScopeForInstance(instanceId.getSpace().getName(), instanceId.getUuid(), stage, applyRestrictions);
             if (returnPermissions) {
@@ -462,7 +534,7 @@ public class CoreInstanceController {
     }
 
     public GraphEntity getNeighbors(UUID id, DataStage stage) {
-        InstanceId instanceId = ids.resolveId(stage, id);
+        InstanceId instanceId = resolveId(id);
         if (instanceId != null) {
             return graphDB.getNeighbors(instanceId.getSpace().getName(), instanceId.getUuid(), stage);
         }

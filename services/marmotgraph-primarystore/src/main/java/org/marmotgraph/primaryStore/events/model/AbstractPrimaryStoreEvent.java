@@ -50,6 +50,8 @@ public abstract class AbstractPrimaryStoreEvent {
     @Column(columnDefinition = "TEXT")
     private String jsonPayload;
     private String userId;
+    private String space;
+    private Long reportedTimestamp;
     private Long indexedTimestamp;
     private boolean suggestion;
 
@@ -57,7 +59,9 @@ public abstract class AbstractPrimaryStoreEvent {
         e.setInstanceUUID(event.getInstanceId());
         e.setSuggestion(event.isSuggestion());
         e.setUserId(event.getUserId());
+        e.setSpace(event.getSpaceName() != null ? event.getSpaceName().getName() : null);
         e.setType(event.getType());
+        e.setReportedTimestamp(event.getReportedTimeStampInMs());
         e.setIndexedTimestamp(event.getIndexedTimestamp());
         e.setJsonPayload(jsonAdapter.toJson(event.getData()));
         return e;

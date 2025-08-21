@@ -39,8 +39,8 @@ import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permissions.controller.Permissions;
 import org.marmotgraph.primaryStore.events.exceptions.FailedEventException;
-import org.marmotgraph.primaryStore.ids.service.IdService;
 import org.marmotgraph.primaryStore.indexing.service.IndexingService;
+import org.marmotgraph.primaryStore.instances.model.InstanceInformation;
 import org.marmotgraph.primaryStore.instances.service.PayloadService;
 import org.marmotgraph.primaryStore.instances.service.Reconcile;
 import org.marmotgraph.primaryStore.structures.service.SpaceService;
@@ -49,13 +49,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 @AllArgsConstructor
@@ -70,26 +68,24 @@ public class EventProcessor {
     private final EventService eventService;
     private final PayloadService payloadService;
     private final SpaceService spaceService;
-    private final IdService idService;
-
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Transactional
     // We spawn the transaction across the whole event persistence to ensure that we don't end up with partial data
     public InstanceId postEvent(Event event) {
-        SpaceName space = evaluateSpace(event);
+        SpaceName space = evaluateSpace(event).orElseThrow(() -> new IllegalStateException(String.format("Space information for instance %s is missing", event.getInstanceId())));
         PersistedEvent eventToPersist = checkPermission(event, space);
         PersistedEvent persistedEvent = persistEvent(eventToPersist);
         processEvent(persistedEvent);
         return new InstanceId(persistedEvent.getInstanceId(), persistedEvent.getSpaceName());
     }
 
-    private SpaceName evaluateSpace(Event event){
-        SpaceName space = event.getSpaceName();
-        if(space == null){
+    private Optional<SpaceName> evaluateSpace(Event event){
+        Optional<SpaceName> space = Optional.ofNullable(event.getSpaceName());
+        if(space.isEmpty()){
             //If the space information is not yet provided, we read it from the db (which requires
-            space = idService.getSpace(event.getInstanceId());
+            space = payloadService.getSpace(event.getInstanceId());
         }
         return space;
     }
@@ -103,25 +99,22 @@ public class EventProcessor {
                 InferredJsonLdDoc inferredDocument = reconcile.reconcile(persistedEvent.getInstanceId(), sourceDocumentsForInstance);
                 NormalizedJsonLd inferredDocumentPayload = inferredDocument.asIndexed().getDoc();
                 boolean autorelease = spaceService.isAutoRelease(persistedEvent.getSpaceName());
-                idService.upsertId(new IdWithAlternatives(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), persistedEvent.getData().identifiers()), DataStage.IN_PROGRESS);
-                payloadService.upsertInferredPayload(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), inferredDocumentPayload, inferredDocument.getAlternatives(), autorelease, persistedEvent.getReportedTimeStampInMs());
+                InstanceInformation instanceInformation = payloadService.upsertGlobalInformation(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), persistedEvent.getData().identifiers());
+                payloadService.upsertInferredPayload(persistedEvent.getInstanceId(), instanceInformation, inferredDocumentPayload, inferredDocument.getAlternatives(), autorelease, persistedEvent.getReportedTimeStampInMs());
                 indexing.upsert(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), inferredDocumentPayload, DataStage.IN_PROGRESS);
                 if(autorelease){
                     indexing.upsert(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), persistedEvent.getData(), DataStage.RELEASED);
                 }
                 break;
             case DELETE:
-                idService.removeId(DataStage.IN_PROGRESS, persistedEvent.getInstanceId());
                 payloadService.removeInferredPayload(persistedEvent.getInstanceId());
                 indexing.delete(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), DataStage.IN_PROGRESS);
                 break;
             case RELEASE:
-                idService.upsertId(new IdWithAlternatives(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), persistedEvent.getData().identifiers()), DataStage.RELEASED);
                 NormalizedJsonLd inferredPayload = payloadService.releaseExistingPayload(persistedEvent.getInstanceId(), persistedEvent.getReportedTimeStampInMs());
                 indexing.upsert(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), inferredPayload, DataStage.RELEASED);
                 break;
             case UNRELEASE:
-                idService.removeId(DataStage.RELEASED, persistedEvent.getInstanceId());
                 payloadService.removeReleasedPayload(persistedEvent.getInstanceId());
                 indexing.delete(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), DataStage.RELEASED);
                 break;

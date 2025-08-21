@@ -43,13 +43,11 @@ public class ReleasedPayload {
     @Column(columnDefinition = "TEXT")
     private String jsonPayload;
 
-    private Long firstRelease;
-
-    private Long lastRelease;
-
-    private String spaceName;
-
     @ElementCollection
     private List<String> types;
+
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "uuid", referencedColumnName = "uuid")
+    private InstanceInformation globalInstanceInformation;
 
 }

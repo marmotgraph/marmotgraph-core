@@ -22,12 +22,37 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.primaryStore.ids.service;
+package org.marmotgraph.primaryStore.instances.model;
 
-import org.marmotgraph.primaryStore.ids.model.RegisteredId;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import org.marmotgraph.commons.model.ReleaseStatus;
 
-@Repository
-public interface IdRepository extends JpaRepository<RegisteredId, RegisteredId.CompositeId> {
+import java.util.Set;
+import java.util.UUID;
+
+@Table(name="instances")
+@Entity
+@Getter
+@Setter
+public class InstanceInformation {
+
+    @Id
+    private UUID uuid;
+
+    private Long createdAt;
+
+    private Long firstRelease;
+
+    private Long lastRelease;
+
+    private String spaceName;
+
+    @Enumerated(EnumType.STRING)
+    private ReleaseStatus releaseStatus;
+
+    @ElementCollection
+    @CollectionTable(name="alternative_ids", indexes = @Index(name="alternativeIdLookup", unique = true, columnList = "alternative_ids"))
+    private Set<String> alternativeIds;
 }

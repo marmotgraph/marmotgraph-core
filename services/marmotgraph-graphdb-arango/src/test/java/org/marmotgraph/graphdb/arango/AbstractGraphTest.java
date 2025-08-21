@@ -29,7 +29,6 @@ import org.marmotgraph.graphdb.arango.model.ArangoCollectionReference;
 import org.marmotgraph.graphdb.arango.model.ArangoDocumentReference;
 import org.marmotgraph.commons.JsonAdapter;
 import org.marmotgraph.commons.api.authentication.Authentication;
-import org.marmotgraph.commons.api.primaryStore.Ids;
 import org.marmotgraph.commons.api.primaryStore.Users;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
@@ -67,9 +66,6 @@ public class AbstractGraphTest {
         Mockito.doAnswer(a -> UserFactory.globalAdmin().getUserWithRoles()).when(authClient).getRoles();
         arangoDatabases.clearAll();
     }
-
-    @MockitoBean
-    protected Ids.Client ids;
 
     @MockitoBean
     protected Users.Client primaryStoreUsers;

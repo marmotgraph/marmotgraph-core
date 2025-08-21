@@ -48,4 +48,5 @@ public class InstanceScope {
 
     @ElementCollection
     private Set<UUID> relatedIds;
+
 }

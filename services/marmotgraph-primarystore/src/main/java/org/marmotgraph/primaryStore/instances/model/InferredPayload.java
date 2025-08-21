@@ -27,7 +27,6 @@ package org.marmotgraph.primaryStore.instances.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.marmotgraph.commons.model.ReleaseStatus;
 
 import java.util.List;
 import java.util.Set;
@@ -51,18 +50,12 @@ public class InferredPayload {
     @ElementCollection
     private Set<String> inferenceOf;
 
-    @Enumerated(EnumType.STRING)
-    private ReleaseStatus releaseStatus;
-
-    private String spaceName;
-
     @ElementCollection
     private List<String> types;
 
-    private Long firstRelease;
-
-    private Long lastRelease;
-
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "uuid", referencedColumnName = "uuid")
+    private InstanceInformation instanceInformation;
 
 
 }

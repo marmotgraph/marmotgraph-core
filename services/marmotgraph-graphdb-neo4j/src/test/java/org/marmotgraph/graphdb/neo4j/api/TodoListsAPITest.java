@@ -29,15 +29,12 @@ import org.junit.jupiter.api.Test;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
-import org.marmotgraph.commons.model.Event;
 import org.marmotgraph.commons.model.SpaceName;
-import org.marmotgraph.commons.model.TodoItem;
 import org.marmotgraph.test.TestCategories;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 

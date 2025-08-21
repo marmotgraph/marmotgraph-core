@@ -28,6 +28,8 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.NotImplementedException;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.api.primaryStore.Instances;
+import org.marmotgraph.commons.exception.AmbiguousException;
+import org.marmotgraph.commons.exception.AmbiguousIdException;
 import org.marmotgraph.commons.exception.ForbiddenException;
 import org.marmotgraph.commons.exception.InstanceNotFoundException;
 import org.marmotgraph.commons.jsonld.InstanceId;
@@ -40,8 +42,8 @@ import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.params.ReleaseTreeScope;
 import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permissions.controller.Permissions;
-import org.marmotgraph.primaryStore.ids.model.RegisteredId;
-import org.marmotgraph.primaryStore.ids.service.IdRepository;
+import org.marmotgraph.primaryStore.instances.model.InstanceInformation;
+import org.marmotgraph.primaryStore.instances.service.InstanceInformationRepository;
 import org.marmotgraph.primaryStore.instances.service.InstanceScopeService;
 import org.marmotgraph.primaryStore.instances.service.PayloadService;
 import org.springframework.stereotype.Component;
@@ -54,10 +56,22 @@ import java.util.stream.Collectors;
 public class InstancesAPI implements Instances.Client {
 
     private final PayloadService payloadService;
-    private final IdRepository idRepository;
+    private final InstanceInformationRepository globalInstanceInformationRepository;
     private final Permissions permissions;
     private final AuthContext authContext;
     private final InstanceScopeService scopes;
+
+    @Override
+    public Map<UUID, InstanceId> resolveIds(List<IdWithAlternatives> idWithAlternatives) throws AmbiguousIdException {
+        return payloadService.resolveIds(idWithAlternatives);
+    }
+
+    @Override
+    public InstanceId findInstanceByIdentifiers(UUID uuid, List<String> identifiers) throws AmbiguousException {
+        return globalInstanceInformationRepository.findById(uuid)
+                .map(i -> new InstanceId(i.getUuid(), SpaceName.fromString(i.getSpaceName())))
+                .orElseGet(() -> resolveIds(List.of(new IdWithAlternatives(uuid, null, new HashSet<>(identifiers)))).get(uuid));
+    }
 
     @Override
     public NormalizedJsonLd getInstanceById(UUID id, DataStage stage, boolean removeInternalProperties) {
@@ -84,9 +98,9 @@ public class InstancesAPI implements Instances.Client {
 
     @Override
     public ReleaseStatus getReleaseStatus(UUID id, ReleaseTreeScope releaseTreeScope){
-        Optional<RegisteredId> byId = idRepository.findById(new RegisteredId.CompositeId(id, DataStage.IN_PROGRESS));
+        Optional<InstanceInformation> byId = globalInstanceInformationRepository.findById(id);
         if(byId.isPresent()) {
-            if(!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.RELEASE_STATUS, SpaceName.fromString(byId.get().getSpace()), id)){
+            if(!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.RELEASE_STATUS, SpaceName.fromString(byId.get().getSpaceName()), id)){
                 throw new ForbiddenException();
             }
             ReleaseStatus topInstanceReleaseStatus = payloadService.getReleaseStatus(id);

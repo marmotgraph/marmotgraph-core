@@ -27,10 +27,9 @@ package org.marmotgraph.primaryStore.instances.service;
 import jakarta.persistence.EntityManager;
 import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.api.graphDB.GraphDB;
-import org.marmotgraph.commons.api.primaryStore.Ids;
-import org.marmotgraph.commons.jsonld.InstanceId;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.ScopeElement;
+import org.marmotgraph.primaryStore.instances.model.InstanceInformation;
 import org.marmotgraph.primaryStore.instances.model.InstanceScope;
 import org.springframework.stereotype.Component;
 
@@ -41,14 +40,15 @@ import java.util.*;
 public class InstanceScopeService {
 
     private final InstanceScopeRepository repository;
-    private final Ids.Client ids;
     private final GraphDB.Client graphDB;
     private final EntityManager em;
+    private final InstanceInformationRepository instanceInformationRepository;
 
     public void calculateInstanceScope(UUID id) {
-        final InstanceId instance = this.ids.findInstanceByIdentifiers(id, new ArrayList<>(), DataStage.IN_PROGRESS);
-        if(instance!=null) {
-            final ScopeElement scopeForInstance = graphDB.getScopeForInstance(instance.getSpace().getName(), id, DataStage.IN_PROGRESS, false);
+        Optional<InstanceInformation> instanceInformationOptional = this.instanceInformationRepository.findById(id);
+        if(instanceInformationOptional.isPresent()){
+            InstanceInformation instanceInformation = instanceInformationOptional.get();
+            final ScopeElement scopeForInstance = graphDB.getScopeForInstance(instanceInformation.getSpaceName(), instanceInformation.getUuid(), DataStage.IN_PROGRESS, false);
             final Set<UUID> uuids = collectIds(scopeForInstance, new HashSet<>());
             repository.saveAndFlush(new InstanceScope(id, new HashSet<>(uuids)));
         }

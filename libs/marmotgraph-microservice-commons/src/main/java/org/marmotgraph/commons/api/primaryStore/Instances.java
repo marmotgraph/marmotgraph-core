@@ -24,6 +24,9 @@
 
 package org.marmotgraph.commons.api.primaryStore;
 
+import org.marmotgraph.commons.exception.AmbiguousException;
+import org.marmotgraph.commons.exception.AmbiguousIdException;
+import org.marmotgraph.commons.jsonld.InstanceId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.markers.ExposesData;
 import org.marmotgraph.commons.model.*;
@@ -38,6 +41,10 @@ public interface Instances {
     interface Client extends Instances {
     }
 
+
+    Map<UUID, InstanceId> resolveIds(List<IdWithAlternatives> idWithAlternatives) throws AmbiguousIdException;
+
+    InstanceId findInstanceByIdentifiers(UUID uuid, List<String> identifiers) throws AmbiguousException;
 
     @ExposesData
     NormalizedJsonLd getInstanceById(UUID id, DataStage stage, boolean removeInternalProperties);

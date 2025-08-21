@@ -24,6 +24,9 @@
 
 package org.marmotgraph.core.api.v3beta;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.api.jsonld.JsonLd;
@@ -39,11 +42,9 @@ import org.marmotgraph.commons.markers.WritesData;
 import org.marmotgraph.commons.model.*;
 import org.marmotgraph.commons.query.KgQuery;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.core.controller.CoreInstanceController;
 import org.marmotgraph.core.controller.CoreQueryController;
-import org.marmotgraph.core.controller.CoreIdsController;
 import org.marmotgraph.core.model.ExposedStage;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -55,6 +56,7 @@ import java.util.stream.Collectors;
 /**
  * The query API allows to execute and manage queries on top of the MarmotGraph. This is the main interface for reading clients.
  */
+@AllArgsConstructor
 @RestController
 @RequestMapping(Version.V3_BETA +"/queries")
 @Simple
@@ -66,14 +68,8 @@ public class QueriesV3Beta {
 
     private final JsonLd.Client jsonLd;
 
-    private final CoreIdsController ids;
+    private final CoreInstanceController instances;
 
-    public QueriesV3Beta(CoreQueryController queryController, AuthContext authContext, JsonLd.Client jsonLd, CoreIdsController ids) {
-        this.queryController = queryController;
-        this.authContext = authContext;
-        this.jsonLd = jsonLd;
-        this.ids = ids;
-    }
 
     @Operation(summary = "List the queries and filter them by root type and/or text in the label, name or description")
     @GetMapping
@@ -106,7 +102,7 @@ public class QueriesV3Beta {
         allRequestParams.remove("size");
         NormalizedJsonLd normalizedJsonLd = jsonLd.normalize(query, true);
         KgQuery q = new KgQuery(normalizedJsonLd, stage.getStage());
-        q.setIdRestriction(ids.resolveId(stage.getStage(), instanceId));
+        q.setIdRestriction(instances.resolveId(instanceId));
         if(restrictToSpaces!=null){
             q.setRestrictToSpaces(restrictToSpaces.stream().filter(Objects::nonNull).map(r -> SpaceName.getInternalSpaceName(r, authContext.getUserWithRoles().getPrivateSpace())).collect(Collectors.toList()));
         }
@@ -122,7 +118,7 @@ public class QueriesV3Beta {
     @GetMapping("/{queryId}")
     @ExposesQuery
     public ResponseEntity<Result<NormalizedJsonLd>> getQuerySpecification(@PathVariable("queryId") UUID queryId) {
-        InstanceId instanceId = ids.resolveId(DataStage.IN_PROGRESS, queryId);
+        InstanceId instanceId = instances.resolveId(queryId);
         if(instanceId != null) {
             NormalizedJsonLd kgQuery = queryController.fetchQueryById(instanceId);
             if(kgQuery == null){
@@ -147,7 +143,7 @@ public class QueriesV3Beta {
     public ResponseEntity<Result<NormalizedJsonLd>> saveQuery(@RequestBody JsonLdDoc query, @PathVariable(value = "queryId") UUID queryId, @RequestParam(value = "space", required = false) @Parameter(description = "Required only when the instance is created to specify where it should be stored ("+SpaceName.PRIVATE_SPACE+" for your private space) - but not if it's updated.") String space) {
         NormalizedJsonLd normalizedJsonLd = jsonLd.normalize(query, true);
         normalizedJsonLd.addTypes(EBRAINSVocabulary.META_QUERY_TYPE);
-        InstanceId resolveId = ids.resolveId(DataStage.IN_PROGRESS, queryId);
+        InstanceId resolveId = instances.resolveId(queryId);
         SpaceName spaceName = authContext.resolveSpaceName(space);
         if(resolveId != null){
             if(spaceName!=null && !resolveId.getSpace().equals(spaceName)){
@@ -190,13 +186,13 @@ public class QueriesV3Beta {
         allRequestParams.remove("instanceId");
         allRequestParams.remove("from");
         allRequestParams.remove("size");
-        InstanceId queryInstance = ids.resolveId(DataStage.IN_PROGRESS, queryId);
+        InstanceId queryInstance = instances.resolveId(queryId);
         final NormalizedJsonLd queryPayload = queryController.fetchQueryById(queryInstance);
         if(queryPayload==null){
             throw new InstanceNotFoundException(String.format("Query with id %s not found", queryId));
         }
         KgQuery query = new KgQuery(queryPayload, stage.getStage());
-        query.setIdRestriction(ids.resolveId(stage.getStage(), instanceId));
+        query.setIdRestriction(instances.resolveId(instanceId));
         if(restrictToSpaces!=null){
             query.setRestrictToSpaces(restrictToSpaces.stream().filter(Objects::nonNull).map(r -> SpaceName.getInternalSpaceName(r, authContext.getUserWithRoles().getPrivateSpace())).collect(Collectors.toList()));
         }

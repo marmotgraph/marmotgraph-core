@@ -25,12 +25,10 @@
 package org.marmotgraph.graphdb.arango.ingestion.controller;
 
 
-import org.marmotgraph.graphdb.arango.model.ArangoCollectionReference;
-import org.marmotgraph.graphdb.arango.model.ArangoDocumentReference;
-import org.marmotgraph.graphdb.arango.model.InternalSpace;
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.TypeUtils;
-import org.marmotgraph.commons.api.primaryStore.Ids;
+import org.marmotgraph.commons.api.primaryStore.Instances;
 import org.marmotgraph.commons.jsonld.InstanceId;
 import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
@@ -47,6 +45,9 @@ import org.marmotgraph.graphdb.arango.ingestion.model.DBOperation;
 import org.marmotgraph.graphdb.arango.ingestion.model.DeleteOperation;
 import org.marmotgraph.graphdb.arango.ingestion.model.EdgeResolutionOperation;
 import org.marmotgraph.graphdb.arango.ingestion.model.UpsertOperation;
+import org.marmotgraph.graphdb.arango.model.ArangoCollectionReference;
+import org.marmotgraph.graphdb.arango.model.ArangoDocumentReference;
+import org.marmotgraph.graphdb.arango.model.InternalSpace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -55,27 +56,19 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@AllArgsConstructor
 @Component
 public class DataController {
 
     private final IdUtils idUtils;
     private final ArangoRepositoryCommons repository;
     private final EntryHookDocuments entryHookDocuments;
-    private final Ids.Client ids;
+    private final Instances.Client instances;
     private final ReleasingController releasingController;
     private final TypeUtils typeUtils;
 
     public static final ArangoDocumentReference UNKNOWN_TARGET = ArangoDocumentReference.fromArangoId("unknown/" + UUID.nameUUIDFromBytes("unknown".getBytes(StandardCharsets.UTF_8)), false);
 
-
-    public DataController(IdUtils idUtils, ArangoRepositoryCommons repository, EntryHookDocuments entryHookDocuments, Ids.Client ids, ReleasingController releasingController, TypeUtils typeUtils) {
-        this.idUtils = idUtils;
-        this.repository = repository;
-        this.entryHookDocuments = entryHookDocuments;
-        this.ids = ids;
-        this.releasingController = releasingController;
-        this.typeUtils = typeUtils;
-    }
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -149,7 +142,7 @@ public class DataController {
             edgeToRequestId.put(e.getOriginalTo(), requestId);
             return new IdWithAlternatives().setId(requestId).setAlternatives(Collections.singleton(e.getOriginalTo().getId()));
         }).collect(Collectors.toList());
-        Map<UUID, InstanceId> resolvedIds = this.ids.resolveId(ids, stage);
+        Map<UUID, InstanceId> resolvedIds = this.instances.resolveIds(ids);
         Set<ArangoEdge> resolvedEdges = new HashSet<>();
         Set<JsonLdId> resolvedJsonLdIds = new HashSet<>();
 

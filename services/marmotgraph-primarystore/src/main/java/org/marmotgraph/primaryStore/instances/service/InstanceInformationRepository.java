@@ -22,48 +22,16 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.primaryStore.ids.model;
+package org.marmotgraph.primaryStore.instances.service;
 
-import jakarta.persistence.*;
-import lombok.*;
-import org.marmotgraph.commons.jsonld.InstanceId;
-import org.marmotgraph.commons.model.DataStage;
-import org.marmotgraph.commons.model.SpaceName;
+import org.marmotgraph.primaryStore.instances.model.InstanceInformation;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-import java.io.Serializable;
-import java.util.Set;
 import java.util.UUID;
 
-@Entity
-@Getter
-@Setter
-@Table(name = "ids")
-public class RegisteredId {
+@Repository
+public interface InstanceInformationRepository extends JpaRepository<InstanceInformation, UUID> {
 
-    @Embeddable
-    @Getter
-    @Setter
-    @EqualsAndHashCode
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class CompositeId implements Serializable {
-        private UUID uuid;
-        @Enumerated(EnumType.STRING)
-        private DataStage stage;
-    }
-
-    @EmbeddedId
-    CompositeId compositeId;
-
-    @ElementCollection
-    @CollectionTable(name="ids_alternatives")
-    private Set<String> alternativeIds;
-
-    private String space;
-
-
-    public InstanceId toInstanceId(){
-        return new InstanceId(compositeId.getUuid(), SpaceName.fromString(getSpace()));
-    }
 
 }

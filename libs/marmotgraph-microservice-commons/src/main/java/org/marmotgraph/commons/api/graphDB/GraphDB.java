@@ -24,9 +24,7 @@
 
 package org.marmotgraph.commons.api.graphDB;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.markers.ExposesMinimalData;
 import org.marmotgraph.commons.model.*;
 import org.marmotgraph.commons.query.KgQuery;
 

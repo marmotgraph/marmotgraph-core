@@ -26,8 +26,6 @@ package org.marmotgraph.primaryStore.instances.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.marmotgraph.commons.model.DataStage;
-import org.marmotgraph.primaryStore.ids.model.RegisteredId;
 
 import java.io.Serializable;
 import java.util.UUID;

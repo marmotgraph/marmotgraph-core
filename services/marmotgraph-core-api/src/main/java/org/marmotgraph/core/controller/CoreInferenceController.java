@@ -24,6 +24,7 @@
 
 package org.marmotgraph.core.controller;
 
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.api.primaryStore.Events;
 import org.marmotgraph.commons.jsonld.JsonLdId;
@@ -38,18 +39,11 @@ import java.util.UUID;
 /**
  * The inference controller contains the orchestration logic for the inference operations
  */
+@AllArgsConstructor
 @Component
 public class CoreInferenceController {
 
     private final IdUtils idUtils;
-    private final Events.Client primaryStoreEvents;
-    private final CoreIdsController ids;
-
-    public CoreInferenceController(IdUtils idUtils, Events.Client primaryStoreEvents, CoreIdsController ids) {
-        this.idUtils = idUtils;
-        this.primaryStoreEvents = primaryStoreEvents;
-        this.ids = ids;
-    }
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 

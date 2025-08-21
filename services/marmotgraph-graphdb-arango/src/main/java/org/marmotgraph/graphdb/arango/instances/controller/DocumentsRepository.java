@@ -26,26 +26,28 @@ package org.marmotgraph.graphdb.arango.instances.controller;
 
 import com.arangodb.ArangoDatabase;
 import com.arangodb.model.AqlQueryOptions;
-import org.marmotgraph.graphdb.arango.ArangoQueries;
-import org.marmotgraph.graphdb.arango.aqlbuilder.AQL;
-import org.marmotgraph.graphdb.arango.aqlbuilder.ArangoVocabulary;
-import org.marmotgraph.graphdb.arango.model.*;
-import org.marmotgraph.commons.*;
-import org.marmotgraph.commons.api.primaryStore.Ids;
-import org.marmotgraph.commons.models.UserWithRoles;
-import org.marmotgraph.commons.permissions.controller.Permissions;
+import lombok.AllArgsConstructor;
+import org.marmotgraph.commons.AuthContext;
+import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.JsonAdapter;
 import org.marmotgraph.commons.Tuple;
+import org.marmotgraph.commons.api.primaryStore.Instances;
 import org.marmotgraph.commons.jsonld.*;
 import org.marmotgraph.commons.markers.ExposesData;
 import org.marmotgraph.commons.markers.ExposesIds;
 import org.marmotgraph.commons.model.*;
+import org.marmotgraph.commons.models.UserWithRoles;
+import org.marmotgraph.commons.permissions.controller.Permissions;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.graphdb.arango.ArangoQueries;
+import org.marmotgraph.graphdb.arango.aqlbuilder.AQL;
+import org.marmotgraph.graphdb.arango.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.graphdb.arango.commons.controller.ArangoDatabases;
 import org.marmotgraph.graphdb.arango.commons.controller.GraphDBArangoUtils;
 import org.marmotgraph.graphdb.arango.commons.controller.PermissionsController;
 import org.marmotgraph.graphdb.arango.commons.model.ArangoDocument;
 import org.marmotgraph.graphdb.arango.instances.model.ArangoRelation;
+import org.marmotgraph.graphdb.arango.model.*;
 import org.marmotgraph.graphdb.arango.structure.controller.MetaDataController;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -54,6 +56,7 @@ import org.springframework.util.CollectionUtils;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@AllArgsConstructor
 @Component
 public class DocumentsRepository extends  AbstractRepository{
 
@@ -67,22 +70,8 @@ public class DocumentsRepository extends  AbstractRepository{
     private final IdUtils idUtils;
     private final Permissions permissions;
     private final IncomingLinksRepository incomingLinks;
+    private final Instances.Client instances;
 
-    private final Ids.Client ids;
-
-    public DocumentsRepository(ArangoDatabases databases, AuthContext authContext, PermissionsController permissionsController, MetaDataController metaDataController, JsonAdapter jsonAdapter, GraphDBArangoUtils graphDBArangoUtils, EmbeddedAndAlternativesRepository embeddedAndAlternatives, IdUtils idUtils, Permissions permissions, IncomingLinksRepository incomingLinks, Ids.Client ids) {
-        this.databases = databases;
-        this.authContext = authContext;
-        this.permissionsController = permissionsController;
-        this.metaDataController = metaDataController;
-        this.jsonAdapter = jsonAdapter;
-        this.graphDBArangoUtils = graphDBArangoUtils;
-        this.embeddedAndAlternatives = embeddedAndAlternatives;
-        this.idUtils = idUtils;
-        this.permissions = permissions;
-        this.incomingLinks = incomingLinks;
-        this.ids = ids;
-    }
 
     public ArangoDocument getDocument(DataStage stage, ArangoDocumentReference reference) {
         return ArangoDocument.from(databases.getByStage(stage).collection(reference.getArangoCollectionReference().getCollectionName()).getDocument(reference.getDocumentId().toString(), NormalizedJsonLd.class));
@@ -358,7 +347,7 @@ public class DocumentsRepository extends  AbstractRepository{
 
     public List<NormalizedJsonLd> getInvitationDocuments(){
         final List<UUID> invitations = authContext.getUserWithRolesWithoutTermsCheck().getInvitations();
-        final List<InstanceId> values = ids.resolveId(invitations.stream().distinct().map(id -> new IdWithAlternatives().setId(id).setAlternatives(Collections.singleton(idUtils.buildAbsoluteUrl(id).getId()))).collect(Collectors.toList()), DataStage.IN_PROGRESS).values().stream().filter(Objects::nonNull).toList();
+        final List<InstanceId> values = instances.resolveIds(invitations.stream().distinct().map(id -> new IdWithAlternatives().setId(id).setAlternatives(Collections.singleton(idUtils.buildAbsoluteUrl(id).getId()))).filter(Objects::nonNull).toList()).values().stream().toList();
         final Map<UUID, Result<NormalizedJsonLd>> documentsByIdList = getDocumentsByIdList(DataStage.IN_PROGRESS, values, null, false, false, false, null, null);
         return documentsByIdList.values().stream().map(Result::getData).collect(Collectors.toList());
     }

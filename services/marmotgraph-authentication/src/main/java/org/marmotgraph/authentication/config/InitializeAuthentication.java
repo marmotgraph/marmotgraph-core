@@ -25,18 +25,14 @@
 package org.marmotgraph.authentication.config;
 
 import jakarta.annotation.PostConstruct;
-import org.marmotgraph.authentication.service.PermissionsRepository;
 import org.marmotgraph.authentication.service.PermissionsService;
 import org.marmotgraph.commons.model.SpaceName;
-import org.marmotgraph.commons.permission.roles.Role;
 import org.marmotgraph.commons.permission.roles.RoleMapping;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 

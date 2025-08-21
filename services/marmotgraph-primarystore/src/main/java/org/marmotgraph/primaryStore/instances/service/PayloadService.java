@@ -31,11 +31,8 @@ import org.marmotgraph.commons.exception.InstanceNotFoundException;
 import org.marmotgraph.commons.jsonld.InstanceId;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.model.DataStage;
-import org.marmotgraph.commons.model.PersistedEvent;
-import org.marmotgraph.commons.model.ReleaseStatus;
-import org.marmotgraph.commons.model.SpaceName;
-import org.marmotgraph.primaryStore.ids.service.IdService;
+import org.marmotgraph.commons.model.*;
+import org.marmotgraph.primaryStore.instances.model.InstanceInformation;
 import org.marmotgraph.primaryStore.instances.model.InferredPayload;
 import org.marmotgraph.primaryStore.instances.model.NativePayload;
 import org.marmotgraph.primaryStore.instances.model.ReleasedPayload;
@@ -53,25 +50,61 @@ public class PayloadService {
     private final NativePayloadRepository nativeRepository;
     private final InferredPayloadRepository inferredPayloadRepository;
     private final ReleasedPayloadRepository releasedPayloadRepository;
-    private final IdService idService;
     private final EntityManager entityManager;
+    private final InstanceInformationRepository globalInstanceInformationRepository;
 
 
-    public void upsertInferredPayload(UUID instanceId, SpaceName spaceName, NormalizedJsonLd payload, JsonLdDoc alternatives, boolean autoRelease, Long reportedTimeStampInMs) {
-        ReleaseStatus releaseStatus = ReleaseStatus.UNRELEASED;
+    public Optional<SpaceName> getSpace(UUID instanceID){
+        return globalInstanceInformationRepository.findById(instanceID).map(i -> SpaceName.fromString(i.getSpaceName()));
+    }
+
+    private record InstanceResolutionResult(UUID uuid, String spaceName, String alternative) {}
+
+
+    public Map<UUID, InstanceId> resolveIds(List<IdWithAlternatives> idWithAlternatives)  {
+        Set<String> flatListOfAlternatives = idWithAlternatives.stream().map(IdWithAlternatives::getAlternatives).flatMap(Collection::stream).collect(Collectors.toSet());
+        Stream<InstanceResolutionResult> result = entityManager.createQuery("select i.uuid, i.spaceName, alternative from InstanceInformation i JOIN i.alternativeIds alternative WHERE alternative IN :alternatives", InstanceResolutionResult.class).setParameter("alternatives", flatListOfAlternatives).getResultStream();
+        if(result!=null) {
+            Map<String, InstanceId> instanceIdsByAlternative = result.collect(Collectors.toMap(InstanceResolutionResult::alternative, v -> new InstanceId(v.uuid(), SpaceName.fromString(v.spaceName()))));
+            Map<UUID, InstanceId> resultMap = new HashMap<>();
+            idWithAlternatives.forEach(id -> {
+                Optional<String> alternative = id.getAlternatives().stream().filter(instanceIdsByAlternative::containsKey).findFirst();
+                alternative.ifPresent(s -> resultMap.put(id.getId(), instanceIdsByAlternative.get(s)));
+            });
+            return resultMap;
+        }
+        return new HashMap<>();
+    }
+
+
+    private InstanceInformation getOrCreateGlobalInstanceInformation(UUID instanceId) {
+        return globalInstanceInformationRepository.findById(instanceId).orElseGet(() -> {
+                InstanceInformation i = new InstanceInformation();
+                i.setUuid(instanceId);
+                return i;
+        });
+    }
+
+    public InstanceInformation upsertGlobalInformation(UUID instanceId, SpaceName spaceName, Set<String> alternativeIds){
+        InstanceInformation instanceInformation = getOrCreateGlobalInstanceInformation(instanceId);
+        instanceInformation.setSpaceName(spaceName.getName());
+        instanceInformation.setAlternativeIds(alternativeIds);
+        globalInstanceInformationRepository.save(instanceInformation);
+        return instanceInformation;
+    }
+
+    public void upsertInferredPayload(UUID instanceId, InstanceInformation instanceInformation, NormalizedJsonLd payload, JsonLdDoc alternatives, boolean autoRelease, Long reportedTimeStampInMs) {
         String newPayload = jsonAdapter.toJson(payload);
-        ReleasedPayload releasedPayload = null;
         if (autoRelease) {
-            releasedPayload = releasePayload(instanceId, spaceName.getName(), jsonAdapter.toJson(payload), reportedTimeStampInMs, payload.types());
-            releaseStatus = ReleaseStatus.RELEASED;
+            releasePayload(instanceId, jsonAdapter.toJson(payload), reportedTimeStampInMs, instanceInformation, payload.types());
         } else {
             Optional<ReleasedPayload> releasedInstance = releasedPayloadRepository.findById(instanceId);
             if (releasedInstance.isPresent()) {
                 ReleasedPayload existingReleasedInstance = releasedInstance.get();
                 if (existingReleasedInstance.getJsonPayload().equals(newPayload)) {
-                    releaseStatus = ReleaseStatus.RELEASED;
+                    instanceInformation.setReleaseStatus(ReleaseStatus.RELEASED);
                 } else {
-                    releaseStatus = ReleaseStatus.HAS_CHANGED;
+                    instanceInformation.setReleaseStatus(ReleaseStatus.HAS_CHANGED);
                 }
             }
         }
@@ -79,35 +112,26 @@ public class PayloadService {
         inferredPayload.setUuid(instanceId);
         inferredPayload.setAlternative(jsonAdapter.toJson(alternatives));
         inferredPayload.setJsonPayload(newPayload);
-        inferredPayload.setSpaceName(spaceName.getName());
         inferredPayload.setTypes(payload.types());
-        inferredPayload.setReleaseStatus(releaseStatus);
-        if (releasedPayload != null) {
-            inferredPayload.setFirstRelease(releasedPayload.getFirstRelease());
-            inferredPayload.setLastRelease(releasedPayload.getLastRelease());
-        }
         inferredPayloadRepository.save(inferredPayload);
     }
 
-    private ReleasedPayload releasePayload(UUID instanceId, String spaceName, String jsonPayload, Long reportedTimestamp, List<String> types) {
-        Optional<ReleasedPayload> byId = releasedPayloadRepository.findById(instanceId);
-        Long firstReleaseTimestamp = reportedTimestamp;
-        if (byId.isPresent()) {
-            firstReleaseTimestamp = byId.get().getFirstRelease();
+    private void releasePayload(UUID instanceId, String jsonPayload, Long reportedTimestamp, InstanceInformation instanceInformation, List<String> types) {
+        if(instanceInformation.getFirstRelease() == null){
+            instanceInformation.setFirstRelease(reportedTimestamp);
         }
+        instanceInformation.setLastRelease(reportedTimestamp);
+        instanceInformation.setReleaseStatus(ReleaseStatus.RELEASED);
         ReleasedPayload releasedPayload = new ReleasedPayload();
         releasedPayload.setUuid(instanceId);
         releasedPayload.setJsonPayload(jsonPayload);
-        releasedPayload.setFirstRelease(firstReleaseTimestamp);
-        releasedPayload.setLastRelease(reportedTimestamp);
-        releasedPayload.setSpaceName(spaceName);
         releasedPayload.setTypes(types);
+        globalInstanceInformationRepository.save(instanceInformation);
         releasedPayloadRepository.save(releasedPayload);
-        return releasedPayload;
     }
 
     public ReleaseStatus getReleaseStatus(UUID instanceId) {
-        Optional<InferredPayload> byId = inferredPayloadRepository.findById(instanceId);
+        Optional<InstanceInformation> byId = globalInstanceInformationRepository.findById(instanceId);
         if (byId.isPresent()) {
             return byId.get().getReleaseStatus();
         }
@@ -115,11 +139,11 @@ public class PayloadService {
     }
 
     public List<ReleaseStatus> getDistinctReleaseStatus(Set<UUID> instanceIds) {
-        return entityManager.createQuery("select distinct r.releaseStatus from InferredPayload r where r.id in :instanceIds", ReleaseStatus.class).setParameter("instanceIds", instanceIds).getResultList();
+        return entityManager.createQuery("select distinct r.releaseStatus from InstanceInformation r where r.uuid in :instanceIds", ReleaseStatus.class).setParameter("instanceIds", instanceIds).getResultList();
     }
 
     public Map<InstanceId, ReleaseStatus> getReleaseStatus(List<UUID> instanceIds) {
-        return entityManager.createQuery("select p.uuid, p.spaceName, p.releaseStatus from InferredPayload p where p.uuid in :instanceIds", ReleaseStatusById.class).setParameter("instanceIds", instanceIds).getResultStream().collect(Collectors.toMap(k -> new InstanceId(k.uuid, SpaceName.fromString(k.spaceName)), v -> v.releaseStatus));
+        return entityManager.createQuery("select p.uuid, p.spaceName, p.releaseStatus from InstanceInformation p where p.uuid in :instanceIds", ReleaseStatusById.class).setParameter("instanceIds", instanceIds).getResultStream().collect(Collectors.toMap(k -> new InstanceId(k.uuid, SpaceName.fromString(k.spaceName)), v -> v.releaseStatus));
     }
 
     record ReleaseStatusById(UUID uuid, String spaceName, ReleaseStatus releaseStatus) {
@@ -137,11 +161,7 @@ public class PayloadService {
         Optional<InferredPayload> inferredPayload = inferredPayloadRepository.findById(instanceId);
         if (inferredPayload.isPresent()) {
             InferredPayload existingPayload = inferredPayload.get();
-            existingPayload.setReleaseStatus(ReleaseStatus.RELEASED);
-            inferredPayloadRepository.save(existingPayload);
-            ReleasedPayload releasedPayload = releasePayload(instanceId, existingPayload.getSpaceName(), existingPayload.getJsonPayload(), reportedTimestamp, existingPayload.getTypes());
-            existingPayload.setFirstRelease(releasedPayload.getFirstRelease());
-            existingPayload.setLastRelease(releasedPayload.getLastRelease());
+            releasePayload(instanceId, existingPayload.getJsonPayload(), reportedTimestamp, existingPayload.getInstanceInformation(), existingPayload.getTypes());
             return jsonAdapter.fromJson(existingPayload.getJsonPayload(), NormalizedJsonLd.class);
         } else {
             throw new InstanceNotFoundException(String.format("Could not release instance %s because it was not found", instanceId));
