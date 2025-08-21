@@ -198,8 +198,8 @@ public class InstancesAPI implements Instances.Client {
 
     @Override
     @ExposesData
-    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<String> ids, DataStage stage, String typeRestriction, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize) {
-        throw new NotImplementedException();
+    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<UUID> ids, DataStage stage, String typeRestriction, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize) {
+        return payloadService.getInstancesByIds(ids, stage, typeRestriction, returnEmbedded, returnAlternatives, returnIncomingLinks, incomingLinksPageSize);
     }
 
 }

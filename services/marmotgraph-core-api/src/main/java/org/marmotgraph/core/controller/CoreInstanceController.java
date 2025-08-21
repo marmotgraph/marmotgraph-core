@@ -291,7 +291,7 @@ public class CoreInstanceController {
         idsAfterResolution.stream().filter(InstanceId::isUnresolved).forEach(id -> result.put(id.getUuid().toString(), Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase())));
         final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
         if (responseConfiguration.isReturnPayload()) {
-            Map<UUID, Result<NormalizedJsonLd>> instancesByIds = instances.getInstancesByIds(idsAfterResolution.stream().filter(i -> !i.isUnresolved()).map(InstanceId::serialize).collect(Collectors.toList()), stage, typeRestriction, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
+            Map<UUID, Result<NormalizedJsonLd>> instancesByIds = instances.getInstancesByIds(idsAfterResolution.stream().filter(i -> !i.isUnresolved()).map(InstanceId::getUuid).collect(Collectors.toList()), stage, typeRestriction, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
             instancesByIds.forEach((k, v) -> {
                 result.put(k.toString(), v);
             });
@@ -362,7 +362,7 @@ public class CoreInstanceController {
         Result<NormalizedJsonLd> result;
         final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
         if (responseConfiguration.isReturnPayload()) {
-            Map<UUID, Result<NormalizedJsonLd>> instancesByIds = instances.getInstancesByIds(instanceIds.stream().map(InstanceId::serialize).collect(Collectors.toList()),
+            Map<UUID, Result<NormalizedJsonLd>> instancesByIds = instances.getInstancesByIds(instanceIds.stream().map(InstanceId::getUuid).collect(Collectors.toList()),
                     DataStage.IN_PROGRESS, null,
                     responseConfiguration.isReturnEmbedded(),
                     responseConfiguration.isReturnAlternatives(),

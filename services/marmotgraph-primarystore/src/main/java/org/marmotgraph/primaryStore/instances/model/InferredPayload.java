@@ -48,9 +48,6 @@ public class InferredPayload {
     private String alternative;
 
     @ElementCollection
-    private Set<String> inferenceOf;
-
-    @ElementCollection
     private List<String> types;
 
     @OneToOne(fetch = FetchType.EAGER)

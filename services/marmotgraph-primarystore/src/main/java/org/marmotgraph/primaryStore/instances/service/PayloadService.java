@@ -32,6 +32,7 @@ import org.marmotgraph.commons.jsonld.InstanceId;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.*;
+import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.primaryStore.instances.model.InstanceInformation;
 import org.marmotgraph.primaryStore.instances.model.InferredPayload;
 import org.marmotgraph.primaryStore.instances.model.NativePayload;
@@ -189,6 +190,47 @@ public class PayloadService {
                 .setParameter("userId", excludeUserId)
                 .getResultStream()
                 .map(d -> jsonAdapter.fromJson(d, NormalizedJsonLd.class));
+    }
+
+
+    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<UUID> ids, DataStage stage, String typeRestriction, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize){
+        //TODO typeRestriction
+        switch (stage) {
+            case NATIVE -> throw new UnsupportedOperationException("You can not request an instance by id for the native stage");
+            case IN_PROGRESS -> {
+                Stream<InferredPayload> resultStream = entityManager.createQuery("select i from InferredPayload i where i.uuid in :uuids", InferredPayload.class).setParameter("uuids", ids).getResultStream();
+                return resultStream.collect(Collectors.toMap(InferredPayload::getUuid, v->{
+                    NormalizedJsonLd result = jsonAdapter.fromJson(v.getJsonPayload(), NormalizedJsonLd.class);
+                    if(!returnEmbedded){
+                        //TODO remove embedded entries
+                    }
+                    if(returnAlternatives){
+                        NormalizedJsonLd alternative = jsonAdapter.fromJson(v.getAlternative(), NormalizedJsonLd.class);
+                        result.put(EBRAINSVocabulary.META_ALTERNATIVE, alternative);
+                    }
+
+                    //TODO incoming links
+                    return Result.ok(result);
+                }));
+            }
+            case RELEASED -> {
+                Stream<InferredPayload> resultStream = entityManager.createQuery("select i from ReleasedPayload i where i.uuid in :uuids", InferredPayload.class).setParameter("uuids", ids).getResultStream();
+                return resultStream.collect(Collectors.toMap(InferredPayload::getUuid, v->{
+                    NormalizedJsonLd result = jsonAdapter.fromJson(v.getJsonPayload(), NormalizedJsonLd.class);
+                    if(!returnEmbedded){
+                        //TODO remove embedded entries
+                    }
+                    if(returnAlternatives){
+                        NormalizedJsonLd alternative = jsonAdapter.fromJson(v.getAlternative(), NormalizedJsonLd.class);
+                        result.put(EBRAINSVocabulary.META_ALTERNATIVE, alternative);
+                    }
+
+                    //TODO incoming links
+                    return Result.ok(result);
+                }));
+            }
+        }
+        return new HashMap<>();
     }
 
 
