@@ -116,7 +116,7 @@ public class KeycloakController {
 
     public User buildUserInfoFromKeycloak(Map<String, Claim> claims) {
         Claim userName = claims.get(PREFERRED_USERNAME);
-        Claim nativeId = claims.get("sub");
+        Claim nativeId = claims.containsKey("sub") ? claims.get("sub") : claims.get("sid");
         Claim name = claims.get("name");
         Claim givenName = claims.get("given_name");
         Claim familyName = claims.get("family_name");

@@ -110,33 +110,48 @@ public class StructureRepository {
         logger.debug("Cache evict: clearing cache for reflected spaces");
     }
 
-    private List<SpaceName> doReflectSpaces(DataStage stage){
-        final ArangoDatabase database = arangoDatabases.getByStage(stage);
-        final List<CollectionEntity> spaces = database.getCollections(new CollectionsReadOptions().excludeSystem(true)).stream().filter(c -> c.getType() == CollectionType.DOCUMENT).filter(c -> !InternalSpace.INTERNAL_SPACENAMES.contains(c.getName())).distinct().collect(Collectors.toList());
-        if(spaces.isEmpty()){
-            return Collections.emptyList();
+
+    static <T> List<List<T>> partition(List<T> list, int size) {
+        List<List<T>> result = new ArrayList<>();
+        int currentPartition = 0;
+        while (currentPartition * size < list.size()) {
+            result.add(list.subList(currentPartition * size, Math.min(list.size(), currentPartition * size + size)));
+            currentPartition++;
         }
-        AQL query = new AQL();
-        Map<String, Object> bindVars = new HashMap<>();
-        query.addLine(AQL.trust("FOR space IN "));
-        if(spaces.size()>1){
-            query.addLine(AQL.trust("UNION_DISTINCT("));
-        }
-        for (int i = 0; i < spaces.size(); i++) {
-            bindVars.put(String.format("@collection%d", i), spaces.get(i).getName());
-            query.addLine(AQL.trust(String.format("(FOR e IN @@collection%d FILTER e.@space != NULL AND e.@space != [] LIMIT 0,1 RETURN DISTINCT e.@space)", i)));
-            if (i < spaces.size() - 1) {
-                query.add(AQL.trust(", "));
-            }
-            bindVars.put("space", EBRAINSVocabulary.META_SPACE);
-        }
-        if(spaces.size()>1){
-            query.addLine(AQL.trust(")"));
-        }
-        query.addLine(AQL.trust(" RETURN space"));
-        return database.query(query.build().getValue(), bindVars, String.class).asListRemaining().stream().map(SpaceName::fromString).collect(Collectors.toList());
+        return result;
     }
 
+
+    private List<SpaceName> doReflectSpaces(DataStage stage) {
+        final ArangoDatabase database = arangoDatabases.getByStage(stage);
+        final List<CollectionEntity> spaces = database.getCollections(new CollectionsReadOptions().excludeSystem(true)).stream().filter(c -> c.getType() == CollectionType.DOCUMENT).filter(c -> !InternalSpace.INTERNAL_SPACENAMES.contains(c.getName())).distinct().collect(Collectors.toList());
+        if (spaces.isEmpty()) {
+            return Collections.emptyList();
+        }
+        // AQL has a limit of objects it can process. Depending on the amount of spaces, this limit can be reached and the reflection process fails. We therefore need to partition the reflection to ensure we're below the limit.
+        List<List<CollectionEntity>> partitionedSpaceNames = partition(spaces, 200);
+        return partitionedSpaceNames.stream().map(currentSpaces -> {
+            AQL query = new AQL();
+            Map<String, Object> bindVars = new HashMap<>();
+            query.addLine(AQL.trust("FOR space IN "));
+            if (currentSpaces.size() > 1) {
+                query.addLine(AQL.trust("UNION_DISTINCT("));
+            }
+            for (int i = 0; i < currentSpaces.size(); i++) {
+                bindVars.put(String.format("@collection%d", i), currentSpaces.get(i).getName());
+                query.addLine(AQL.trust(String.format("(FOR e IN @@collection%d FILTER e.@space != NULL AND e.@space != [] LIMIT 0,1 RETURN DISTINCT e.@space)", i)));
+                if (i < currentSpaces.size() - 1) {
+                    query.add(AQL.trust(", "));
+                }
+                bindVars.put("space", EBRAINSVocabulary.META_SPACE);
+            }
+            if (currentSpaces.size() > 1) {
+                query.addLine(AQL.trust(")"));
+            }
+            query.addLine(AQL.trust(" RETURN space"));
+            return database.query(query.build().getValue(), bindVars, String.class).asListRemaining().stream().map(SpaceName::fromString).collect(Collectors.toList());
+        }).flatMap(Collection::stream).distinct().toList();
+    }
 
 
     @Cacheable(value = CacheConstant.CACHE_KEYS_SPACES, sync = true)
