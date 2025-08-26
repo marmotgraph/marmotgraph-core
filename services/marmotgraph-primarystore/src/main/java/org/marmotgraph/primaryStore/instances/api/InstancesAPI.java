@@ -62,15 +62,15 @@ public class InstancesAPI implements Instances.Client {
     private final InstanceScopeService scopes;
 
     @Override
-    public Map<UUID, InstanceId> resolveIds(List<IdWithAlternatives> idWithAlternatives) throws AmbiguousIdException {
-        return payloadService.resolveIds(idWithAlternatives);
+    public Map<UUID, InstanceId> resolveIds(List<IdWithAlternatives> idWithAlternatives, DataStage stage) throws AmbiguousIdException {
+        return payloadService.resolveIds(idWithAlternatives, stage);
     }
 
     @Override
-    public InstanceId findInstanceByIdentifiers(UUID uuid, List<String> identifiers) throws AmbiguousException {
+    public InstanceId findInstanceByIdentifiers(UUID uuid, List<String> identifiers, DataStage dataStage) throws AmbiguousException {
         return globalInstanceInformationRepository.findById(uuid)
                 .map(i -> new InstanceId(i.getUuid(), SpaceName.fromString(i.getSpaceName())))
-                .orElseGet(() -> resolveIds(List.of(new IdWithAlternatives(uuid, null, new HashSet<>(identifiers)))).get(uuid));
+                .orElseGet(() -> resolveIds(List.of(new IdWithAlternatives(uuid, null, new HashSet<>(identifiers))), dataStage).get(uuid));
     }
 
     @Override

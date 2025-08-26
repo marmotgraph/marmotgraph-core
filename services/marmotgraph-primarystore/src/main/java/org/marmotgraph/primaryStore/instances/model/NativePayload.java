@@ -54,4 +54,7 @@ public class NativePayload {
     @Column(columnDefinition = "TEXT")
     private String jsonPayload;
 
+    @Column(columnDefinition = "TEXT")
+    private String propertyUpdates;
+
 }

@@ -142,12 +142,12 @@ public class DataController {
             edgeToRequestId.put(e.getOriginalTo(), requestId);
             return new IdWithAlternatives().setId(requestId).setAlternatives(Collections.singleton(e.getOriginalTo().getId()));
         }).collect(Collectors.toList());
-        Map<UUID, InstanceId> resolvedIds = this.instances.resolveIds(ids);
+        Map<UUID, InstanceId> resolvedIds = this.instances.resolveIds(ids, stage);
         Set<ArangoEdge> resolvedEdges = new HashSet<>();
         Set<JsonLdId> resolvedJsonLdIds = new HashSet<>();
 
         for (ArangoEdge edge : edges) {
-            if (stage == DataStage.NATIVE || isEdgeOf(edge.getReference(), InternalSpace.INFERENCE_OF_SPACE, new SpaceName(EBRAINSVocabulary.META_USER))) {
+            if (stage == DataStage.NATIVE || isEdgeOf(edge.getReference(), new SpaceName(EBRAINSVocabulary.META_USER))) {
                 //We are either in NATIVE stage or have a relation to inference of or user - we already know that we won't be able to resolve it (since the target instance is in a different database), so we shortcut the process.
                 logger.trace(String.format("Not resolving edge pointing to %s", edge.getOriginalTo()));
                 edge.setToReference(UNKNOWN_TARGET);

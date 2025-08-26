@@ -33,12 +33,12 @@ import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.*;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
-import org.marmotgraph.primaryStore.instances.model.InstanceInformation;
-import org.marmotgraph.primaryStore.instances.model.InferredPayload;
-import org.marmotgraph.primaryStore.instances.model.NativePayload;
-import org.marmotgraph.primaryStore.instances.model.ReleasedPayload;
+import org.marmotgraph.primaryStore.instances.model.*;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -53,7 +53,8 @@ public class PayloadService {
     private final ReleasedPayloadRepository releasedPayloadRepository;
     private final EntityManager entityManager;
     private final InstanceInformationRepository globalInstanceInformationRepository;
-
+    private final InferredDocumentRelationRepository inferredDocumentRelationRepository;
+    private final ReleasedDocumentRelationRepository releasedDocumentRelationRepository;
 
     public Optional<SpaceName> getSpace(UUID instanceID){
         return globalInstanceInformationRepository.findById(instanceID).map(i -> SpaceName.fromString(i.getSpaceName()));
@@ -62,9 +63,17 @@ public class PayloadService {
     private record InstanceResolutionResult(UUID uuid, String spaceName, String alternative) {}
 
 
-    public Map<UUID, InstanceId> resolveIds(List<IdWithAlternatives> idWithAlternatives)  {
+    public Map<UUID, InstanceId> resolveIds(List<IdWithAlternatives> idWithAlternatives, DataStage stage)  {
         Set<String> flatListOfAlternatives = idWithAlternatives.stream().map(IdWithAlternatives::getAlternatives).flatMap(Collection::stream).collect(Collectors.toSet());
-        Stream<InstanceResolutionResult> result = entityManager.createQuery("select i.uuid, i.spaceName, alternative from InstanceInformation i JOIN i.alternativeIds alternative WHERE alternative IN :alternatives", InstanceResolutionResult.class).setParameter("alternatives", flatListOfAlternatives).getResultStream();
+
+        Stream<InstanceResolutionResult> result;
+        if(stage==DataStage.RELEASED){
+            // If we are looking for released information only, we should exclude those resolved ids which are unreleased.
+            result = entityManager.createQuery("select i.uuid, i.spaceName, alternative from InstanceInformation i JOIN i.alternativeIds alternative WHERE i.releaseStatus IN :acceptedReleaseStatus and :alternative IN :alternatives", InstanceResolutionResult.class).setParameter("acceptedReleaseStatus", Arrays.asList(ReleaseStatus.RELEASED, ReleaseStatus.HAS_CHANGED)).setParameter("alternatives", flatListOfAlternatives).getResultStream();
+        }
+        else {
+            result = entityManager.createQuery("select i.uuid, i.spaceName, alternative from InstanceInformation i JOIN i.alternativeIds alternative WHERE alternative IN :alternatives", InstanceResolutionResult.class).setParameter("alternatives", flatListOfAlternatives).getResultStream();
+        }
         if(result!=null) {
             Map<String, InstanceId> instanceIdsByAlternative = result.collect(Collectors.toMap(InstanceResolutionResult::alternative, v -> new InstanceId(v.uuid(), SpaceName.fromString(v.spaceName()))));
             Map<UUID, InstanceId> resultMap = new HashMap<>();
@@ -86,7 +95,7 @@ public class PayloadService {
         });
     }
 
-    public InstanceInformation upsertGlobalInformation(UUID instanceId, SpaceName spaceName, Set<String> alternativeIds){
+    public InstanceInformation upsertInstanceInformation(UUID instanceId, SpaceName spaceName, Set<String> alternativeIds){
         InstanceInformation instanceInformation = getOrCreateGlobalInstanceInformation(instanceId);
         instanceInformation.setSpaceName(spaceName.getName());
         instanceInformation.setAlternativeIds(alternativeIds);
@@ -94,10 +103,10 @@ public class PayloadService {
         return instanceInformation;
     }
 
-    public void upsertInferredPayload(UUID instanceId, InstanceInformation instanceInformation, NormalizedJsonLd payload, JsonLdDoc alternatives, boolean autoRelease, Long reportedTimeStampInMs) {
+    public void upsertInferredPayload(UUID instanceId, InstanceInformation instanceInformation, NormalizedJsonLd payload, Set<String> relations, JsonLdDoc alternatives, boolean autoRelease, Long reportedTimeStampInMs) {
         String newPayload = jsonAdapter.toJson(payload);
         if (autoRelease) {
-            releasePayload(instanceId, jsonAdapter.toJson(payload), reportedTimeStampInMs, instanceInformation, payload.types());
+            releasePayload(instanceId, jsonAdapter.toJson(payload), relations, reportedTimeStampInMs, instanceInformation, payload.types());
         } else {
             Optional<ReleasedPayload> releasedInstance = releasedPayloadRepository.findById(instanceId);
             if (releasedInstance.isPresent()) {
@@ -114,10 +123,49 @@ public class PayloadService {
         inferredPayload.setAlternative(jsonAdapter.toJson(alternatives));
         inferredPayload.setJsonPayload(newPayload);
         inferredPayload.setTypes(payload.types());
+        handleIncomingDocumentRelations(instanceId, instanceInformation.getAlternativeIds(), InferredDocumentRelation.class, inferredDocumentRelationRepository);
+        handleOutgoingDocumentRelations(instanceId, relations, InferredDocumentRelation.class, inferredDocumentRelationRepository, DataStage.IN_PROGRESS);
         inferredPayloadRepository.save(inferredPayload);
     }
 
-    private void releasePayload(UUID instanceId, String jsonPayload, Long reportedTimestamp, InstanceInformation instanceInformation, List<String> types) {
+
+    private <T extends DocumentRelation> void handleIncomingDocumentRelations(UUID instanceId, Set<String> alternativeIds, Class<T> clazz, JpaRepository<T, DocumentRelation.CompositeId> repository){
+        //TODO we could exclude those relations which are already resolved (to the correct UUID) in the DB query
+        Stream<T> incomingRelations = entityManager.createQuery(String.format("select i from %s i where i.compositeId.targetReference in :alternativeIds", clazz.getSimpleName()), clazz).setParameter("alternativeIds", alternativeIds).getResultStream();
+        incomingRelations.forEach(i -> {
+            if(i.getResolvedTarget() == null || !i.getResolvedTarget().equals(instanceId)) {
+                i.setResolvedTarget(instanceId);
+                repository.save(i);
+            }
+        });
+    }
+
+
+    private <T extends DocumentRelation> void handleOutgoingDocumentRelations(UUID instanceId, Set<String> newRelations, Class<T> clazz, JpaRepository<T, DocumentRelation.CompositeId> repository, DataStage stage){
+        List<String> existingDocumentRelations = entityManager.createQuery(String.format("select i.compositeId.targetReference from %s i where i.compositeId.instanceId = :uuid", clazz.getSimpleName()), String.class).setParameter("uuid", instanceId).getResultList();
+        Set<String> toBeRemoved = existingDocumentRelations.stream().filter(e -> !newRelations.contains(e)).collect(Collectors.toSet());
+        Set<String> toBeAdded = newRelations.stream().filter(n -> !existingDocumentRelations.contains(n)).collect(Collectors.toSet());
+        toBeRemoved.forEach(r -> repository.deleteById(new DocumentRelation.CompositeId(instanceId, r)));
+        Map<UUID, InstanceId> resolvedLinks = resolveIds(toBeAdded.stream().map(i -> new IdWithAlternatives(UUID.nameUUIDFromBytes(i.getBytes(StandardCharsets.UTF_8)), null, Collections.singleton(i))).toList(), stage);
+        //TODO do we also need to reevaluate those which are "untouched" to clean up possible inconsistencies?
+        toBeAdded.forEach(r -> {
+            try{
+                T documentRelation = clazz.getConstructor().newInstance();
+                UUID resolutionKey = UUID.nameUUIDFromBytes(r.getBytes(StandardCharsets.UTF_8));
+                if(resolvedLinks.containsKey(resolutionKey)) {
+                    documentRelation.setResolvedTarget(resolvedLinks.get(resolutionKey).getUuid());
+                }
+                documentRelation.setCompositeId(new DocumentRelation.CompositeId(instanceId, r));
+                repository.save(documentRelation);
+            }
+            catch(NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e){
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+
+    private void releasePayload(UUID instanceId, String jsonPayload, Set<String> relations, Long reportedTimestamp, InstanceInformation instanceInformation, List<String> types) {
         if(instanceInformation.getFirstRelease() == null){
             instanceInformation.setFirstRelease(reportedTimestamp);
         }
@@ -127,6 +175,8 @@ public class PayloadService {
         releasedPayload.setUuid(instanceId);
         releasedPayload.setJsonPayload(jsonPayload);
         releasedPayload.setTypes(types);
+        handleIncomingDocumentRelations(instanceId, instanceInformation.getAlternativeIds(), ReleasedDocumentRelation.class, releasedDocumentRelationRepository);
+        handleOutgoingDocumentRelations(instanceId, relations, ReleasedDocumentRelation.class, releasedDocumentRelationRepository, DataStage.RELEASED);
         globalInstanceInformationRepository.save(instanceInformation);
         releasedPayloadRepository.save(releasedPayload);
     }
@@ -162,8 +212,9 @@ public class PayloadService {
         Optional<InferredPayload> inferredPayload = inferredPayloadRepository.findById(instanceId);
         if (inferredPayload.isPresent()) {
             InferredPayload existingPayload = inferredPayload.get();
-            releasePayload(instanceId, existingPayload.getJsonPayload(), reportedTimestamp, existingPayload.getInstanceInformation(), existingPayload.getTypes());
-            return jsonAdapter.fromJson(existingPayload.getJsonPayload(), NormalizedJsonLd.class);
+            NormalizedJsonLd normalizedJsonLd = jsonAdapter.fromJson(existingPayload.getJsonPayload(), NormalizedJsonLd.class);
+            releasePayload(instanceId, existingPayload.getJsonPayload(), normalizedJsonLd.findOutgoingRelations(), reportedTimestamp, existingPayload.getInstanceInformation(), existingPayload.getTypes());
+            return normalizedJsonLd;
         } else {
             throw new InstanceNotFoundException(String.format("Could not release instance %s because it was not found", instanceId));
         }
@@ -174,6 +225,7 @@ public class PayloadService {
             NativePayload payload = new NativePayload();
             payload.setJsonPayload(jsonAdapter.toJson(event.getData()));
             payload.setCompositeId(new NativePayload.CompositeId(event.getInstanceId(), event.getUserId()));
+            payload.setPropertyUpdates(jsonAdapter.toJson(event.getData().getFieldUpdateTimes()));
             nativeRepository.save(payload);
         }
     }
@@ -184,12 +236,21 @@ public class PayloadService {
         }
     }
 
+    private record SourceDocument(String jsonPayload, String propertyUpdates){
+
+        private NormalizedJsonLd toNormalizedJsonLd(JsonAdapter jsonAdapter){
+            NormalizedJsonLd normalizedJsonLd = jsonAdapter.fromJson(this.jsonPayload, NormalizedJsonLd.class);
+            normalizedJsonLd.setFieldUpdateTimes(jsonAdapter.fromJson(this.propertyUpdates, NormalizedJsonLd.FieldUpdateTimes.class));
+            return normalizedJsonLd;
+        }
+    }
+
     public Stream<NormalizedJsonLd> getSourceDocumentsForInstanceFromDB(UUID instanceId, String excludeUserId) {
-        return entityManager.createQuery("select d.jsonPayload from NativePayload d where d.compositeId.instanceId = :instanceId and d.compositeId.userId != :userId", String.class)
+        return entityManager.createQuery("select d.jsonPayload, d.propertyUpdates from NativePayload d where d.compositeId.instanceId = :instanceId and d.compositeId.userId != :userId", SourceDocument.class)
                 .setParameter("instanceId", instanceId)
                 .setParameter("userId", excludeUserId)
                 .getResultStream()
-                .map(d -> jsonAdapter.fromJson(d, NormalizedJsonLd.class));
+                .map(d -> d.toNormalizedJsonLd(jsonAdapter));
     }
 
 
@@ -251,7 +312,12 @@ public class PayloadService {
     }
 
     public Optional<NormalizedJsonLd> getNativeInstanceById(UUID id, String userId){
-        return nativeRepository.findById(new NativePayload.CompositeId(id, userId)).map(n -> jsonAdapter.fromJson(n.getJsonPayload(), NormalizedJsonLd.class));
+        return nativeRepository.findById(new NativePayload.CompositeId(id, userId)).map(n -> addFieldUpdateTimes(jsonAdapter.fromJson(n.getJsonPayload(), NormalizedJsonLd.class), jsonAdapter.fromJson(n.getPropertyUpdates(), NormalizedJsonLd.FieldUpdateTimes.class)));
+    }
+
+    private NormalizedJsonLd addFieldUpdateTimes(NormalizedJsonLd normalizedJsonLd, NormalizedJsonLd.FieldUpdateTimes fieldUpdateTimes){
+        normalizedJsonLd.setFieldUpdateTimes(fieldUpdateTimes);
+        return normalizedJsonLd;
     }
 
 }

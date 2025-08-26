@@ -108,9 +108,6 @@ public class StructureSplitter {
                     }
                 }
                 keyStack.pop();
-            } else if (InferredJsonLdDoc.isInferenceOfKey(key)) {
-                List<String> originalTos = (List<String>) parent.getDoc().get(key);
-                originalTos.forEach(originalTo -> handleInferenceOfReference(originalDocumentReference, collector, new JsonLdId(originalTo)));
             }
         }
         return collector;
@@ -138,14 +135,6 @@ public class StructureSplitter {
         edge.redefineId(ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_ALTERNATIVE)).doc(UUID.randomUUID()));
         collector.add(edge);
         subTree.put(EBRAINSVocabulary.META_ALTERNATIVE, alternativeId);
-    }
-
-    private void handleInferenceOfReference(ArangoDocumentReference from, List<ArangoInstance> collector, JsonLdId originalTo) {
-        ArangoEdge edge = new ArangoEdge();
-        edge.redefineId(ArangoCollectionReference.fromSpace(InternalSpace.INFERENCE_OF_SPACE).doc(UUID.randomUUID()));
-        edge.setOriginalTo(originalTo);
-        edge.setFromReference(from);
-        collector.add(edge);
     }
 
     private ArangoEdge extractEdge(ArangoDocument parent, NormalizedJsonLd subTree, ArangoDocumentReference originalDocumentRef, Stack<String> keyStack, int orderNumber, List<ArangoInstance> collector) {

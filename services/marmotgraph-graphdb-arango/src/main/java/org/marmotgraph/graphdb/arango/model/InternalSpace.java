@@ -34,7 +34,6 @@ public class InternalSpace extends SpaceName {
 
 
     public static final SpaceName GLOBAL_SPEC = new SpaceName("global_spec");
-    public static final InternalSpace INFERENCE_OF_SPACE = new InternalSpace(InferredJsonLdDoc.INFERENCE_OF);
     public static final InternalSpace UNRESOLVED_SPACE = new InternalSpace("unresolved");
     public static final ArangoCollectionReference DOCUMENT_ID_EDGE_COLLECTION = new ArangoCollectionReference("documentId", true);
     public static final InternalSpace DOCUMENT_ID_SPACE = new InternalSpace("documentIds");
@@ -50,7 +49,7 @@ public class InternalSpace extends SpaceName {
 
     public static final Collection<String> INTERNAL_SPACENAMES = Arrays.asList(ArangoCollectionReference.fromSpace(GLOBAL_SPEC).getCollectionName(),  ArangoCollectionReference.fromSpace(DOCUMENT_ID_SPACE).getCollectionName(), ArangoCollectionReference.fromSpace(RELEASE_STATUS_SPACE).getCollectionName(), ArangoCollectionReference.fromSpace(TYPE_SPACE).getCollectionName(), ArangoCollectionReference.fromSpace(USERS_PICTURE_SPACE).getCollectionName());
 
-    public static final Collection<ArangoCollectionReference> INTERNAL_NON_META_EDGES = Arrays.asList(DOCUMENT_ID_EDGE_COLLECTION, ArangoCollectionReference.fromSpace(INFERENCE_OF_SPACE), RELEASE_STATUS_EDGE_COLLECTION, TYPE_EDGE_COLLECTION, ArangoCollectionReference.fromSpace(UNRESOLVED_SPACE));
+    public static final Collection<ArangoCollectionReference> INTERNAL_NON_META_EDGES = Arrays.asList(DOCUMENT_ID_EDGE_COLLECTION, RELEASE_STATUS_EDGE_COLLECTION, TYPE_EDGE_COLLECTION, ArangoCollectionReference.fromSpace(UNRESOLVED_SPACE));
 
 
     public InternalSpace(String name) {

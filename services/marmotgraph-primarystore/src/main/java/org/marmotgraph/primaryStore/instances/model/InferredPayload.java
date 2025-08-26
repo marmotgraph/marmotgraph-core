@@ -29,7 +29,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Table(name="inferred_documents")
@@ -53,6 +52,5 @@ public class InferredPayload {
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "uuid", referencedColumnName = "uuid")
     private InstanceInformation instanceInformation;
-
 
 }

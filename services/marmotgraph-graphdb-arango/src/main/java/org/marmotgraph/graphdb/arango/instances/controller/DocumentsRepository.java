@@ -347,7 +347,7 @@ public class DocumentsRepository extends  AbstractRepository{
 
     public List<NormalizedJsonLd> getInvitationDocuments(){
         final List<UUID> invitations = authContext.getUserWithRolesWithoutTermsCheck().getInvitations();
-        final List<InstanceId> values = instances.resolveIds(invitations.stream().distinct().map(id -> new IdWithAlternatives().setId(id).setAlternatives(Collections.singleton(idUtils.buildAbsoluteUrl(id).getId()))).filter(Objects::nonNull).toList()).values().stream().toList();
+        final List<InstanceId> values = instances.resolveIds(invitations.stream().distinct().map(id -> new IdWithAlternatives().setId(id).setAlternatives(Collections.singleton(idUtils.buildAbsoluteUrl(id).getId()))).filter(Objects::nonNull).toList(), DataStage.IN_PROGRESS).values().stream().toList();
         final Map<UUID, Result<NormalizedJsonLd>> documentsByIdList = getDocumentsByIdList(DataStage.IN_PROGRESS, values, null, false, false, false, null, null);
         return documentsByIdList.values().stream().map(Result::getData).collect(Collectors.toList());
     }

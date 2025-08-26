@@ -514,7 +514,6 @@ public class StructureRepository {
             new ArangoCollectionReference(EBRAINSVocabulary.META_ALTERNATIVE, true).getCollectionName(),
             new ArangoCollectionReference(EBRAINSVocabulary.META_USER, true).getCollectionName(),
             InternalSpace.DOCUMENT_ID_EDGE_COLLECTION.getCollectionName(),
-            ArangoCollectionReference.fromSpace(InternalSpace.INFERENCE_OF_SPACE).getCollectionName(),
             InternalSpace.RELEASE_STATUS_EDGE_COLLECTION.getCollectionName(),
             InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName(),
             ArangoCollectionReference.fromSpace(InternalSpace.UNRESOLVED_SPACE).getCollectionName());

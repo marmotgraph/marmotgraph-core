@@ -24,28 +24,39 @@
 
 package org.marmotgraph.commons.jsonld;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * A  JSON-LD in compacted format with applied context. It is the JSON-LD which comes the closest to basic JSON.
  */
+
 public class NormalizedJsonLd extends JsonLdDoc {
 
     public NormalizedJsonLd() {
     }
 
-
     public NormalizedJsonLd(Map<String, ?> m) {
         super(m);
     }
+
+    public static class FieldUpdateTimes extends HashMap<String, ZonedDateTime>{
+        public FieldUpdateTimes(Map<String, ZonedDateTime> map){
+            super(map);
+        }
+        public FieldUpdateTimes(){
+            super();
+        }
+    }
+
+    @Getter
+    @Setter
+    private FieldUpdateTimes fieldUpdateTimes;
 
     public Set<String> allIdentifiersIncludingId() {
         Set<String> identifiers = new HashSet<>(identifiers());
@@ -53,39 +64,6 @@ public class NormalizedJsonLd extends JsonLdDoc {
             identifiers.add(id().getId());
         }
         return identifiers;
-    }
-
-
-    public void defineFieldUpdateTimes(Map<String, ZonedDateTime> fieldUpdateTimes) {
-        put(EBRAINSVocabulary.META_PROPERTYUPDATES, serializeUpdateTimes(fieldUpdateTimes));
-    }
-
-    private transient Map<String, ZonedDateTime> fieldUpdateTimes;
-
-    public Map<String, ZonedDateTime> fieldUpdateTimes() {
-        if(fieldUpdateTimes == null) {
-            Object o = get(EBRAINSVocabulary.META_PROPERTYUPDATES);
-            if (o instanceof Map) {
-                fieldUpdateTimes = deserializeUpdateTimes((Map) o);
-            }
-        }
-        return fieldUpdateTimes;
-    }
-
-    private Map<String, String> serializeUpdateTimes(Map<String, ZonedDateTime> map) {
-        Map<String, String> newMap = new HashMap<>();
-        for (Map.Entry<String,ZonedDateTime> entry : map.entrySet()) {
-            newMap.put(entry.getKey(), entry.getValue().format(DateTimeFormatter.ISO_INSTANT));
-        }
-        return newMap;
-    }
-
-    private Map<String, ZonedDateTime> deserializeUpdateTimes(Map<String, String> map) {
-        Map<String, ZonedDateTime> newMap = new HashMap<>();
-        for (Map.Entry<String,String> entry : map.entrySet()) {
-            newMap.put(entry.getKey(),ZonedDateTime.parse(entry.getValue()));
-        }
-        return newMap;
     }
 
     public void applyVocab(String vocab){
@@ -115,4 +93,29 @@ public class NormalizedJsonLd extends JsonLdDoc {
         }
         return this;
     }
+
+
+    public Set<String> findOutgoingRelations() {
+        Set<String> result = new HashSet<>();
+        recursiveOutgoingRelationDetection(this, true, result);
+        return result;
+    }
+
+
+    private void recursiveOutgoingRelationDetection(Object object, boolean rootLevel, Set<String> collector) {
+        if (object instanceof Map<?, ?> map) {
+            if (!rootLevel && map.containsKey(JsonLdConsts.ID)) {
+                //A json ld id which is not on the root level means an outgoing relation
+                Object referenceValue = map.get(JsonLdConsts.ID);
+                if (referenceValue instanceof String) {
+                    collector.add((String)referenceValue);
+                }
+            } else {
+                map.keySet().stream().filter(k -> k instanceof String).forEach(k -> recursiveOutgoingRelationDetection(map.get(k), false, collector));
+            }
+        } else if (object instanceof List) {
+            ((List<?>) object).forEach(o -> recursiveOutgoingRelationDetection(o, false, collector));
+        }
+    }
+
 }

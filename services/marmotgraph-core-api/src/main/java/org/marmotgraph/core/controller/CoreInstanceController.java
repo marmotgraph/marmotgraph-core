@@ -51,6 +51,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -74,13 +75,13 @@ public class CoreInstanceController {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public Map<UUID, InstanceId> resolveIds(List<IdWithAlternatives> idWithAlternatives) {
-        return instances.resolveIds(idWithAlternatives);
+    public Map<UUID, InstanceId> resolveIds(List<IdWithAlternatives> idWithAlternatives, DataStage stage) {
+        return instances.resolveIds(idWithAlternatives, stage);
     }
 
-    public InstanceId resolveId(UUID id) {
+    public InstanceId resolveId(UUID id, DataStage stage) {
         if(id!=null) {
-            List<InstanceId> documentIds = resolveIdsByUUID(Collections.singletonList(id), false);
+            List<InstanceId> documentIds = resolveIdsByUUID(Collections.singletonList(id), false, stage);
             if (documentIds != null && documentIds.size() == 1) {
                 return documentIds.get(0);
             }
@@ -89,15 +90,15 @@ public class CoreInstanceController {
     }
 
 
-    public List<InstanceId> resolveIdsByUUID(List<UUID> ids, boolean returnUnresolved) {
+    public List<InstanceId> resolveIdsByUUID(List<UUID> ids, boolean returnUnresolved, DataStage stage) {
         List<IdWithAlternatives> idWithAlternatives = ids.stream().map(id -> new IdWithAlternatives().setId(id).setAlternatives(Collections.singleton(idUtils.buildAbsoluteUrl(id).getId()))).collect(Collectors.toList());
-        return resolveIds(idWithAlternatives, returnUnresolved);
+        return resolveIds(idWithAlternatives, returnUnresolved, stage);
     }
 
 
-    private List<InstanceId> resolveIds(List<IdWithAlternatives> idWithAlternatives, boolean returnUnresolved) {
+    private List<InstanceId> resolveIds(List<IdWithAlternatives> idWithAlternatives, boolean returnUnresolved, DataStage stage) {
         List<InstanceId> resultList;
-        Map<UUID, InstanceId> result = resolveIds(idWithAlternatives);
+        Map<UUID, InstanceId> result = resolveIds(idWithAlternatives, stage);
         if (result != null) {
             resultList = idWithAlternatives.stream().map(idWithAlternative -> {
                 idWithAlternative.setFound(result.containsKey(idWithAlternative.getId()));
@@ -121,9 +122,9 @@ public class CoreInstanceController {
     }
 
 
-    public InstanceId findId(UUID uuid, Set<String> identifiers) {
+    public InstanceId findIdForContribution(UUID uuid, Set<String> identifiers) {
         try {
-            return this.instances.findInstanceByIdentifiers(uuid, new ArrayList<>(identifiers));
+            return this.instances.findInstanceByIdentifiers(uuid, new ArrayList<>(identifiers), DataStage.IN_PROGRESS);
         } catch (AmbiguousException e) {
             final Result<?> nok = Result.nok(HttpStatus.CONFLICT.value(), String.format("The payload you're providing contains a shared identifier of the instances %s. Please merge those instances if they are reflecting the same entity.", e.getMessage()));
             throw new CancelProcessException(nok, HttpStatus.CONFLICT.value());
@@ -133,15 +134,15 @@ public class CoreInstanceController {
 
     public void createInvitation(UUID instanceId, UUID userId) {
         //TODO move permission check to authentication module
-        final InstanceId resolvedInstanceId = resolveIdOrThrowException(instanceId);
+        final InstanceId resolvedInstanceId = resolveIdOrThrowException(instanceId, DataStage.IN_PROGRESS);
         if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)) {
             throw new UnauthorizedException("You don't have the right to invite somebody to this instance.");
         }
         this.invitation.inviteUserForInstance(instanceId, userId);
     }
 
-    private InstanceId resolveIdOrThrowException(UUID instanceId) {
-        final InstanceId resolvedInstanceId = resolveId(instanceId);
+    private InstanceId resolveIdOrThrowException(UUID instanceId, DataStage stage) {
+        final InstanceId resolvedInstanceId = resolveId(instanceId, stage);
         if (resolvedInstanceId == null) {
             throw new InstanceNotFoundException(String.format("Instance %s not found", instanceId));
         }
@@ -150,7 +151,7 @@ public class CoreInstanceController {
 
     public void revokeInvitation(UUID instanceId, UUID userId) {
         //TODO move permission check to authentication module
-        final InstanceId resolvedInstanceId = resolveIdOrThrowException(instanceId);
+        final InstanceId resolvedInstanceId = resolveIdOrThrowException(instanceId, DataStage.IN_PROGRESS);
         if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)) {
             throw new UnauthorizedException("You don't have the right to invite somebody to this instance.");
         }
@@ -159,7 +160,7 @@ public class CoreInstanceController {
 
     public List<String> listInvitedUserIds(UUID instanceId) {
         //TODO move permission check to authentication module
-        final InstanceId resolvedInstanceId = resolveIdOrThrowException(instanceId);
+        final InstanceId resolvedInstanceId = resolveIdOrThrowException(instanceId, DataStage.IN_PROGRESS);
         if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)) {
             throw new UnauthorizedException("You don't have the right to list the invitations for this instance");
         }
@@ -174,15 +175,15 @@ public class CoreInstanceController {
     }
 
     public void calculateInstanceInvitationScope(UUID instanceId) {
-        final InstanceId resolvedInstanceId = resolveIdOrThrowException(instanceId);
+        final InstanceId resolvedInstanceId = resolveIdOrThrowException(instanceId, DataStage.IN_PROGRESS);
         if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.UPDATE_INVITATIONS, resolvedInstanceId.getSpace(), instanceId)) {
             throw new UnauthorizedException("You don't have the right to recalculate the invitation scope for this instance");
         }
         this.scopes.calculateInstanceScope(instanceId);
     }
 
-    private void checkIdForExistence(UUID uuid, Set<String> identifiers){
-        final InstanceId id = findId(uuid, identifiers);
+    private void checkIdForCreation(UUID uuid, Set<String> identifiers){
+        final InstanceId id = findIdForContribution(uuid, identifiers);
         if(id!=null){
             final Result<?> nok = Result.nok(HttpStatus.CONFLICT.value(), String.format("The payload you're providing is pointing to the instance %s (either by the %s or the %s field it contains). Please do a PUT or a PATCH to the mentioned id instead.", id.serialize(), JsonLdConsts.ID, SchemaOrgVocabulary.IDENTIFIER), id.getUuid());
             throw new CancelProcessException(nok, HttpStatus.CONFLICT.value());
@@ -200,8 +201,8 @@ public class CoreInstanceController {
      * @throws CancelProcessException in case an instance with the same id (or one of the given identifiers in http://schema.org/identifier) already exists in the DB
      */
     public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(NormalizedJsonLd normalizedJsonLd, UUID id, SpaceName spaceName, ExtendedResponseConfiguration responseConfiguration) {
-        checkIdForExistence(id, normalizedJsonLd.allIdentifiersIncludingId());
-        normalizedJsonLd.defineFieldUpdateTimes(normalizedJsonLd.keySet().stream().collect(Collectors.toMap(k -> k, k -> ZonedDateTime.now())));
+        checkIdForCreation(id, normalizedJsonLd.allIdentifiersIncludingId());
+        normalizedJsonLd.setFieldUpdateTimes(new NormalizedJsonLd.FieldUpdateTimes(normalizedJsonLd.keySet().stream().collect(Collectors.toMap(k -> k, k -> ZonedDateTime.now().withZoneSameInstant(ZoneOffset.UTC)))));
         Event upsertEvent = createUpsertEvent(id, normalizedJsonLd, spaceName);
         InstanceId instanceId = events.postEvent(upsertEvent);
         return handleIngestionResponse(responseConfiguration, Collections.singleton(instanceId));
@@ -248,13 +249,13 @@ public class CoreInstanceController {
     private NormalizedJsonLd patchInstance(InstanceId instanceId, NormalizedJsonLd normalizedJsonLd, boolean removeNonDefinedKeys) {
         NormalizedJsonLd instance = instances.getNativeInstanceById(instanceId.getUuid(), authContext.getUserId());
         if (instance == null) {
-            Map<String, ZonedDateTime> updateTimes = new HashMap<>();
-            normalizedJsonLd.keySet().forEach(k -> updateTimes.put(k, ZonedDateTime.now()));
-            normalizedJsonLd.defineFieldUpdateTimes(updateTimes);
+            NormalizedJsonLd.FieldUpdateTimes updateTimes = new NormalizedJsonLd.FieldUpdateTimes();
+            normalizedJsonLd.keySet().forEach(k -> updateTimes.put(k, ZonedDateTime.now().withZoneSameInstant(ZoneOffset.UTC)));
+            normalizedJsonLd.setFieldUpdateTimes(updateTimes);
             return normalizedJsonLd;
         } else {
-            Map<String, ZonedDateTime> updateTimesFromInstance = instance.fieldUpdateTimes();
-            Map<String, ZonedDateTime> updateTimes = updateTimesFromInstance != null ? updateTimesFromInstance : new HashMap<>();
+            NormalizedJsonLd.FieldUpdateTimes updateTimesFromInstance = instance.getFieldUpdateTimes();
+            NormalizedJsonLd.FieldUpdateTimes updateTimes = updateTimesFromInstance != null ? updateTimesFromInstance : new NormalizedJsonLd.FieldUpdateTimes();
             Set<String> oldKeys = new HashSet<>(instance.keySet());
             normalizedJsonLd.keySet().forEach(k -> {
                 Object value = normalizedJsonLd.get(k);
@@ -262,7 +263,7 @@ public class CoreInstanceController {
                     updateTimes.remove(k);
                     instance.remove(k);
                 } else {
-                    updateTimes.put(k, ZonedDateTime.now());
+                    updateTimes.put(k, ZonedDateTime.now().withZoneSameInstant(ZoneOffset.UTC));
                     instance.put(k, value);
                 }
             });
@@ -273,7 +274,7 @@ public class CoreInstanceController {
                     updateTimes.remove(k);
                 });
             }
-            instance.defineFieldUpdateTimes(updateTimes);
+            instance.setFieldUpdateTimes(updateTimes);
             return instance;
         }
     }
@@ -287,7 +288,7 @@ public class CoreInstanceController {
                 return null;
             }
         }).filter(Objects::nonNull).collect(Collectors.toList());
-        List<InstanceId> idsAfterResolution = resolveIdsByUUID(validUUIDs, true);
+        List<InstanceId> idsAfterResolution = resolveIdsByUUID(validUUIDs, true, stage);
         idsAfterResolution.stream().filter(InstanceId::isUnresolved).forEach(id -> result.put(id.getUuid().toString(), Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase())));
         final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
         if (responseConfiguration.isReturnPayload()) {
@@ -387,7 +388,7 @@ public class CoreInstanceController {
     }
 
     public Paginated<NormalizedJsonLd> getIncomingLinks(UUID id, DataStage stage, String property, Type type, PaginationParam pagination) {
-        InstanceId instanceId = resolveId(id);
+        InstanceId instanceId = resolveId(id, stage);
         if (instanceId == null) {
             return null;
         }
@@ -398,7 +399,7 @@ public class CoreInstanceController {
     }
 
     public NormalizedJsonLd getInstanceById(UUID id, DataStage stage, ExtendedResponseConfiguration responseConfiguration) {
-        InstanceId instanceId = resolveId(id);
+        InstanceId instanceId = resolveId(id, stage);
         final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
         if (instanceId == null) {
             return null;
@@ -462,7 +463,7 @@ public class CoreInstanceController {
         List<IdWithAlternatives> idWithAlternatives = requestToIdentifier.keySet().stream()
                 .map(k -> new IdWithAlternatives(k, null, Collections.singleton(requestToIdentifier.get(k))))
                 .collect(Collectors.toList());
-        Map<UUID, InstanceId> resolvedIds = resolveIds(idWithAlternatives);
+        Map<UUID, InstanceId> resolvedIds = resolveIds(idWithAlternatives, stage);
         Map<UUID, Set<Map<String, Object>>> updatedObjects = new HashMap<>();
         Set<InstanceId> instanceIds = new HashSet<>();
         Map<String, InstanceId> instanceIdByIdentifier = new HashMap<>();
@@ -522,7 +523,7 @@ public class CoreInstanceController {
     }
 
     public ScopeElement getScopeForInstance(UUID id, DataStage stage, boolean returnPermissions, boolean applyRestrictions) {
-        InstanceId instanceId = resolveId(id);
+        InstanceId instanceId = resolveId(id, stage);
         if (instanceId != null) {
             ScopeElement scope = graphDB.getScopeForInstance(instanceId.getSpace().getName(), instanceId.getUuid(), stage, applyRestrictions);
             if (returnPermissions) {
@@ -534,7 +535,7 @@ public class CoreInstanceController {
     }
 
     public GraphEntity getNeighbors(UUID id, DataStage stage) {
-        InstanceId instanceId = resolveId(id);
+        InstanceId instanceId = resolveId(id, stage);
         if (instanceId != null) {
             return graphDB.getNeighbors(instanceId.getSpace().getName(), instanceId.getUuid(), stage);
         }

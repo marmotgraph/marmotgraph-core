@@ -25,13 +25,9 @@
 package org.marmotgraph.primaryStore.instances.service;
 
 import lombok.AllArgsConstructor;
-import org.marmotgraph.commons.IdUtils;
-import org.marmotgraph.commons.api.primaryStore.Types;
 import org.marmotgraph.commons.jsonld.*;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -92,12 +88,8 @@ import java.util.stream.Collectors;
 public class Reconcile {
 
 
-    private final IdUtils idUtils;
-
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-
-    public InferredJsonLdDoc reconcile(UUID id, List<NormalizedJsonLd> sourceDocuments) {
-        return merge(id, sourceDocuments);
+    public InferredJsonLdDoc reconcile(List<NormalizedJsonLd> sourceDocuments) {
+        return merge(sourceDocuments);
     }
 
     private JsonLdDoc createAlternative(String key, Object value, boolean selected, List<JsonLdId> users) {
@@ -112,7 +104,7 @@ public class Reconcile {
         return null;
     }
 
-    private InferredJsonLdDoc merge(UUID instanceId, List<NormalizedJsonLd> originalInstances) {
+    private InferredJsonLdDoc merge(List<NormalizedJsonLd> originalInstances) {
         if (CollectionUtils.isEmpty(originalInstances)) {
             return null;
         }
@@ -121,67 +113,63 @@ public class Reconcile {
         JsonLdDoc alternatives = new JsonLdDoc();
         inferredDocument.setAlternatives(alternatives);
         for (String key : keys) {
-            //We don't need the property update times in inferred -> this is an information for reconciliation only and therefore should only be in NATIVE
-            if (!key.equals(EBRAINSVocabulary.META_PROPERTYUPDATES) && !key.equals(EBRAINSVocabulary.META_USER)) {
-                List<NormalizedJsonLd> documentsForKey = originalInstances.stream().filter(i -> i.containsKey(key) || i.getAs(EBRAINSVocabulary.META_PROPERTYUPDATES, Map.class, Collections.emptyMap()).containsKey(key)).collect(Collectors.toList());
-                if (documentsForKey.size() == 1) {
-                    //Single occurrence - the merge is easy. :)
-                    NormalizedJsonLd doc = documentsForKey.getFirst();
-                    final Object value = doc.get(key);
-                    //We only add the property to the inferred document if it is not-null.
-                    if (value != null) {
-                        inferredDocument.asIndexed().getDoc().addProperty(key, value);
-                    }
-                    JsonLdDoc alternative = createAlternative(key, doc.get(key), true, Collections.singletonList(doc.getAs(EBRAINSVocabulary.META_USER, JsonLdId.class)));
-                    if (alternative != null) {
-                        alternatives.put(key, Collections.singletonList(alternative));
-                    }
-                } else if (documentsForKey.size() > 1) {
-                    sortByFieldChangeDate(key, documentsForKey);
-                    NormalizedJsonLd firstDoc = documentsForKey.getFirst();
-                    switch (key) {
-                        case JsonLdConsts.ID:
-                            List<JsonLdId> distinctIds = documentsForKey.stream().map(JsonLdDoc::id).distinct().toList();
-                            if (distinctIds.size() == 1) {
-                                inferredDocument.asIndexed().getDoc().setId(distinctIds.getFirst());
-                            }
-                            //We don't handle the ID merging - if there are conflicting ids, we create a new one - but this is in the responsibility of the event generation process.
-                            break;
-                        case SchemaOrgVocabulary.IDENTIFIER:
-                            Set<String> identifiers = documentsForKey.stream().map(JsonLdDoc::identifiers).flatMap(Collection::stream).collect(Collectors.toSet());
-                            inferredDocument.asIndexed().getDoc().put(SchemaOrgVocabulary.IDENTIFIER, identifiers);
-                            break;
-                        default:
-                            final Object propertyValue = firstDoc.get(key);
-                            //We only add the property to the inferred document if it is not-null.
-                            if (propertyValue != null) {
-                                inferredDocument.asIndexed().getDoc().addProperty(key, propertyValue);
-                            }
-                            Object nullGroup = new Object();
-                            Map<Object, List<NormalizedJsonLd>> documentsByValue = documentsForKey.stream().collect(Collectors.groupingBy(d -> d.getOrDefault(key, nullGroup)));
-                            final List<JsonLdDoc> alternativePayloads = documentsByValue.keySet().stream().map(value -> {
-                                List<NormalizedJsonLd> docs = documentsByValue.get(value);
-                                return createAlternative(key, value == nullGroup ? null : value, docs.contains(firstDoc), docs.stream().filter(d -> d.getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class) != null).map(doc -> doc.getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class).id()).distinct().collect(Collectors.toList()));
-                            }).filter(Objects::nonNull).collect(Collectors.toList());
-                            if (!CollectionUtils.isEmpty(alternativePayloads)) {
-                                alternatives.put(key, alternativePayloads);
-                            } else {
-                                //FIXME do we want to remove this code? It is cleaning up some data and therefore is rather defensive
-                                alternatives.remove(key);
-                            }
-                            break;
-                    }
+            List<NormalizedJsonLd> documentsForKey = originalInstances.stream().filter(i -> i.containsKey(key) || i.getAs(EBRAINSVocabulary.META_PROPERTYUPDATES, Map.class, Collections.emptyMap()).containsKey(key)).collect(Collectors.toList());
+            if (documentsForKey.size() == 1) {
+                //Single occurrence - the merge is easy. :)
+                NormalizedJsonLd doc = documentsForKey.getFirst();
+                final Object value = doc.get(key);
+                //We only add the property to the inferred document if it is not-null.
+                if (value != null) {
+                    inferredDocument.asIndexed().getDoc().addProperty(key, value);
+                }
+                JsonLdDoc alternative = createAlternative(key, doc.get(key), true, Collections.singletonList(doc.getAs(EBRAINSVocabulary.META_USER, JsonLdId.class)));
+                if (alternative != null) {
+                    alternatives.put(key, Collections.singletonList(alternative));
+                }
+            } else if (documentsForKey.size() > 1) {
+                sortByFieldChangeDate(key, documentsForKey);
+                NormalizedJsonLd firstDoc = documentsForKey.getFirst();
+                switch (key) {
+                    case JsonLdConsts.ID:
+                        List<JsonLdId> distinctIds = documentsForKey.stream().map(JsonLdDoc::id).distinct().toList();
+                        if (distinctIds.size() == 1) {
+                            inferredDocument.asIndexed().getDoc().setId(distinctIds.getFirst());
+                        }
+                        //We don't handle the ID merging - if there are conflicting ids, we create a new one - but this is in the responsibility of the event generation process.
+                        break;
+                    case SchemaOrgVocabulary.IDENTIFIER:
+                        Set<String> identifiers = documentsForKey.stream().map(JsonLdDoc::identifiers).flatMap(Collection::stream).collect(Collectors.toSet());
+                        inferredDocument.asIndexed().getDoc().put(SchemaOrgVocabulary.IDENTIFIER, identifiers);
+                        break;
+                    default:
+                        final Object propertyValue = firstDoc.get(key);
+                        //We only add the property to the inferred document if it is not-null.
+                        if (propertyValue != null) {
+                            inferredDocument.asIndexed().getDoc().addProperty(key, propertyValue);
+                        }
+                        Object nullGroup = new Object();
+                        Map<Object, List<NormalizedJsonLd>> documentsByValue = documentsForKey.stream().collect(Collectors.groupingBy(d -> d.getOrDefault(key, nullGroup)));
+                        final List<JsonLdDoc> alternativePayloads = documentsByValue.keySet().stream().map(value -> {
+                            List<NormalizedJsonLd> docs = documentsByValue.get(value);
+                            return createAlternative(key, value == nullGroup ? null : value, docs.contains(firstDoc), docs.stream().filter(d -> d.getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class) != null).map(doc -> doc.getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class).id()).distinct().collect(Collectors.toList()));
+                        }).filter(Objects::nonNull).collect(Collectors.toList());
+                        if (!CollectionUtils.isEmpty(alternativePayloads)) {
+                            alternatives.put(key, alternativePayloads);
+                        } else {
+                            //FIXME do we want to remove this code? It is cleaning up some data and therefore is rather defensive
+                            alternatives.remove(key);
+                        }
+                        break;
                 }
             }
         }
-        inferredDocument.setInferenceOf(originalInstances.stream().map(i -> idUtils.buildAbsoluteUrl(instanceId).getId()).distinct().collect(Collectors.toList()));
         return inferredDocument;
     }
 
     private void sortByFieldChangeDate(String key, List<NormalizedJsonLd> documentsForKey) {
         documentsForKey.sort((o1, o2) -> {
-            ZonedDateTime dateTime1 = o1 != null && o1.fieldUpdateTimes() != null ? o1.fieldUpdateTimes().get(key) : null;
-            ZonedDateTime dateTime2 = o2 != null && o2.fieldUpdateTimes() != null ? o2.fieldUpdateTimes().get(key) : null;
+            ZonedDateTime dateTime1 = o1 != null && o1.getFieldUpdateTimes() != null ? o1.getFieldUpdateTimes().get(key) : null;
+            ZonedDateTime dateTime2 = o2 != null && o2.getFieldUpdateTimes() != null ? o2.getFieldUpdateTimes().get(key) : null;
             if (dateTime1 != null) {
                 return dateTime2 == null || dateTime1.isBefore(dateTime2) ? 1 : dateTime1.equals(dateTime2) ? 0 : -1;
             }

@@ -30,10 +30,7 @@ import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.exception.ForbiddenException;
 import org.marmotgraph.commons.exception.UnauthorizedException;
-import org.marmotgraph.commons.jsonld.InferredJsonLdDoc;
-import org.marmotgraph.commons.jsonld.InstanceId;
-import org.marmotgraph.commons.jsonld.JsonLdId;
-import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
+import org.marmotgraph.commons.jsonld.*;
 import org.marmotgraph.commons.model.*;
 import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.permission.Functionality;
@@ -96,11 +93,11 @@ public class EventProcessor {
             case UPDATE:
                 //We need to add the current payload explicitly because the transaction is not yet committed and therefore not returned by the db
                 List<NormalizedJsonLd> sourceDocumentsForInstance = Stream.concat(payloadService.getSourceDocumentsForInstanceFromDB(persistedEvent.getInstanceId(), persistedEvent.getUserId()), Stream.of(persistedEvent.getData()).filter(Objects::nonNull)).toList();
-                InferredJsonLdDoc inferredDocument = reconcile.reconcile(persistedEvent.getInstanceId(), sourceDocumentsForInstance);
+                InferredJsonLdDoc inferredDocument = reconcile.reconcile(sourceDocumentsForInstance);
                 NormalizedJsonLd inferredDocumentPayload = inferredDocument.asIndexed().getDoc();
                 boolean autorelease = spaceService.isAutoRelease(persistedEvent.getSpaceName());
-                InstanceInformation instanceInformation = payloadService.upsertGlobalInformation(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), persistedEvent.getData().identifiers());
-                payloadService.upsertInferredPayload(persistedEvent.getInstanceId(), instanceInformation, inferredDocumentPayload, inferredDocument.getAlternatives(), autorelease, persistedEvent.getReportedTimeStampInMs());
+                InstanceInformation instanceInformation = payloadService.upsertInstanceInformation(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), persistedEvent.getData().identifiers());
+                payloadService.upsertInferredPayload(persistedEvent.getInstanceId(), instanceInformation, inferredDocumentPayload, inferredDocumentPayload.findOutgoingRelations(), inferredDocument.getAlternatives(), autorelease, persistedEvent.getReportedTimeStampInMs());
                 indexing.upsert(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), inferredDocumentPayload, DataStage.IN_PROGRESS);
                 if(autorelease){
                     indexing.upsert(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), persistedEvent.getData(), DataStage.RELEASED);

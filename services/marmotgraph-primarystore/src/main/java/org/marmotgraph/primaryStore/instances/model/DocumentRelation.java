@@ -22,39 +22,32 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.commons.jsonld;
+package org.marmotgraph.primaryStore.instances.model;
 
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.persistence.*;
+import lombok.*;
 
-import java.util.*;
+import java.io.Serializable;
+import java.util.UUID;
 
-public class InferredJsonLdDoc {
+public abstract class DocumentRelation {
 
-    private final IndexedJsonLdDoc indexedJsonLdDoc;
-
-    @Setter
+    @Embeddable
     @Getter
-    private JsonLdDoc alternatives;
-
-    protected InferredJsonLdDoc(IndexedJsonLdDoc document) {
-        this.indexedJsonLdDoc = document;
+    @Setter
+    @EqualsAndHashCode
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class CompositeId implements Serializable {
+        private UUID instanceId;
+        private String targetReference;
     }
 
-    public static InferredJsonLdDoc create() {
-        return new InferredJsonLdDoc(IndexedJsonLdDoc.create());
-    }
+    public abstract  CompositeId getCompositeId();
+    public abstract void setCompositeId(CompositeId compositeId);
 
-    public static InferredJsonLdDoc from(IndexedJsonLdDoc indexedJsonLdDoc) {
-        return new InferredJsonLdDoc(indexedJsonLdDoc);
-    }
+    public abstract UUID getResolvedTarget();
+    public abstract void setResolvedTarget(UUID resolvedTarget);
 
-    public static InferredJsonLdDoc from(NormalizedJsonLd document) {
-        return new InferredJsonLdDoc(IndexedJsonLdDoc.from(document));
-    }
-
-    public IndexedJsonLdDoc asIndexed() {
-        return indexedJsonLdDoc;
-    }
 
 }

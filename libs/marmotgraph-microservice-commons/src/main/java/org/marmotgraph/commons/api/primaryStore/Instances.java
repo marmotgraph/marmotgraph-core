@@ -42,9 +42,9 @@ public interface Instances {
     }
 
 
-    Map<UUID, InstanceId> resolveIds(List<IdWithAlternatives> idWithAlternatives) throws AmbiguousIdException;
+    Map<UUID, InstanceId> resolveIds(List<IdWithAlternatives> idWithAlternatives, DataStage stage) throws AmbiguousIdException;
 
-    InstanceId findInstanceByIdentifiers(UUID uuid, List<String> identifiers) throws AmbiguousException;
+    InstanceId findInstanceByIdentifiers(UUID uuid, List<String> identifiers, DataStage dataStage) throws AmbiguousException;
 
     @ExposesData
     NormalizedJsonLd getInstanceById(UUID id, DataStage stage, boolean removeInternalProperties);

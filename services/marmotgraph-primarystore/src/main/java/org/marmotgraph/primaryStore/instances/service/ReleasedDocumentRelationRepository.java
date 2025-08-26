@@ -22,39 +22,15 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.commons.jsonld;
+package org.marmotgraph.primaryStore.instances.service;
 
-import lombok.Getter;
-import lombok.Setter;
+import org.marmotgraph.primaryStore.instances.model.DocumentRelation;
+import org.marmotgraph.primaryStore.instances.model.InferredDocumentRelation;
+import org.marmotgraph.primaryStore.instances.model.ReleasedDocumentRelation;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-import java.util.*;
-
-public class InferredJsonLdDoc {
-
-    private final IndexedJsonLdDoc indexedJsonLdDoc;
-
-    @Setter
-    @Getter
-    private JsonLdDoc alternatives;
-
-    protected InferredJsonLdDoc(IndexedJsonLdDoc document) {
-        this.indexedJsonLdDoc = document;
-    }
-
-    public static InferredJsonLdDoc create() {
-        return new InferredJsonLdDoc(IndexedJsonLdDoc.create());
-    }
-
-    public static InferredJsonLdDoc from(IndexedJsonLdDoc indexedJsonLdDoc) {
-        return new InferredJsonLdDoc(indexedJsonLdDoc);
-    }
-
-    public static InferredJsonLdDoc from(NormalizedJsonLd document) {
-        return new InferredJsonLdDoc(IndexedJsonLdDoc.from(document));
-    }
-
-    public IndexedJsonLdDoc asIndexed() {
-        return indexedJsonLdDoc;
-    }
+@Repository
+public interface ReleasedDocumentRelationRepository extends JpaRepository<ReleasedDocumentRelation, DocumentRelation.CompositeId> {
 
 }

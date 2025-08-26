@@ -145,7 +145,7 @@ public class InstancesV3 {
     private ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(NormalizedJsonLd normalizedJsonLd, UUID id, ExtendedResponseConfiguration responseConfiguration, boolean removeNonDeclaredFields) {
         Date startTime = new Date();
         logger.debug(String.format("Contributing to instance with id %s", id));
-        final InstanceId instanceId = instanceController.findId(id, normalizedJsonLd.identifiers());
+        final InstanceId instanceId = instanceController.findIdForContribution(id, normalizedJsonLd.identifiers());
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
         }
@@ -236,7 +236,7 @@ public class InstancesV3 {
             }
             return PaginatedResult.ok(new Paginated<>(instancesByInvitation, (long) instancesByInvitation.size(), total, paginationParam.getFrom()));
         } else {
-            searchByLabel = enrichSearchTermIfItIsAUUID(searchByLabel);
+            searchByLabel = enrichSearchTermIfItIsAUUID(searchByLabel, stage.getStage());
             result = PaginatedResult.ok(instanceController.getInstances(stage.getStage(), new Type(type), SpaceName.fromString(space), searchByLabel, filterProperty, filterValue, responseConfiguration, paginationParam));
         }
         result.setExecutionDetails(startTime, new Date());
@@ -260,7 +260,7 @@ public class InstancesV3 {
     public Result<Map<String, Result<NormalizedJsonLd>>> getInstancesByIdentifiers(@RequestBody List<String> identifiers, @RequestParam("stage") ExposedStage stage, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
         List<IdWithAlternatives> idWithAlternatives = identifiers.stream().filter(Objects::nonNull).map(identifier -> new IdWithAlternatives(UUID.randomUUID(), null, Collections.singleton(identifier))).collect(Collectors.toList());
         Map<UUID, String> uuidToIdentifier = idWithAlternatives.stream().collect(Collectors.toMap(IdWithAlternatives::getId, v -> v.getAlternatives().iterator().next()));
-        Map<UUID, InstanceId> resolvedIds = instanceController.resolveIds(idWithAlternatives);
+        Map<UUID, InstanceId> resolvedIds = instanceController.resolveIds(idWithAlternatives, stage.getStage());
         Map<String, InstanceId> identifierToInstanceIdLookup = new HashMap<>();
         resolvedIds.keySet().forEach(uuid -> identifierToInstanceIdLookup.put(uuidToIdentifier.get(uuid), resolvedIds.get(uuid)));
         Map<String, Result<NormalizedJsonLd>> instancesByIds = instanceController.getInstancesByIds(identifierToInstanceIdLookup.values().stream().filter(Objects::nonNull).map(id -> id.getUuid().toString()).collect(Collectors.toList()), stage.getStage(), responseConfiguration, null);
@@ -367,17 +367,17 @@ public class InstancesV3 {
     @Extra
     public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestBody NormalizedJsonLd payload, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "property") String propertyName, @PathVariable("id") UUID id, @Parameter(description = "The source type for which the given property shall be evaluated. If not provided, the API tries to figure out the type by analyzing the type of the root object originating from the payload. Please note, that this parameter is mandatory for embedded structures.") @RequestParam(value = "sourceType", required = false) String sourceType, @Parameter(description = "The target type of the suggestions. If not provided, suggestions of all possible target types will be returned.") @RequestParam(value = "targetType", required = false) String targetType, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
         Date start = new Date();
-        InstanceId instanceId = instanceController.resolveId(id);
-        search = enrichSearchTermIfItIsAUUID(search);
+        InstanceId instanceId = instanceController.resolveId(id, stage.getStage());
+        search = enrichSearchTermIfItIsAUUID(search, stage.getStage());
         return Result.ok(instances.getSuggestedLinksForProperty(payload, stage.getStage(), instanceId != null && instanceId.getSpace() != null ? instanceId.getSpace().getName() : null, id, propertyName, sourceType != null && !sourceType.isBlank() ? new Type(sourceType).getName() : null, targetType != null && !targetType.isBlank() ? new Type(targetType).getName() : null, search, paginationParam)).setExecutionDetails(start, new Date());
     }
 
-    private String enrichSearchTermIfItIsAUUID(String search) {
+    private String enrichSearchTermIfItIsAUUID(String search, DataStage stage) {
         if (search != null) {
             try {
                 //The search string is a UUID -> let's try to resolve it - if we're successful, we can shortcut the lookup process.
                 UUID uuid = UUID.fromString(search);
-                InstanceId resolvedSearchId = instanceController.resolveId(uuid);
+                InstanceId resolvedSearchId = instanceController.resolveId(uuid, stage);
                 if (resolvedSearchId != null) {
                     return resolvedSearchId.serialize();
                 }

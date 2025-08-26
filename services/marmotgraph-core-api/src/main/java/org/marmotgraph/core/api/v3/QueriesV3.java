@@ -103,7 +103,7 @@ public class QueriesV3 {
         allRequestParams.remove("size");
         NormalizedJsonLd normalizedJsonLd = jsonLd.normalize(query, true);
         KgQuery q = new KgQuery(normalizedJsonLd, stage.getStage());
-        q.setIdRestriction(instances.resolveId(instanceId));
+        q.setIdRestriction(instances.resolveId(instanceId, stage.getStage()));
         if(restrictToSpaces!=null){
             q.setRestrictToSpaces(restrictToSpaces.stream().filter(Objects::nonNull).map(r -> SpaceName.getInternalSpaceName(r, authContext.getUserWithRoles().getPrivateSpace())).collect(Collectors.toList()));
         }
@@ -120,7 +120,7 @@ public class QueriesV3 {
     @ExposesQuery
     @Simple
     public ResponseEntity<Result<NormalizedJsonLd>> getQuerySpecification(@PathVariable("queryId") UUID queryId) {
-        InstanceId instanceId = instances.resolveId(queryId);
+        InstanceId instanceId = instances.resolveId(queryId, DataStage.IN_PROGRESS);
         if(instanceId != null) {
             NormalizedJsonLd kgQuery = queryController.fetchQueryById(instanceId);
             if(kgQuery == null){
@@ -147,7 +147,7 @@ public class QueriesV3 {
     public ResponseEntity<Result<NormalizedJsonLd>> saveQuery(@RequestBody JsonLdDoc query, @PathVariable(value = "queryId") UUID queryId, @RequestParam(value = "space", required = false) @Parameter(description = "Required only when the instance is created to specify where it should be stored ("+SpaceName.PRIVATE_SPACE+" for your private space) - but not if it's updated.") String space) {
         NormalizedJsonLd normalizedJsonLd = jsonLd.normalize(query, true);
         normalizedJsonLd.addTypes(EBRAINSVocabulary.META_QUERY_TYPE);
-        InstanceId resolveId = instances.resolveId(queryId);
+        InstanceId resolveId = instances.resolveId(queryId, DataStage.IN_PROGRESS);
         SpaceName spaceName = authContext.resolveSpaceName(space);
         if(resolveId != null){
             if(spaceName!=null && !resolveId.getSpace().equals(spaceName)){
@@ -191,14 +191,14 @@ public class QueriesV3 {
         allRequestParams.remove("instanceId");
         allRequestParams.remove("from");
         allRequestParams.remove("size");
-        InstanceId queryInstance = instances.resolveId(queryId);
+        InstanceId queryInstance = instances.resolveId(queryId, DataStage.IN_PROGRESS);
         final NormalizedJsonLd queryPayload = queryController.fetchQueryById(queryInstance);
         if(queryPayload==null){
             throw new InstanceNotFoundException(String.format("Query with id %s not found", queryId));
         }
         KgQuery query = new KgQuery(queryPayload, stage.getStage());
 
-        query.setIdRestriction(instances.resolveId(instanceId));
+        query.setIdRestriction(instances.resolveId(instanceId, stage.getStage()));
         if(restrictToSpaces!=null){
             query.setRestrictToSpaces(restrictToSpaces.stream().filter(Objects::nonNull).map(r -> SpaceName.getInternalSpaceName(r, authContext.getUserWithRoles().getPrivateSpace())).collect(Collectors.toList()));
         }

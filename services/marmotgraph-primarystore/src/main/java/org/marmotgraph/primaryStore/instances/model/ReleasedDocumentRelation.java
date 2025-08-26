@@ -22,39 +22,24 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.commons.jsonld;
+package org.marmotgraph.primaryStore.instances.model;
 
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.*;
+import java.util.UUID;
 
-public class InferredJsonLdDoc {
+@Table(name="released_document_relations")
+@Entity
+@Getter
+@Setter
+public class ReleasedDocumentRelation extends DocumentRelation {
 
-    private final IndexedJsonLdDoc indexedJsonLdDoc;
+    @EmbeddedId
+    private DocumentRelation.CompositeId compositeId;
 
-    @Setter
-    @Getter
-    private JsonLdDoc alternatives;
-
-    protected InferredJsonLdDoc(IndexedJsonLdDoc document) {
-        this.indexedJsonLdDoc = document;
-    }
-
-    public static InferredJsonLdDoc create() {
-        return new InferredJsonLdDoc(IndexedJsonLdDoc.create());
-    }
-
-    public static InferredJsonLdDoc from(IndexedJsonLdDoc indexedJsonLdDoc) {
-        return new InferredJsonLdDoc(indexedJsonLdDoc);
-    }
-
-    public static InferredJsonLdDoc from(NormalizedJsonLd document) {
-        return new InferredJsonLdDoc(IndexedJsonLdDoc.from(document));
-    }
-
-    public IndexedJsonLdDoc asIndexed() {
-        return indexedJsonLdDoc;
-    }
-
+    private UUID resolvedTarget;
 }
