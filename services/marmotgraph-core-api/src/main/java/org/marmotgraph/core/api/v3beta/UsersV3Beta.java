@@ -74,10 +74,10 @@ public class UsersV3Beta {
     @Extra
     @Deprecated(forRemoval = true)
     @SecurityRequirements
-    public Result<JsonLdDoc> getAuthEndpoint() {
+    public ResultWithExecutionDetails<JsonLdDoc> getAuthEndpoint() {
         JsonLdDoc ld = new JsonLdDoc();
         ld.addProperty(ENDPOINT, authentication.authEndpoint());
-        return Result.ok(ld);
+        return ResultWithExecutionDetails.ok(ld);
     }
 
     @Operation(summary = "DEPRECATED: Get the endpoint of the openid configuration - please use the harmonized endpoint at /setup/authorization")
@@ -86,10 +86,10 @@ public class UsersV3Beta {
     @Advanced
     @Deprecated(forRemoval = true)
     @SecurityRequirements
-    public Result<JsonLdDoc> getOpenIdConfigUrl() {
+    public ResultWithExecutionDetails<JsonLdDoc> getOpenIdConfigUrl() {
         JsonLdDoc ld = new JsonLdDoc();
         ld.addProperty(ENDPOINT, authentication.openIdConfigUrl());
-        return Result.ok(ld);
+        return ResultWithExecutionDetails.ok(ld);
     }
 
     @Operation(summary = "DEPRECATED: Get the endpoint to retrieve your token (e.g. via client id and client secret) - please use the harmonized endpoint at /setup/authorization")
@@ -98,28 +98,28 @@ public class UsersV3Beta {
     @Extra
     @Deprecated(forRemoval = true)
     @SecurityRequirements
-    public Result<JsonLdDoc> getTokenEndpoint() {
+    public ResultWithExecutionDetails<JsonLdDoc> getTokenEndpoint() {
         JsonLdDoc ld = new JsonLdDoc();
         ld.addProperty(ENDPOINT, authentication.tokenEndpoint());
-        return Result.ok(ld);
+        return ResultWithExecutionDetails.ok(ld);
     }
 
     @Operation(summary = "Retrieve user information from the passed token (including detailed information such as e-mail address)")
     @GetMapping("/me")
     @ExposesUserInfo
     @Simple
-    public ResponseEntity<Result<User>> myUserInfo() {
+    public ResponseEntity<ResultWithExecutionDetails<User>> myUserInfo() {
         User myUserInfo = authentication.getMyUserInfo();
-        return myUserInfo!=null ? ResponseEntity.ok(Result.ok(myUserInfo)) : ResponseEntity.notFound().build();
+        return myUserInfo!=null ? ResponseEntity.ok(ResultWithExecutionDetails.ok(myUserInfo)) : ResponseEntity.notFound().build();
     }
 
     @Operation(summary = "Retrieve the roles for the current user")
     @GetMapping("/me/roles")
     @ExposesUserInfo
     @Extra
-    public ResponseEntity<Result<UserWithRoles>> myRoles() {
+    public ResponseEntity<ResultWithExecutionDetails<UserWithRoles>> myRoles() {
         final UserWithRoles roles = authentication.getRoles();
-        return roles!=null ? ResponseEntity.ok(Result.ok(roles)) : ResponseEntity.notFound().build();
+        return roles!=null ? ResponseEntity.ok(ResultWithExecutionDetails.ok(roles)) : ResponseEntity.notFound().build();
     }
 
 
@@ -137,8 +137,8 @@ public class UsersV3Beta {
     @ExposesUserInfo
     @Extra
     @Deprecated(forRemoval = true)
-    public ResponseEntity<Result<List<ReducedUserInformation>>>findUsers(@RequestParam("search") String search) {
-        return ResponseEntity.badRequest().body(Result.nok(HttpStatus.BAD_REQUEST.value(), "This method is no longer supported. Please resolve users via the IAM directly."));
+    public ResponseEntity<ResultWithExecutionDetails<List<ReducedUserInformation>>>findUsers(@RequestParam("search") String search) {
+        return ResponseEntity.badRequest().body(ResultWithExecutionDetails.nok(HttpStatus.BAD_REQUEST.value(), "This method is no longer supported. Please resolve users via the IAM directly."));
     }
 
 
@@ -198,8 +198,8 @@ public class UsersV3Beta {
     @PutMapping("/{id}/picture")
     @Extra
     @Deprecated(forRemoval = true)
-    public ResponseEntity<Result<Void>> defineUserPicture(@PathVariable("id") UUID userId, @RequestBody String base64encodedImage) {
-        return ResponseEntity.ok(Result.ok());
+    public ResponseEntity<ResultWithExecutionDetails<Void>> defineUserPicture(@PathVariable("id") UUID userId, @RequestBody String base64encodedImage) {
+        return ResponseEntity.ok(ResultWithExecutionDetails.ok());
     }
 
 }

@@ -170,7 +170,7 @@ public class DocumentsRepository extends  AbstractRepository{
                 Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = ArangoQueries.queryDocuments(database, new AQLQuery(aql, bindVars), null);
                 embeddedAndAlternatives.handleAlternativesAndEmbedded(normalizedJsonLdPaginated.getData(), stage, alternatives, embedded);
                 exposeRevision(normalizedJsonLdPaginated.getData());
-                final SpaceName privateSpace = authContext.getUserWithRolesWithoutTermsCheck().getPrivateSpace();
+                final SpaceName privateSpace = authContext.getUserWithRoles().getPrivateSpace();
                 normalizedJsonLdPaginated.getData().forEach(r -> {
                     r.removeAllInternalProperties();
                     final String s = r.getAs(EBRAINSVocabulary.META_SPACE, String.class);
@@ -254,7 +254,7 @@ public class DocumentsRepository extends  AbstractRepository{
 
 
 
-    public Map<UUID, Result<NormalizedJsonLd>> getDocumentsByReferenceList(DataStage stage, List<ArangoDocumentReference> documentReferences, String typeRestriction) {
+    public Map<UUID, ResultWithExecutionDetails<NormalizedJsonLd>> getDocumentsByReferenceList(DataStage stage, List<ArangoDocumentReference> documentReferences, String typeRestriction) {
         ArangoDatabase db = databases.getByStage(stage);
         AQL aql = new AQL();
 
@@ -277,7 +277,7 @@ public class DocumentsRepository extends  AbstractRepository{
             }
         }
         aql.addLine(AQL.trust("}"));
-        Map<UUID, Result<NormalizedJsonLd>> result = new HashMap<>();
+        Map<UUID, ResultWithExecutionDetails<NormalizedJsonLd>> result = new HashMap<>();
         List<NormalizedJsonLd> results = db.query(aql.build().getValue(), NormalizedJsonLd.class, bindVars, new AqlQueryOptions()).asListRemaining().stream().filter(Objects::nonNull).toList();
         if (!results.isEmpty()) {
             // The response object is always just a single dictionary
@@ -285,42 +285,42 @@ public class DocumentsRepository extends  AbstractRepository{
             for (String uuid : singleResult.keySet()) {
                 NormalizedJsonLd doc = singleResult.getAs(uuid, NormalizedJsonLd.class);
                 if (doc != null) {
-                    result.put(UUID.fromString(uuid), Result.ok(doc));
+                    result.put(UUID.fromString(uuid), ResultWithExecutionDetails.ok(doc));
                 } else {
-                    result.put(UUID.fromString(uuid), Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase()));
+                    result.put(UUID.fromString(uuid), ResultWithExecutionDetails.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase()));
                 }
             }
         }
         return result;
     }
-    public Map<UUID, Result<NormalizedJsonLd>> getDocumentsByIdList(DataStage stage, List<InstanceId> instanceIds, String typeRestriction, boolean embedded, boolean alternatives, boolean incomingLinks, Long incomingLinksPageSize) {
+    public Map<UUID, ResultWithExecutionDetails<NormalizedJsonLd>> getDocumentsByIdList(DataStage stage, List<InstanceId> instanceIds, String typeRestriction, boolean embedded, boolean alternatives, boolean incomingLinks, Long incomingLinksPageSize) {
         return getDocumentsByIdList(stage, instanceIds, typeRestriction, embedded, alternatives, incomingLinks, incomingLinksPageSize, getInvitationDocuments());
     }
 
-    private Map<UUID, Result<NormalizedJsonLd>> getDocumentsByIdList(DataStage stage, List<InstanceId> instanceIds, String typeRestriction, boolean embedded, boolean alternatives, boolean incomingLinks, Long incomingLinksPageSize, List<NormalizedJsonLd> invitationDocuments) {
+    private Map<UUID, ResultWithExecutionDetails<NormalizedJsonLd>> getDocumentsByIdList(DataStage stage, List<InstanceId> instanceIds, String typeRestriction, boolean embedded, boolean alternatives, boolean incomingLinks, Long incomingLinksPageSize, List<NormalizedJsonLd> invitationDocuments) {
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
 
         Set<InstanceId> hasReadPermissions = instanceIds.stream().filter(i -> permissions.hasPermission(userWithRoles, permissionsController.getReadFunctionality(stage), i.getSpace(), i.getUuid())).collect(Collectors.toSet());
         Set<InstanceId> hasOnlyMinimalReadPermissions = instanceIds.stream().filter(i -> !hasReadPermissions.contains(i) && permissions.hasPermission(userWithRoles, permissionsController.getMinimalReadFunctionality(stage), i.getSpace(), i.getUuid())).collect(Collectors.toSet());
         Set<InstanceId> hasNoPermissions = instanceIds.stream().filter(i -> !hasReadPermissions.contains(i) && !hasOnlyMinimalReadPermissions.contains(i)).collect(Collectors.toSet());
 
-        Map<UUID, Result<NormalizedJsonLd>> documentsByReferenceList = getDocumentsByReferenceListWithPostProcessing(stage, hasReadPermissions.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), typeRestriction, embedded, alternatives, incomingLinks, incomingLinksPageSize, invitationDocuments);
-        Map<UUID, Result<NormalizedJsonLd>> documentsByReferenceListWithMinimalReadAccess = getDocumentsByReferenceList(stage, hasOnlyMinimalReadPermissions.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), typeRestriction);
+        Map<UUID, ResultWithExecutionDetails<NormalizedJsonLd>> documentsByReferenceList = getDocumentsByReferenceListWithPostProcessing(stage, hasReadPermissions.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), typeRestriction, embedded, alternatives, incomingLinks, incomingLinksPageSize, invitationDocuments);
+        Map<UUID, ResultWithExecutionDetails<NormalizedJsonLd>> documentsByReferenceListWithMinimalReadAccess = getDocumentsByReferenceList(stage, hasOnlyMinimalReadPermissions.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), typeRestriction);
 
         //Reduce the payload to the minimal fields
-        documentsByReferenceListWithMinimalReadAccess.values().stream().filter(Objects::nonNull).map(Result::getData).filter(Objects::nonNull).forEach(d -> d.keepPropertiesOnly(getMinimalFields(stage, d.types(), invitationDocuments)));
+        documentsByReferenceListWithMinimalReadAccess.values().stream().filter(Objects::nonNull).map(ResultWithExecutionDetails::getData).filter(Objects::nonNull).forEach(d -> d.keepPropertiesOnly(getMinimalFields(stage, d.types(), invitationDocuments)));
         documentsByReferenceList.putAll(documentsByReferenceListWithMinimalReadAccess);
 
         //Define responses for no-permission instances
-        hasNoPermissions.forEach(i -> documentsByReferenceList.put(i.getUuid(), Result.nok(HttpStatus.FORBIDDEN.value(), String.format("You don't have rights to read id %s", i.getUuid()), i.getUuid())));
+        hasNoPermissions.forEach(i -> documentsByReferenceList.put(i.getUuid(), ResultWithExecutionDetails.nok(HttpStatus.FORBIDDEN.value(), String.format("You don't have rights to read id %s", i.getUuid()), i.getUuid())));
         return documentsByReferenceList;
     }
 
 
 
-    public Map<UUID, Result<NormalizedJsonLd>> getDocumentsByReferenceListWithPostProcessing(DataStage stage, List<ArangoDocumentReference> documentReferences, String typeRestriction, boolean embedded, boolean alternatives, boolean showIncomingLinks, Long incomingLinksPageSize, List<NormalizedJsonLd> invitationDocuments) {
-        final Map<UUID, Result<NormalizedJsonLd>> result = getDocumentsByReferenceList(stage, documentReferences, typeRestriction);
-        final List<NormalizedJsonLd> normalizedJsonLds = result.values().stream().map(Result::getData).filter(Objects::nonNull).collect(Collectors.toList());
+    public Map<UUID, ResultWithExecutionDetails<NormalizedJsonLd>> getDocumentsByReferenceListWithPostProcessing(DataStage stage, List<ArangoDocumentReference> documentReferences, String typeRestriction, boolean embedded, boolean alternatives, boolean showIncomingLinks, Long incomingLinksPageSize, List<NormalizedJsonLd> invitationDocuments) {
+        final Map<UUID, ResultWithExecutionDetails<NormalizedJsonLd>> result = getDocumentsByReferenceList(stage, documentReferences, typeRestriction);
+        final List<NormalizedJsonLd> normalizedJsonLds = result.values().stream().map(ResultWithExecutionDetails::getData).filter(Objects::nonNull).collect(Collectors.toList());
         if (!normalizedJsonLds.isEmpty()) {
             embeddedAndAlternatives.handleAlternativesAndEmbedded(normalizedJsonLds, stage, alternatives, embedded);
             exposeRevision(normalizedJsonLds);
@@ -346,10 +346,10 @@ public class DocumentsRepository extends  AbstractRepository{
     }
 
     public List<NormalizedJsonLd> getInvitationDocuments(){
-        final List<UUID> invitations = authContext.getUserWithRolesWithoutTermsCheck().getInvitations();
+        final List<UUID> invitations = authContext.getUserWithRoles().getInvitations();
         final List<InstanceId> values = instances.resolveIds(invitations.stream().distinct().map(id -> new IdWithAlternatives().setId(id).setAlternatives(Collections.singleton(idUtils.buildAbsoluteUrl(id).getId()))).filter(Objects::nonNull).toList(), DataStage.IN_PROGRESS).values().stream().toList();
-        final Map<UUID, Result<NormalizedJsonLd>> documentsByIdList = getDocumentsByIdList(DataStage.IN_PROGRESS, values, null, false, false, false, null, null);
-        return documentsByIdList.values().stream().map(Result::getData).collect(Collectors.toList());
+        final Map<UUID, ResultWithExecutionDetails<NormalizedJsonLd>> documentsByIdList = getDocumentsByIdList(DataStage.IN_PROGRESS, values, null, false, false, false, null, null);
+        return documentsByIdList.values().stream().map(ResultWithExecutionDetails::getData).collect(Collectors.toList());
     }
 
     Set<String> getMinimalFields(DataStage stage, List<String> types, List<NormalizedJsonLd> invitationDocuments) {

@@ -26,7 +26,7 @@ package org.marmotgraph.core.api.instances.load;
 
 import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.core.model.ExposedStage;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -47,7 +47,7 @@ class DeleteSystemTest extends AbstractInstancesLoadTest {
         //When
         for (int i = 0; i < allInstancesFromInProgress.size(); i++) {
             Mockito.doReturn(i).when(testInformation).getExecutionNumber();
-            ResponseEntity<Result<Void>> resultResponseEntity = instances.deleteInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).id()));
+            ResponseEntity<ResultWithExecutionDetails<Void>> resultResponseEntity = instances.deleteInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).id()));
             System.out.printf("Result %d: %d ms%n", i, resultResponseEntity.getBody().getDurationInMs());
         }
     }

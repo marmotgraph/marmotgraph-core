@@ -30,7 +30,7 @@ import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.Paginated;
 import org.marmotgraph.commons.model.PaginationParam;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
 
 import java.util.List;
@@ -42,7 +42,7 @@ public interface Types {
 
     Paginated<TypeInformation> listTypes(DataStage stage, String space, boolean withProperties, boolean withIncomingLinks, PaginationParam paginationParam);
 
-    Map<String, Result<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space, boolean withProperties, boolean withIncomingLinks);
+    Map<String, ResultWithExecutionDetails<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space, boolean withProperties, boolean withIncomingLinks);
 
     DynamicJson getSpecifyType(String type, boolean global);
 

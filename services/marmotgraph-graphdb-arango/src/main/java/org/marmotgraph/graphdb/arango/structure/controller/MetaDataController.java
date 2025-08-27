@@ -30,7 +30,7 @@ import org.marmotgraph.commons.exception.InstanceNotFoundException;
 import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.Type;
 import org.marmotgraph.commons.model.external.spaces.SpaceSpecification;
@@ -148,10 +148,10 @@ public class MetaDataController {
         }
     }
 
-    public Map<String, Result<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space,
-                                                               boolean withProperties, boolean withIncomingLinks, UserWithRoles userWithRoles, SpaceName clientSpace, List<NormalizedJsonLd> invitationDocuments) {
+    public Map<String, ResultWithExecutionDetails<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space,
+                                                                                   boolean withProperties, boolean withIncomingLinks, UserWithRoles userWithRoles, SpaceName clientSpace, List<NormalizedJsonLd> invitationDocuments) {
         final List<TypeInformation> typeInformation = readMetaDataStructure(stage, space, types, withProperties, withIncomingLinks, userWithRoles, clientSpace, userWithRoles.getPrivateSpace(), invitationDocuments);
-        return typeInformation.stream().filter(t -> types.contains(t.getIdentifier())).collect(Collectors.toMap(TypeInformation::getIdentifier, Result::ok));
+        return typeInformation.stream().filter(t -> types.contains(t.getIdentifier())).collect(Collectors.toMap(TypeInformation::getIdentifier, ResultWithExecutionDetails::ok));
     }
 
     public List<TypeInformation> readMetaDataStructure(DataStage stage, String spaceRestriction, List<String> typeRestriction, boolean withProperties, boolean withIncomingLinks, UserWithRoles userWithRoles, SpaceName clientSpace, SpaceName privateUserSpace, List<NormalizedJsonLd> invitationDocuments) {

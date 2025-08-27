@@ -25,7 +25,7 @@
 package org.marmotgraph.core.api.instances.tests;
 
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.core.api.instances.TestContext;
 import org.marmotgraph.core.api.v3.InstancesV3;
 import org.marmotgraph.core.model.ExposedStage;
@@ -36,7 +36,7 @@ import java.util.UUID;
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class ReleaseInstanceTest extends AbstractInstanceTest {
 
-    public ResponseEntity<Result<Void>> response;
+    public ResponseEntity<ResultWithExecutionDetails<Void>> response;
     public NormalizedJsonLd originalInstance;
 
     public ReleaseInstanceTest(TestContext testContext, InstancesV3 instances) {
@@ -53,7 +53,7 @@ public class ReleaseInstanceTest extends AbstractInstanceTest {
         response = instances.releaseInstance(getInstanceUUID(), null);
     }
 
-    public ResponseEntity<Result<NormalizedJsonLd>> fetchInstance(){
+    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> fetchInstance(){
         return instances.getInstanceById(getInstanceUUID(), ExposedStage.RELEASED, defaultResponseConfiguration);
     }
 

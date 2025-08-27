@@ -22,7 +22,7 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.primaryStore.structures.service;
+package org.marmotgraph.primaryStore.instances.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
@@ -36,7 +36,7 @@ import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permission.FunctionalityInstance;
 import org.marmotgraph.commons.permissions.controller.Permissions;
-import org.marmotgraph.primaryStore.structures.model.SpaceDefinition;
+import org.marmotgraph.primaryStore.instances.model.Space;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
 @Service
 public class SpaceService {
 
-    private final SpaceDefinitionRepository spaceDefinitionRepository;
+    private final SpaceRepository spaceRepository;
 
     private final EntityManager entityManager;
 
@@ -57,9 +57,13 @@ public class SpaceService {
 
     private final AuthContext authContext;
 
+    public Optional<Space> getSpace(SpaceName spaceName){
+        return spaceRepository.findById(spaceName.getName());
+    }
+
     public boolean isAutoRelease(SpaceName spaceName){
-        Optional<SpaceDefinition> byId = spaceDefinitionRepository.findById(spaceName.getName());
-        return byId.map(SpaceDefinition::isAutoRelease).orElse(false);
+        Optional<Space> byId = spaceRepository.findById(spaceName.getName());
+        return byId.map(Space::isAutoRelease).orElse(false);
     }
 
     private Set<SpaceName> whitelistedSpaceReads(UserWithRoles userWithRoles){
@@ -70,19 +74,21 @@ public class SpaceService {
         return null;
     }
 
+
+
     public Paginated<SpaceInformation> listSpaces(PaginationParam paginationParam) {
         Set<SpaceName> whitelistedSpaceReads = whitelistedSpaceReads(authContext.getUserWithRoles());
-        TypedQuery<SpaceDefinition> query;
+        TypedQuery<Space> query;
         if(whitelistedSpaceReads == null){
-            query = entityManager.createQuery("select s from SpaceDefinition s order by s.name", SpaceDefinition.class);
+            query = entityManager.createQuery("select s from Space s order by s.name", Space.class);
         }
         else{
-            query = entityManager.createQuery("select s from SpaceDefinition s where s.name in :whitelist order by s.name", SpaceDefinition.class).setParameter("whitelist", whitelistedSpaceReads);
+            query = entityManager.createQuery("select s from Space s where s.name in :whitelist order by s.name", Space.class).setParameter("whitelist", whitelistedSpaceReads);
         }
         if(paginationParam.getSize()!=null) {
             query = query.setFirstResult((int) paginationParam.getFrom()).setMaxResults(paginationParam.getSize().intValue());
         }
-        List<SpaceInformation> result = query.getResultStream().map(SpaceDefinition::toSpaceInformation).toList();
+        List<SpaceInformation> result = query.getResultStream().map(Space::toSpaceInformation).toList();
         //FIXME we need to count the total results.
         return new Paginated<>(result, 0L, result.size(), paginationParam.getFrom());
 

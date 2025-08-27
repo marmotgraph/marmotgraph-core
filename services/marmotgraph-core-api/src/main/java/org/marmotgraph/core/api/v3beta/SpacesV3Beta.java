@@ -40,7 +40,7 @@ import org.marmotgraph.commons.markers.ExposesSpace;
 import org.marmotgraph.commons.markers.WritesData;
 import org.marmotgraph.commons.model.PaginatedResult;
 import org.marmotgraph.commons.model.PaginationParam;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.external.spaces.SpaceInformation;
 import org.marmotgraph.commons.model.external.spaces.SpaceSpecification;
@@ -72,10 +72,10 @@ public class SpacesV3Beta {
     @GetMapping("{space}")
     @ExposesSpace
     @Advanced
-    public Result<SpaceInformation> getSpace(@PathVariable("space") @Parameter(description = "The space to be read or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space") String space, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
+    public ResultWithExecutionDetails<SpaceInformation> getSpace(@PathVariable("space") @Parameter(description = "The space to be read or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space") String space, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
         SpaceInformation s = spaceController.getSpace(SpaceName.fromString(space), permissions);
         if(s != null){
-            return Result.ok(s);
+            return ResultWithExecutionDetails.ok(s);
         }
         throw new InstanceNotFoundException(String.format("Space %s was not found", space));
     }

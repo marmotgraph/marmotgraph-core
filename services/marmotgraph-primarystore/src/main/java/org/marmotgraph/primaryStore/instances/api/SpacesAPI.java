@@ -22,7 +22,7 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.primaryStore.structures.api;
+package org.marmotgraph.primaryStore.instances.api;
 
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.NotImplementedException;
@@ -30,23 +30,19 @@ import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.api.primaryStore.Spaces;
 import org.marmotgraph.commons.exception.ForbiddenException;
 import org.marmotgraph.commons.exception.InvalidRequestException;
-import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.Paginated;
 import org.marmotgraph.commons.model.PaginationParam;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.external.spaces.SpaceInformation;
 import org.marmotgraph.commons.model.external.spaces.SpaceSpecification;
-import org.marmotgraph.commons.model.internal.spaces.Space;
 import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permissions.controller.Permissions;
-import org.marmotgraph.primaryStore.structures.model.SpaceDefinition;
-import org.marmotgraph.primaryStore.structures.service.SpaceDefinitionRepository;
+import org.marmotgraph.primaryStore.instances.model.Space;
+import org.marmotgraph.primaryStore.instances.service.SpaceRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 
 @AllArgsConstructor
 @Service
@@ -56,14 +52,14 @@ public class SpacesAPI implements Spaces.Client {
 
     private final Permissions permissions;
     private final AuthContext authContext;
-    private final SpaceDefinitionRepository spaceDefinitionRepository;
+    private final SpaceRepository spaceDefinitionRepository;
 
 
-    private static Space createSpaceRepresentation(String name) {
-        return new Space(new SpaceName(name), false, false, false);
+    private static org.marmotgraph.commons.model.internal.spaces.Space createSpaceRepresentation(String name) {
+        return new org.marmotgraph.commons.model.internal.spaces.Space(new SpaceName(name), false, false, false);
     }
 
-    private List<Space> getSpaces() {
+    private List<org.marmotgraph.commons.model.internal.spaces.Space> getSpaces() {
         throw new NotImplementedException();
 //        List<Space> spaces = this.metaDataController.getSpaces(DataStage.IN_PROGRESS, authContext.getUserWithRoles());
 //        final SpaceName privateSpace = authContext.getUserWithRoles().getPrivateSpace();
@@ -130,7 +126,7 @@ public class SpacesAPI implements Spaces.Client {
                 default:
                     break;
             }
-            spaceDefinitionRepository.save(SpaceDefinition.fromSpaceSpecification(spaceSpecification));
+            spaceDefinitionRepository.save(Space.fromSpaceSpecification(spaceSpecification));
         } else {
             throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
         }

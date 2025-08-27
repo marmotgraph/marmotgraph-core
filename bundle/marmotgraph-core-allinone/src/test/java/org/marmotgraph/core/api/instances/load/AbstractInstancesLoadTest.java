@@ -25,7 +25,7 @@
 package org.marmotgraph.core.api.instances.load;
 
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.core.api.v3.InstancesV3;
 import org.marmotgraph.core.model.ExposedStage;
 import org.marmotgraph.core.api.metrics.PerformanceTestUtils;
@@ -67,7 +67,7 @@ public abstract class AbstractInstancesLoadTest extends AbstractLoadTest {
         utils.addSection(title.toString());
 
         // When
-        List<ResponseEntity<Result<NormalizedJsonLd>>> results = utils.executeMany(numberOfFields, normalize, numberOfIterations, parallelize, link, p -> instances.createNewInstance(p, "test", DEFAULT_RESPONSE_CONFIG));
+        List<ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>>> results = utils.executeMany(numberOfFields, normalize, numberOfIterations, parallelize, link, p -> instances.createNewInstance(p, "test", DEFAULT_RESPONSE_CONFIG));
 
         //Then
         for (int i = 0; i < results.size(); i++) {

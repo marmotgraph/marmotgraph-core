@@ -22,14 +22,14 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.primaryStore.structures.service;
+package org.marmotgraph.primaryStore.instances.service;
 
-import org.marmotgraph.primaryStore.structures.model.SpaceDefinition;
+import org.marmotgraph.primaryStore.instances.model.Space;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface SpaceDefinitionRepository extends JpaRepository<SpaceDefinition, String> {
+public interface SpaceRepository extends JpaRepository<Space, String> {
 
 
 

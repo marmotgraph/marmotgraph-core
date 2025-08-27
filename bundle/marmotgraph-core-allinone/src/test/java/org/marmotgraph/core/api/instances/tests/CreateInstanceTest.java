@@ -26,7 +26,7 @@ package org.marmotgraph.core.api.instances.tests;
 
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.core.api.instances.TestContext;
 import org.marmotgraph.core.api.v3.InstancesV3;
 import org.marmotgraph.core.api.testutils.TestDataFactory;
@@ -36,7 +36,7 @@ import org.springframework.http.ResponseEntity;
 public class CreateInstanceTest extends AbstractInstanceTest {
 
     public JsonLdDoc testData = TestDataFactory.createTestData(smallPayload, 1, true);
-    public ResponseEntity<Result<NormalizedJsonLd>> response;
+    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> response;
 
     public CreateInstanceTest(TestContext testContext, InstancesV3 instances) {
         super(testContext, instances);

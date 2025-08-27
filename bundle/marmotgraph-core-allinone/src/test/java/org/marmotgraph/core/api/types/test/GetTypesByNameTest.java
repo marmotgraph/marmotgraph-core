@@ -25,7 +25,7 @@
 package org.marmotgraph.core.api.types.test;
 
 import org.marmotgraph.commons.model.ExtendedResponseConfiguration;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
 import org.marmotgraph.core.api.AbstractTest;
@@ -45,7 +45,7 @@ public class GetTypesByNameTest extends AbstractTest {
     private final SpaceName spaceName;
     private final boolean withProperties;
 
-    public  Result<Map<String, Result<TypeInformation>>> response;
+    public ResultWithExecutionDetails<Map<String, ResultWithExecutionDetails<TypeInformation>>> response;
 
     public GetTypesByNameTest(TestContext testContext, SpaceName spaceName, boolean withProperties, TypesV3 types, InstancesV3 instances) {
         super(testContext);

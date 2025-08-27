@@ -22,7 +22,7 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.primaryStore.structures.model;
+package org.marmotgraph.primaryStore.instances.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -34,7 +34,7 @@ import org.marmotgraph.commons.model.external.spaces.SpaceSpecification;
 @Entity
 @Getter
 @Setter
-public class SpaceDefinition {
+public class Space {
 
     @Id
     private String name;
@@ -42,23 +42,14 @@ public class SpaceDefinition {
     private boolean deferCache;
     private boolean clientSpace;
     private boolean scopeRelevant;
-    private boolean explicitlySpecified;
 
-
-    public static SpaceDefinition fromSpaceSpecification(SpaceSpecification spec) {
-        SpaceDefinition d = new SpaceDefinition();
+    public static Space fromSpaceSpecification(SpaceSpecification spec) {
+        Space d = new Space();
         d.setName(spec.getName());
         d.setAutoRelease(spec.getAutoRelease() != null ? spec.getAutoRelease() : false);
         d.setClientSpace(spec.getClientSpace() != null ? spec.getClientSpace() : false);
         d.setDeferCache(spec.getDeferCache() != null ? spec.getDeferCache() : false);
         d.setScopeRelevant(spec.getScopeRelevant() != null ? spec.getScopeRelevant() : false);
-        d.setExplicitlySpecified(true);
-        return d;
-    }
-
-    public static SpaceDefinition fromReflection(String spaceName){
-        SpaceDefinition d = new SpaceDefinition();
-        d.setName(spaceName);
         return d;
     }
 

@@ -30,7 +30,13 @@ import lombok.*;
 import java.io.Serializable;
 import java.util.UUID;
 
+@Getter
+@Setter
+@MappedSuperclass
 public abstract class DocumentRelation {
+
+    @EmbeddedId
+    private DocumentRelation.CompositeId compositeId;
 
     @Embeddable
     @Getter
@@ -43,11 +49,6 @@ public abstract class DocumentRelation {
         private String targetReference;
     }
 
-    public abstract  CompositeId getCompositeId();
-    public abstract void setCompositeId(CompositeId compositeId);
-
-    public abstract UUID getResolvedTarget();
-    public abstract void setResolvedTarget(UUID resolvedTarget);
-
+    private UUID resolvedTarget;
 
 }

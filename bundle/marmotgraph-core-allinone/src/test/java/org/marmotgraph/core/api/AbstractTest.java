@@ -30,7 +30,7 @@ import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.ExtendedResponseConfiguration;
 import org.marmotgraph.commons.model.PaginationParam;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.model.User;
 import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.permission.roles.Role;
@@ -148,19 +148,19 @@ public abstract class AbstractTest {
     }
 
 
-    public <T> T assureValidPayload(Result<T> result) {
+    public <T> T assureValidPayload(ResultWithExecutionDetails<T> result) {
         notNull(result, "The response body shouldn't be null");
         T data = result.getData();
         notNull(result, "The data section of the body shouldn't be null");
         return data;
     }
 
-    public <T> T assureValidPayload(ResponseEntity<Result<T>> response) {
+    public <T> T assureValidPayload(ResponseEntity<ResultWithExecutionDetails<T>> response) {
         notNull(response, "Response shouldn't be null");
         return assureValidPayload(response.getBody());
     }
 
-    public NormalizedJsonLd assureValidPayloadIncludingId(ResponseEntity<Result<NormalizedJsonLd>> response) {
+    public NormalizedJsonLd assureValidPayloadIncludingId(ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> response) {
         NormalizedJsonLd data = assureValidPayload(response);
         JsonLdId id = data.id();
         notNull(id, "The id shouldn't be null when creating an instance");

@@ -47,10 +47,6 @@ public class AuthContext {
         return authentication.getRoles();
     }
 
-    public UserWithRoles getUserWithRolesWithoutTermsCheck() {
-        return authentication.getRoles();
-    }
-
     public Space getClientSpace(){
         return getUserWithRoles()!=null && getUserWithRoles().getClientId()!=null ? new Space(new SpaceName(getUserWithRoles().getClientId()),  false, true, false) : null;
     }

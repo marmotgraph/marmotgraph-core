@@ -31,23 +31,7 @@ import lombok.Setter;
 import java.util.List;
 import java.util.UUID;
 
-@Table(name="released_documents")
 @Entity
-@Getter
-@Setter
-public class ReleasedPayload {
-
-    @Id
-    private UUID uuid;
-
-    @Column(columnDefinition = "TEXT")
-    private String jsonPayload;
-
-    @ElementCollection
-    private List<String> types;
-
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "uuid", referencedColumnName = "uuid")
-    private InstanceInformation globalInstanceInformation;
+public class ReleasedPayload extends Payload {
 
 }

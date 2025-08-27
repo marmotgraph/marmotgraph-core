@@ -95,6 +95,7 @@ public class AuthenticationAPI implements Authentication.Client {
         return userProfile != null ? keycloakController.buildUserInfoFromKeycloak(userProfile.claims()) : null;
     }
 
+    //TODO caching by token?
     @Override
     public UserWithRoles getRoles() {
         UserOrClientProfile userProfile = keycloakController.getUserProfile(true);
@@ -104,6 +105,7 @@ public class AuthenticationAPI implements Authentication.Client {
             if(clientProfile!=null && !keycloakController.isServiceAccount(clientProfile.claims())){
                 throw new UnauthorizedException("The client authorization credentials you've passed doesn't belong to a service account. This is not allowed!");
             }
+            //TODO we could skip the invitation roles if the user already has global permissions starting from REVIEWER role (since the user is allowed to read everything)
             List<UUID> invitationRoles = invitationsService.getAllInvitationsForUserId(user.getNativeId());
             return new UserWithRoles(user, userProfile.roleNames(), clientProfile != null ? clientProfile.roleNames() : null, invitationRoles,
                     keycloakController.getClientInfoFromKeycloak(clientProfile != null ? clientProfile.claims() : null));

@@ -25,7 +25,7 @@
 package org.marmotgraph.core.api.spaces.test;
 
 import org.marmotgraph.commons.model.ExtendedResponseConfiguration;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.model.external.spaces.SpaceInformation;
 import org.marmotgraph.core.api.AbstractTest;
 import org.marmotgraph.core.api.instances.TestContext;
@@ -38,7 +38,7 @@ public class GetSpaceWithPermissionsTest extends AbstractTest {
 
     private final InstancesV3 instances;
     private final SpacesV3 spaces;
-    public Result<SpaceInformation> space;
+    public ResultWithExecutionDetails<SpaceInformation> space;
 
     public GetSpaceWithPermissionsTest(TestContext testContext, InstancesV3 instances, SpacesV3 spaces) {
         super(testContext);

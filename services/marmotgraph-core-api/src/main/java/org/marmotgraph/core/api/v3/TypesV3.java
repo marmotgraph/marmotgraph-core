@@ -37,7 +37,7 @@ import org.marmotgraph.commons.markers.ExposesType;
 import org.marmotgraph.commons.markers.WritesData;
 import org.marmotgraph.commons.model.PaginatedResult;
 import org.marmotgraph.commons.model.PaginationParam;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
@@ -76,8 +76,8 @@ public class TypesV3 {
     @PostMapping("/typesByName")
     @ExposesType
     @Advanced
-    public Result<Map<String, Result<TypeInformation>>> getTypesByName(@RequestBody List<String> typeNames, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space) {
-        return Result.ok(graphDBTypes.getTypesByName(typeNames, stage.getStage(), space, withProperties, withIncomingLinks));
+    public ResultWithExecutionDetails<Map<String, ResultWithExecutionDetails<TypeInformation>>> getTypesByName(@RequestBody List<String> typeNames, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space) {
+        return ResultWithExecutionDetails.ok(graphDBTypes.getTypesByName(typeNames, stage.getStage(), space, withProperties, withIncomingLinks));
     }
 
     @Operation(summary = "Get type specification")

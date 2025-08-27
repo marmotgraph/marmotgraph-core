@@ -29,7 +29,7 @@ import org.marmotgraph.commons.api.authentication.Authentication;
 import org.marmotgraph.commons.config.openApiGroups.Extra;
 import org.marmotgraph.commons.config.openApiGroups.Simple;
 import org.marmotgraph.commons.markers.ExposesUserInfo;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.model.User;
 import org.marmotgraph.commons.models.UserWithRoles;
 import io.swagger.v3.oas.annotations.Operation;
@@ -55,18 +55,18 @@ public class UsersV3 {
     @GetMapping("/me")
     @ExposesUserInfo
     @Simple
-    public ResponseEntity<Result<User>> myUserInfo() {
+    public ResponseEntity<ResultWithExecutionDetails<User>> myUserInfo() {
         User myUserInfo = authentication.getMyUserInfo();
-        return myUserInfo!=null ? ResponseEntity.ok(Result.ok(myUserInfo)) : ResponseEntity.notFound().build();
+        return myUserInfo!=null ? ResponseEntity.ok(ResultWithExecutionDetails.ok(myUserInfo)) : ResponseEntity.notFound().build();
     }
 
     @Operation(summary = "Retrieve the roles for the current user")
     @GetMapping("/me/roles")
     @ExposesUserInfo
     @Extra
-    public ResponseEntity<Result<UserWithRoles>> myRoles() {
+    public ResponseEntity<ResultWithExecutionDetails<UserWithRoles>> myRoles() {
         final UserWithRoles roles = authentication.getRoles();
-        return roles!=null ? ResponseEntity.ok(Result.ok(roles)) : ResponseEntity.notFound().build();
+        return roles!=null ? ResponseEntity.ok(ResultWithExecutionDetails.ok(roles)) : ResponseEntity.notFound().build();
     }
 
 }

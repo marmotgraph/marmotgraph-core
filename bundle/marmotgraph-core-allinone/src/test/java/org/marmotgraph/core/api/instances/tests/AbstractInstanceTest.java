@@ -26,7 +26,7 @@ package org.marmotgraph.core.api.instances.tests;
 
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.core.api.AbstractTest;
 import org.marmotgraph.core.api.instances.TestContext;
 import org.marmotgraph.core.api.v3.InstancesV3;
@@ -44,7 +44,7 @@ public abstract class AbstractInstanceTest extends AbstractTest {
 
     protected NormalizedJsonLd createInstanceWithServerDefinedUUID(int iteration) {
         JsonLdDoc originalDoc = TestDataFactory.createTestData(smallPayload, iteration, true);
-        ResponseEntity<Result<NormalizedJsonLd>> response = instances.createNewInstance(originalDoc, "functionalityTest", defaultResponseConfiguration);
+        ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> response = instances.createNewInstance(originalDoc, "functionalityTest", defaultResponseConfiguration);
         return response.getBody().getData();
     }
 

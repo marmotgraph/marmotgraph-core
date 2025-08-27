@@ -29,9 +29,7 @@ import org.marmotgraph.commons.jsonld.IndexedJsonLdDoc;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.model.ReleaseStatus;
-import org.marmotgraph.commons.model.Result;
-import org.marmotgraph.commons.params.ReleaseTreeScope;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.core.api.v3.InstancesV3;
 import org.marmotgraph.core.model.ExposedStage;
 import org.marmotgraph.core.api.testutils.TestDataFactory;
@@ -58,7 +56,7 @@ class WorkflowSystemTest extends AbstractInstancesLoadTest {
     void testReleaseAndUnreleaseAndReReleaseInstance() {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
-        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
+        ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
         JsonLdId id = instance.getBody().getData().id();
         IndexedJsonLdDoc from = IndexedJsonLdDoc.from(instance.getBody().getData());
 
@@ -83,16 +81,16 @@ class WorkflowSystemTest extends AbstractInstancesLoadTest {
     void testInsertAndDeleteInstance() throws IOException {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
-        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
+        ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
         JsonLdId id = instance.getBody().getData().id();
 
         //When
-        ResponseEntity<Result<Void>> resultResponseEntity = instances.deleteInstance(idUtils.getUUID(id));
+        ResponseEntity<ResultWithExecutionDetails<Void>> resultResponseEntity = instances.deleteInstance(idUtils.getUUID(id));
 
         //Then
         assertEquals(HttpStatus.OK, resultResponseEntity.getStatusCode());
 
-        ResponseEntity<Result<NormalizedJsonLd>> instanceById = instances.getInstanceById(idUtils.getUUID(id), ExposedStage.IN_PROGRESS, DEFAULT_RESPONSE_CONFIG);
+        ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> instanceById = instances.getInstanceById(idUtils.getUUID(id), ExposedStage.IN_PROGRESS, DEFAULT_RESPONSE_CONFIG);
 
         assertEquals(HttpStatus.NOT_FOUND, instanceById.getStatusCode());
 
@@ -103,13 +101,13 @@ class WorkflowSystemTest extends AbstractInstancesLoadTest {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
 
-        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
+        ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
         JsonLdId id = instance.getBody().getData().id();
 
         //When
         JsonLdDoc doc = new JsonLdDoc();
         doc.addProperty("https://marmotgraph.org/fooE", "fooEUpdated");
-        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), DEFAULT_RESPONSE_CONFIG);
+        ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> resultResponseEntity = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), DEFAULT_RESPONSE_CONFIG);
 
         //Then
         assertEquals("fooEUpdated", resultResponseEntity.getBody().getData().getAs("https://marmotgraph.org/fooE", String.class));
@@ -120,7 +118,7 @@ class WorkflowSystemTest extends AbstractInstancesLoadTest {
     void testFullCycle() throws IOException {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
-        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
+        ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
         JsonLdId id = instance.getBody().getData().id();
         IndexedJsonLdDoc from = IndexedJsonLdDoc.from(instance.getBody().getData());
 
@@ -128,7 +126,7 @@ class WorkflowSystemTest extends AbstractInstancesLoadTest {
         //Update
         JsonLdDoc doc = new JsonLdDoc();
         doc.addProperty("https://marmotgraph.org/fooE", "fooEUpdated");
-        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), DEFAULT_RESPONSE_CONFIG);
+        ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> resultResponseEntity = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), DEFAULT_RESPONSE_CONFIG);
 
         //Then
         assertEquals("fooEUpdated", resultResponseEntity.getBody().getData().getAs("https://marmotgraph.org/fooE", String.class));

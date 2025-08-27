@@ -28,7 +28,7 @@ import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.ExtendedResponseConfiguration;
 import org.marmotgraph.commons.model.PaginatedResult;
 import org.marmotgraph.commons.model.PaginationParam;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
 import org.marmotgraph.core.api.AbstractTest;
 import org.marmotgraph.core.api.instances.TestContext;
@@ -59,7 +59,7 @@ public class GetTypesForInvitation extends AbstractTest {
     @Override
     protected void setup() {
         // We create a new instance so the type is implicitly created.
-        final ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), "functionalityTest", new ExtendedResponseConfiguration());
+        final ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> instance = instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), "functionalityTest", new ExtendedResponseConfiguration());
         instances.inviteUserForInstance(testContext.getIdUtils().getUUID(instance.getBody().getData().id()), USER_ID);
     }
 

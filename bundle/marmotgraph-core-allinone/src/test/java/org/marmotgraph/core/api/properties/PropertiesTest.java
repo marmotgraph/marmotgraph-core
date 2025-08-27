@@ -27,7 +27,7 @@ package org.marmotgraph.core.api.properties;
 import org.junit.jupiter.api.Assertions;
 import org.marmotgraph.commons.exception.ForbiddenException;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
 import org.marmotgraph.commons.permission.roles.RoleMapping;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
@@ -68,7 +68,7 @@ class PropertiesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            Map<String, Result<TypeInformation>> result = test.assureValidPayload(this.types.getTypesByName(Collections.singletonList(test.type), ExposedStage.IN_PROGRESS, true, true, null));
+            Map<String, ResultWithExecutionDetails<TypeInformation>> result = test.assureValidPayload(this.types.getTypesByName(Collections.singletonList(test.type), ExposedStage.IN_PROGRESS, true, true, null));
             TypeInformation typeDefinition = test.assureValidPayload(result.get(test.type));
             List<NormalizedJsonLd> properties = typeDefinition.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class);
             NormalizedJsonLd propertydef = properties.stream().filter(p -> p.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class).equals(test.property)).findFirst().orElse(null);

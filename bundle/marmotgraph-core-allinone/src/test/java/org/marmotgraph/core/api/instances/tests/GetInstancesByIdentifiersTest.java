@@ -27,6 +27,7 @@ package org.marmotgraph.core.api.instances.tests;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.core.api.instances.TestContext;
 import org.marmotgraph.core.api.v3.InstancesV3;
 import org.marmotgraph.core.model.ExposedStage;
@@ -34,12 +35,13 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class GetInstancesByIdentifiersTest extends AbstractInstanceTest {
 
-    public Result<Map<String, Result<NormalizedJsonLd>>> response;
-    public ResponseEntity<Result<NormalizedJsonLd>> updateResult;
+    public ResultWithExecutionDetails<Map<String, Result<NormalizedJsonLd>>> response;
+    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> updateResult;
     public NormalizedJsonLd originalInstance;
     public String identifier = "https://foo/bar";
     public JsonLdDoc doc;

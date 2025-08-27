@@ -404,9 +404,9 @@ class InstancesTest extends AbstractFunctionalityTest {
             assertNotNull(test.response.getData());
             assertEquals(2, test.response.getData().size());
             test.ids.forEach(id -> {
-                assertTrue(test.response.getData().containsKey(id.toString()));
+                assertTrue(test.response.getData().containsKey(id));
                 NormalizedJsonLd original = test.originalInstances.get(id);
-                Result<NormalizedJsonLd> result = test.response.getData().get(id.toString());
+                Result<NormalizedJsonLd> result = test.response.getData().get(id);
                 assertNotNull(result.getData());
                 assertEquals(result.getData(), original);
             });
@@ -426,7 +426,7 @@ class InstancesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             for (UUID id : test.ids) {
-                Result.Error error = test.response.getData().get(id.toString()).getError();
+                ResultWithExecutionDetails.Error error = test.response.getData().get(id.toString()).getError();
                 assertNotNull(error);
                 assertEquals(403, error.getCode());
             }
@@ -466,7 +466,7 @@ class InstancesTest extends AbstractFunctionalityTest {
         test.execute(() -> {
 
             //Then
-            Result.Error error = test.response.getData().get(test.identifier).getError();
+            ResultWithExecutionDetails.Error error = test.response.getData().get(test.identifier).getError();
             assertNotNull(error);
             assertEquals(403, error.getCode());
         });
@@ -481,7 +481,7 @@ class InstancesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            ResponseEntity<Result<NormalizedJsonLd>> instanceById = test.fetchInstance();
+            ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> instanceById = test.fetchInstance();
             assertEquals(HttpStatus.NOT_FOUND, instanceById.getStatusCode(), "We expect a 404 to be returned from instanceById");
         });
     }
@@ -505,7 +505,7 @@ class InstancesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            ResponseEntity<Result<NormalizedJsonLd>> instanceById = test.fetchInstance();
+            ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> instanceById = test.fetchInstance();
             NormalizedJsonLd releasedInstance = test.assureValidPayloadIncludingId(instanceById);
             final String firstRelease = releasedInstance.getAs(EBRAINSVocabulary.META_FIRST_RELEASED_AT, String.class);
             assertNotNull(firstRelease);
@@ -549,11 +549,11 @@ class InstancesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            ResponseEntity<Result<NormalizedJsonLd>> releasedInstanceById = test.fetchInstance(ExposedStage.RELEASED);
+            ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> releasedInstanceById = test.fetchInstance(ExposedStage.RELEASED);
             assertEquals(HttpStatus.NOT_FOUND, releasedInstanceById.getStatusCode(), "We expect a 404 to be returned from instanceById in released scope");
 
             //Just to be sure - we want to check if the instance is still available in the inferred space.
-            ResponseEntity<Result<NormalizedJsonLd>> inferredInstanceById = test.fetchInstance(ExposedStage.IN_PROGRESS);
+            ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> inferredInstanceById = test.fetchInstance(ExposedStage.IN_PROGRESS);
             test.assureValidPayloadIncludingId(inferredInstanceById);
         });
     }

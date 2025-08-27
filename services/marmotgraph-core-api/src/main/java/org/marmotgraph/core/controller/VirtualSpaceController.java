@@ -53,8 +53,8 @@ public class VirtualSpaceController {
         r.setReturnEmbedded(responseConfiguration.isReturnEmbedded());
         r.setReturnPayload(responseConfiguration.isReturnPayload());
         r.setReturnPermissions(responseConfiguration.isReturnPermissions());
-        final List<String> invitationIds = authContext.getUserWithRoles().getInvitations().stream().map(UUID::toString).sorted().collect(Collectors.toList());
-        final Map<String, Result<NormalizedJsonLd>> instancesByIds = instanceController.getInstancesByIds(invitationIds, stage, r, type);
+        final List<UUID> invitationIds = authContext.getUserWithRoles().getInvitations().stream().sorted().collect(Collectors.toList());
+        final Map<UUID, Result<NormalizedJsonLd>> instancesByIds = instanceController.getInstancesByIds(invitationIds, stage, r, type);
         return instancesByIds.values().stream().map(Result::getData).filter(Objects::nonNull).collect(Collectors.toList());
     }
 

@@ -240,7 +240,6 @@ public class CacheController {
     private static final int DEFER_CACHE_EVICTION_DELAY_IN_S = 30;
     private static final int DEFER_CACHE_EVICTION_MAX_MAP_ENTRIES = 1000;
 
-    @Scheduled(fixedRate = 30000)
     public synchronized void checkDeferredCacheEviction() {
             logger.info("Checking for deferred cache eviction...");
             final Set<Tuple<SpaceName, DataStage>> handledSpaceTypes = deferredSpaceTypesForCacheEviction.keySet().stream().filter(k ->

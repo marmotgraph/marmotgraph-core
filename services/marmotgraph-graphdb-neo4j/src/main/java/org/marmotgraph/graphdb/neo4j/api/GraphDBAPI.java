@@ -62,17 +62,6 @@ public class GraphDBAPI implements GraphDB.Client {
 
     @Override
     @ExposesMinimalData
-    public GraphEntity getNeighbors(String space, UUID id, DataStage stage) {
-        throw new NotImplementedException();
-    }
-
-    @Override
-    public Paginated<NormalizedJsonLd> getIncomingLinks(String space, UUID id, DataStage stage, String property, String type, PaginationParam paginationParam) {
-        throw new NotImplementedException();
-    }
-
-    @Override
-    @ExposesMinimalData
     public ScopeElement getScopeForInstance(String space, UUID id, DataStage stage, boolean applyRestrictions){
         throw new NotImplementedException();
     }

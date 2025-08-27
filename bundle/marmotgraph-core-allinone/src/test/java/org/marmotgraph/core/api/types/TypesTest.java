@@ -27,7 +27,7 @@ package org.marmotgraph.core.api.types;
 import org.junit.jupiter.api.Assertions;
 import org.marmotgraph.commons.exception.ForbiddenException;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
 import org.marmotgraph.commons.permission.roles.RoleMapping;
@@ -77,7 +77,7 @@ class TypesTest extends AbstractFunctionalityTest {
 
         //When
         test.execute(() -> {
-            Result<Map<String, Result<TypeInformation>>> typesByName = types.getTypesByName(Collections.singletonList(test.typeName), ExposedStage.IN_PROGRESS, false, false,null);
+            ResultWithExecutionDetails<Map<String, ResultWithExecutionDetails<TypeInformation>>> typesByName = types.getTypesByName(Collections.singletonList(test.typeName), ExposedStage.IN_PROGRESS, false, false,null);
             TypeInformation data = typesByName.getData().get(test.typeName).getData();
             assertNotNull(data);
             assertEquals(test.typeName, data.getIdentifier());
@@ -224,7 +224,7 @@ class TypesTest extends AbstractFunctionalityTest {
         test.execute(()->{
 
             //Then
-            Map<String, Result<TypeInformation>> map = test.assureValidPayload(test.response);
+            Map<String, ResultWithExecutionDetails<TypeInformation>> map = test.assureValidPayload(test.response);
             test.assureValidPayload(map.get(TestDataFactory.TEST_TYPE));
         });
     }
@@ -237,7 +237,7 @@ class TypesTest extends AbstractFunctionalityTest {
         //When
         test.execute(()->{
             //Then
-            Result.Error error = test.response.getData().get(TestDataFactory.TEST_TYPE).getError();
+            ResultWithExecutionDetails.Error error = test.response.getData().get(TestDataFactory.TEST_TYPE).getError();
             assertNotNull(error);
             assertEquals(403, error.getCode());
         });

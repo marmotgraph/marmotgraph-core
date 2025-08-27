@@ -25,7 +25,7 @@
 package org.marmotgraph.core.api.metrics;
 
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.core.api.testutils.TestDataFactory;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.rank.Median;
@@ -148,8 +148,8 @@ public class PerformanceTestUtils {
         }
     }
 
-    public <T> List<ResponseEntity<Result<T>>> executeMany(int numberOfFields, boolean normalize, int numberOfIteration, boolean parallelize, Link link, CallableWithPayload<ResponseEntity<Result<T>>> r) {
-        List<ResponseEntity<Result<T>>> result = null;
+    public <T> List<ResponseEntity<ResultWithExecutionDetails<T>>> executeMany(int numberOfFields, boolean normalize, int numberOfIteration, boolean parallelize, Link link, CallableWithPayload<ResponseEntity<ResultWithExecutionDetails<T>>> r) {
+        List<ResponseEntity<ResultWithExecutionDetails<T>>> result = null;
         if (parallelize) {
             for (int i = 0; i < THREADS_ORDER.length; i++) {
                 result = runWithThreads(numberOfFields, normalize, link, numberOfIteration, i * numberOfIteration, r, THREADS_ORDER[i]);
@@ -164,12 +164,12 @@ public class PerformanceTestUtils {
     }
 
 
-    private <T> List<ResponseEntity<Result<T>>> runWithThreads(int numberOfFields, boolean normalize, Link link, int numberOfIteration, int idOffset, CallableWithPayload<ResponseEntity<Result<T>>> r, int threads) {
-        List<ResponseEntity<Result<T>>> result;
+    private <T> List<ResponseEntity<ResultWithExecutionDetails<T>>> runWithThreads(int numberOfFields, boolean normalize, Link link, int numberOfIteration, int idOffset, CallableWithPayload<ResponseEntity<ResultWithExecutionDetails<T>>> r, int threads) {
+        List<ResponseEntity<ResultWithExecutionDetails<T>>> result;
         Instant start = Instant.now();
         ExecutorService executorService = Executors.newFixedThreadPool(threads);
         //When
-        List<Future<ResponseEntity<Result<T>>>> futureResults = new ArrayList<>();
+        List<Future<ResponseEntity<ResultWithExecutionDetails<T>>>> futureResults = new ArrayList<>();
         for (int i = 0; i < numberOfIteration; i++) {
             final int iteration = i + idOffset;
             futureResults.add(executorService.submit(() -> {
@@ -182,7 +182,7 @@ public class PerformanceTestUtils {
             Instant end = Instant.now();
             result = futureResults.stream().map(tempres -> {
                 try {
-                    ResponseEntity<Result<T>> resultResponseEntity = tempres.get();
+                    ResponseEntity<ResultWithExecutionDetails<T>> resultResponseEntity = tempres.get();
                     System.out.printf("Result: %d ms%n", Objects.requireNonNull(resultResponseEntity.getBody()).getDurationInMs());
                     return resultResponseEntity;
                 } catch (InterruptedException | ExecutionException e) {
@@ -193,7 +193,7 @@ public class PerformanceTestUtils {
 
             List<GoogleCharts.Value> values = new ArrayList<>();
             Long startTime = result.stream().min(Comparator.comparing(res -> res.getBody().getStartTime())).get().getBody().getStartTime();
-            for (ResponseEntity<Result<T>> res : result) {
+            for (ResponseEntity<ResultWithExecutionDetails<T>> res : result) {
                 values.add(new GoogleCharts.Value(String.valueOf(values.size()), String.valueOf(res.getStatusCode()), res.getBody().getStartTime()-startTime, res.getBody().getStartTime()-startTime+res.getBody().getDurationInMs()));
             }
             double[] durations = result.stream().mapToDouble(res -> Objects.requireNonNull(res.getBody()).getDurationInMs().doubleValue()).toArray();

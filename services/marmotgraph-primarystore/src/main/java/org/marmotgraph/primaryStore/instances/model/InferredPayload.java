@@ -24,33 +24,16 @@
 
 package org.marmotgraph.primaryStore.instances.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-import java.util.UUID;
-
-@Table(name="inferred_documents")
 @Entity
 @Getter
 @Setter
-public class InferredPayload {
-
-    @Id
-    private UUID uuid;
-
-    @Column(columnDefinition = "TEXT")
-    private String jsonPayload;
+public class InferredPayload extends Payload {
 
     @Column(columnDefinition = "TEXT")
     private String alternative;
-
-    @ElementCollection
-    private List<String> types;
-
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "uuid", referencedColumnName = "uuid")
-    private InstanceInformation instanceInformation;
-
 }

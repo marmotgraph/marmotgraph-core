@@ -26,7 +26,7 @@ package org.marmotgraph.core.api.instances.tests;
 
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.core.api.instances.TestContext;
 import org.marmotgraph.core.api.v3.InstancesV3;
 import org.marmotgraph.core.api.testutils.TestDataFactory;
@@ -38,7 +38,7 @@ import java.util.UUID;
 public class CreateInstanceWithSpecifiedUUIDTest extends AbstractInstanceTest {
 
     public JsonLdDoc testData = TestDataFactory.createTestData(smallPayload, 1, true);
-    public ResponseEntity<Result<NormalizedJsonLd>> response;
+    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> response;
     public UUID clientSpecifiedUUID = UUID.randomUUID();
 
     public CreateInstanceWithSpecifiedUUIDTest(TestContext testContext, InstancesV3 instances) {

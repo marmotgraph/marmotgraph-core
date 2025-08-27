@@ -32,7 +32,6 @@ import org.marmotgraph.commons.model.ReleaseStatus;
 import java.util.Set;
 import java.util.UUID;
 
-@Table(name="instances")
 @Entity
 @Getter
 @Setter

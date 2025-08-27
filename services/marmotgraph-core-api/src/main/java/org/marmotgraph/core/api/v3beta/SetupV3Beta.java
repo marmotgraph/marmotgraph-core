@@ -30,7 +30,7 @@ import org.marmotgraph.commons.config.openApiGroups.Admin;
 import org.marmotgraph.commons.config.openApiGroups.Simple;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.markers.ExposesConfigurationInformation;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.model.TermsOfUse;
 import org.marmotgraph.commons.permission.roles.RoleMapping;
 import io.swagger.v3.oas.annotations.Operation;
@@ -82,11 +82,11 @@ public class SetupV3Beta {
     @ExposesConfigurationInformation
     @SecurityRequirements
     @Simple
-    public Result<JsonLdDoc> getOpenIdConfigUrl() {
+    public ResultWithExecutionDetails<JsonLdDoc> getOpenIdConfigUrl() {
         JsonLdDoc ld = new JsonLdDoc();
         ld.addProperty("endpoint", authentication.openIdConfigUrl());
         ld.addProperty("loginClientId", authentication.loginClientId());
-        return Result.ok(ld);
+        return ResultWithExecutionDetails.ok(ld);
     }
 
 }

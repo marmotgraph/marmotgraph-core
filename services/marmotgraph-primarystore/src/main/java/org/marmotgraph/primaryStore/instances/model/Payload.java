@@ -22,42 +22,30 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.commons.model;
+package org.marmotgraph.primaryStore.instances.model;
 
-import java.util.Collection;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
-public class AmbiguousResult<T> extends ResultWithExecutionDetails<T> {
+import java.util.List;
+import java.util.UUID;
+@MappedSuperclass
+@Getter
+@Setter
+public abstract class Payload {
 
-    private Collection<T> ambiguousData;
+    @Id
+    private UUID uuid;
 
-    public static <T> ResultWithExecutionDetails<T> ok(Collection<T> data) {
-        return ok(data, null);
-    }
+    @Column(columnDefinition = "TEXT")
+    private String jsonPayload;
 
-    public static <T> ResultWithExecutionDetails<T> ok(Collection<T> data, String message) {
-        if(data==null || data.isEmpty()){
-            return null;
-        }
-        else if(data.size()==1){
-            return ok(data.iterator().next(), message);
-        }
-        else {
-            AmbiguousResult<T> result = new AmbiguousResult<>();
-            result.ambiguousData = data;
-            if (message != null) {
-                result.message = message;
-            }
-            return result;
-        }
-    }
+    @ElementCollection
+    private List<String> types;
 
-    @Override
-    public T getData() {
-        return data;
-    }
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "uuid", referencedColumnName = "uuid")
+    private InstanceInformation instanceInformation;
 
-    @Override
-    public String getMessage() {
-        return message;
-    }
 }

@@ -26,7 +26,7 @@ package org.marmotgraph.commons.model;
 
 import java.util.stream.Stream;
 
-public class PaginatedStreamResult<T> extends Result<Stream<T>> {
+public class PaginatedStreamResult<T> extends ResultWithExecutionDetails<Stream<T>> {
     private Long total;
     private long size;
     private long from;

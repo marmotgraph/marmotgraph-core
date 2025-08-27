@@ -30,6 +30,7 @@ import org.marmotgraph.authentication.models.Invitation;
 import org.marmotgraph.commons.api.primaryStore.Scopes;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -52,6 +53,9 @@ public class InvitationsService {
 
     public List<UUID> getAllInvitationsForUserId(String userId) {
         List<UUID> instanceIds = em.createQuery("select i.compositeId.instanceId from Invitation i where i.compositeId.userId = :userId", UUID.class).setParameter("userId", userId).getResultList();
+        if(instanceIds.isEmpty()){
+            return Collections.emptyList();
+        }
         List<UUID> relatedInstances = scopes.relatedInstancesByScope(instanceIds);
         return Stream.concat(instanceIds.stream(), relatedInstances.stream()).distinct().toList();
     }

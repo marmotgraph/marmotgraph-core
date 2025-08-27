@@ -32,7 +32,7 @@ import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.Paginated;
 import org.marmotgraph.commons.model.PaginationParam;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -51,8 +51,8 @@ public class TypesAPI implements Types.Client {
     }
 
     @Override
-    public Map<String, Result<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space,
-                                                               boolean withProperties, boolean withIncomingLinks) {
+    public Map<String, ResultWithExecutionDetails<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space,
+                                                                                   boolean withProperties, boolean withIncomingLinks) {
         throw new NotImplementedException();
     }
 

@@ -32,7 +32,7 @@ import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.ExtendedResponseConfiguration;
 import org.marmotgraph.commons.model.PaginationParam;
 import org.marmotgraph.commons.model.ResponseConfiguration;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import org.marmotgraph.core.api.v3.InstancesV3;
@@ -76,7 +76,7 @@ class ConsistencyCheckTest {
             JsonLdDoc doc = new JsonLdDoc();
             doc.addTypes(type);
             doc.addProperty("http://schema.hbp.eu/foo", "instance" + i);
-            ResponseEntity<Result<NormalizedJsonLd>> document = instances.createNewInstance(doc, "foo", DEFAULT_RESPONSE_CONFIG);
+            ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> document = instances.createNewInstance(doc, "foo", DEFAULT_RESPONSE_CONFIG);
             JsonLdId id = Objects.requireNonNull(document.getBody()).getData().id();
             System.out.printf("Created instance %s%n", id.getId());
         }

@@ -23,54 +23,28 @@
  */
 
 package org.marmotgraph.commons.model;
+import lombok.Getter;
+
+import java.util.Date;
 import java.util.UUID;
 
-public class Result<T> {
+@Getter
+public class ResultWithExecutionDetails<T> extends Result<T> {
 
-    protected T data;
-    protected String message;
-    protected Error error;
+    protected Long startTime;
+    protected Long durationInMs;
+    protected UUID transactionId;
 
-    public static class Error{
-        private int code;
-        private String message;
-        private UUID instanceId;
-
-        public int getCode() {
-            return code;
-        }
-
-        public void setCode(int code) {
-            this.code = code;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-
-        public void setMessage(String message) {
-            this.message = message;
-        }
-
-        public UUID getInstanceId() {
-            return instanceId;
-        }
-
-        public void setInstanceId(UUID instanceId) {
-            this.instanceId = instanceId;
-        }
-    }
-
-    public static <T> Result<T> ok(){
+    public static <T> ResultWithExecutionDetails<T> ok(){
         return ok(null, null);
     }
 
-    public static <T> Result<T> ok(T data) {
+    public static <T> ResultWithExecutionDetails<T> ok(T data) {
         return ok(data, null);
     }
 
-    public static <T> Result<T> ok(T data, String message) {
-        Result<T> result = new Result<>();
+    public static <T> ResultWithExecutionDetails<T> ok(T data, String message) {
+        ResultWithExecutionDetails<T> result = new ResultWithExecutionDetails<>();
         result.data = data;
         if (message != null) {
             result.message = message;
@@ -78,11 +52,11 @@ public class Result<T> {
         return result;
     }
 
-    public static <T> Result<T> nok(int errorCode, String message){
+    public static <T> ResultWithExecutionDetails<T> nok(int errorCode, String message){
         return nok(errorCode, message, null);
     }
-    public static <T> Result<T> nok(int errorCode, String message, UUID uuid){
-        Result<T> result = new Result<>();
+    public static <T> ResultWithExecutionDetails<T> nok(int errorCode, String message, UUID uuid){
+        ResultWithExecutionDetails<T> result = new ResultWithExecutionDetails<>();
         Error error = new Error();
         error.setCode(errorCode);
         error.setMessage(message);
@@ -93,16 +67,10 @@ public class Result<T> {
         return result;
     }
 
-
-    public Error getError() {
-        return error;
+    public ResultWithExecutionDetails<T> setExecutionDetails(Date startTime, Date endTime){
+        this.startTime = startTime.getTime();
+        this.durationInMs = endTime.getTime() - this.startTime;
+        return this;
     }
 
-    public T getData() {
-        return data;
-    }
-
-    public String getMessage() {
-        return message;
-    }
 }

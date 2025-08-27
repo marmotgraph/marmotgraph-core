@@ -24,22 +24,9 @@
 
 package org.marmotgraph.primaryStore.instances.model;
 
-import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.Setter;
 
-import java.util.UUID;
-
-@Table(name="released_document_relations")
 @Entity
-@Getter
-@Setter
 public class ReleasedDocumentRelation extends DocumentRelation {
 
-    @EmbeddedId
-    private DocumentRelation.CompositeId compositeId;
-
-    private UUID resolvedTarget;
 }

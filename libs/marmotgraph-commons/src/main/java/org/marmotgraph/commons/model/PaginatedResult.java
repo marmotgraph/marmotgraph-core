@@ -26,7 +26,7 @@ package org.marmotgraph.commons.model;
 
 import java.util.List;
 
-public class PaginatedResult<T> extends Result<List<T>> {
+public class PaginatedResult<T> extends ResultWithExecutionDetails<List<T>> {
     private Long total;
     private long size;
     private long from;

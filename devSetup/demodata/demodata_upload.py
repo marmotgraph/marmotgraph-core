@@ -42,10 +42,14 @@ def upload():
             if result.error and result.error.code == 409:
                 result = client.instances.contribute_to_full_replacement(data, result.error.uuid)
             if result.error:
-                print(f"Wasn't able to upload the instance {testdata} - error: {e}")
+                print(f"Wasn't able to upload the instance {testdata} - error: {result.error}")
             else:
                 print(f"Upload of {testdata} was successful", flush=True)
-
+                error = client.instances.release(result.data.uuid)
+                if error:
+                    print(f"Wasn't able to release the instance {testdata} - error: {error}")
+                else:
+                    print(f"Release of {testdata} was successful", flush=True)
 
 endpoint_with_protocol = f"http://{endpoint}" if endpoint.startswith("172.") or endpoint.startswith("localhost") else f"https://{endpoint}"
 number_of_retries = 30

@@ -27,6 +27,7 @@ package org.marmotgraph.primaryStore.instances.api;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.NotImplementedException;
 import org.marmotgraph.commons.AuthContext;
+import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.api.primaryStore.Instances;
 import org.marmotgraph.commons.exception.AmbiguousException;
 import org.marmotgraph.commons.exception.AmbiguousIdException;
@@ -42,6 +43,7 @@ import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.params.ReleaseTreeScope;
 import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permissions.controller.Permissions;
+import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.primaryStore.instances.model.InstanceInformation;
 import org.marmotgraph.primaryStore.instances.service.InstanceInformationRepository;
 import org.marmotgraph.primaryStore.instances.service.InstanceScopeService;
@@ -60,6 +62,7 @@ public class InstancesAPI implements Instances.Client {
     private final Permissions permissions;
     private final AuthContext authContext;
     private final InstanceScopeService scopes;
+    private final IdUtils idUtils;
 
     @Override
     public Map<UUID, InstanceId> resolveIds(List<IdWithAlternatives> idWithAlternatives, DataStage stage) throws AmbiguousIdException {
@@ -75,7 +78,7 @@ public class InstancesAPI implements Instances.Client {
 
     @Override
     public NormalizedJsonLd getInstanceById(UUID id, DataStage stage, boolean removeInternalProperties) {
-        Optional<NormalizedJsonLd> instanceById = payloadService.getInstanceById(id, stage);
+        Optional<NormalizedJsonLd> instanceById = payloadService.getInstanceById(id, stage, false, authContext.getUserWithRoles());
         if(instanceById.isPresent()) {
             NormalizedJsonLd normalizedJsonLd = instanceById.get();
             if(removeInternalProperties){
@@ -167,15 +170,29 @@ public class InstancesAPI implements Instances.Client {
     }
 
     @Override
-    public NormalizedJsonLd getInstanceById(String space, UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize, boolean removeInternalProperties) {
-        throw new NotImplementedException();
-
+    public NormalizedJsonLd getInstanceById(UUID id, DataStage stage, boolean returnPayload, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize, boolean removeInternalProperties) {
+        Optional<NormalizedJsonLd> instanceById = payloadService.getInstanceById(id, stage, returnPayload && returnAlternatives, authContext.getUserWithRoles());
+        if(instanceById.isEmpty()){
+            return null;
+        }
+        NormalizedJsonLd result = instanceById.get();
+        if(returnPayload){
+            if(removeInternalProperties){
+                result.removeAllInternalProperties();
+            }
+            if(!returnEmbedded){
+                result.removeEmbedded();
+            }
+        }
+        else{
+            String space = result.getAs(EBRAINSVocabulary.META_SPACE, String.class);
+            result = new NormalizedJsonLd();
+            result.setId(idUtils.buildAbsoluteUrl(id));
+            result.put(EBRAINSVocabulary.META_SPACE, space);
+        }
+        return result;
     }
 
-    @Override
-    public NormalizedJsonLd getInstanceByIdWithoutPayload(String space, UUID id, DataStage stage, boolean returnIncomingLinks, Long incomingLinksPageSize) {
-        throw new NotImplementedException();
-    }
 
     @Override
     @ExposesQuery
@@ -186,8 +203,8 @@ public class InstancesAPI implements Instances.Client {
 
     @Override
     @ExposesData
-    public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String typeName, String space, String searchByLabel, String filterProperty, String filterValue, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam) {
-        throw new NotImplementedException();
+    public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String typeName, String space, String searchByLabel, String filterProperty, String filterValue, boolean returnPayload, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam) {
+        return payloadService.getInstancesByType(stage, typeName, space, searchByLabel, filterProperty, filterValue, returnPayload, returnAlternatives, returnEmbedded, paginationParam);
     }
 
     @Override
@@ -198,8 +215,20 @@ public class InstancesAPI implements Instances.Client {
 
     @Override
     @ExposesData
-    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<UUID> ids, DataStage stage, String typeRestriction, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize) {
-        return payloadService.getInstancesByIds(ids, stage, typeRestriction, returnEmbedded, returnAlternatives, returnIncomingLinks, incomingLinksPageSize);
+    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<UUID> ids, DataStage stage, String typeRestriction, boolean returnPayload, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize) {
+        return payloadService.getInstancesByIds(ids, stage, typeRestriction, returnPayload, returnEmbedded, returnAlternatives, returnIncomingLinks, incomingLinksPageSize);
+    }
+
+
+    @Override
+    @ExposesMinimalData
+    public GraphEntity getNeighbors(String space, UUID id, DataStage stage) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public Paginated<NormalizedJsonLd> getIncomingLinks(String space, UUID id, DataStage stage, String property, String type, PaginationParam paginationParam) {
+        throw new NotImplementedException();
     }
 
 }

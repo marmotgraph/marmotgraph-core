@@ -26,7 +26,7 @@ package org.marmotgraph.core.api.instances.tests;
 
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.PaginationParam;
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.model.SuggestionResult;
 import org.marmotgraph.core.api.instances.TestContext;
 import org.marmotgraph.core.api.v3.InstancesV3;
@@ -35,7 +35,7 @@ import org.marmotgraph.core.model.ExposedStage;
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class GetSuggestionsTest extends AbstractInstanceTest {
 
-    public Result<SuggestionResult> response;
+    public ResultWithExecutionDetails<SuggestionResult> response;
     public NormalizedJsonLd originalInstance;
 
     public GetSuggestionsTest(TestContext testContext, InstancesV3 instances) {

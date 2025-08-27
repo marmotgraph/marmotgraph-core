@@ -52,7 +52,7 @@ public class CoreCacheController {
 
     public List<String> clearKeys(List<String> keys) {
 
-        if (!permissions.hasGlobalPermission(authContext.getUserWithRolesWithoutTermsCheck(), Functionality.CACHE_FLUSH)) {
+        if (!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.CACHE_FLUSH)) {
             throw new UnauthorizedException(CoreCacheController.NO_RIGHTS_TO_FLUSH_CACHE);
         }
 
@@ -70,7 +70,7 @@ public class CoreCacheController {
 
     public List<String> clearAllKeys() {
 
-        if (!permissions.hasGlobalPermission(authContext.getUserWithRolesWithoutTermsCheck(), Functionality.CACHE_FLUSH)) {
+        if (!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.CACHE_FLUSH)) {
             throw new UnauthorizedException(CoreCacheController.NO_RIGHTS_TO_FLUSH_CACHE);
         }
 
@@ -78,7 +78,7 @@ public class CoreCacheController {
     }
 
     public List<String> getKeys() {
-        if (!permissions.hasGlobalPermission(authContext.getUserWithRolesWithoutTermsCheck(), Functionality.CACHE_FLUSH)) {
+        if (!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.CACHE_FLUSH)) {
             throw new UnauthorizedException(CoreCacheController.NO_RIGHTS_TO_FLUSH_CACHE);
         }
         return cacheManager.getCacheNames().stream().toList();

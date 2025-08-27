@@ -37,7 +37,5 @@ public interface GraphDB {
     void delete(UUID instanceId, SpaceName spaceName, DataStage dataStage);
     void upsert(UUID instanceId, SpaceName spaceName, NormalizedJsonLd payload, DataStage stage);
     StreamedQueryResult executeQuery(KgQuery query, Map<String, String> params, PaginationParam paginationParam);
-    GraphEntity getNeighbors(String space, UUID id, DataStage stage);
-    Paginated<NormalizedJsonLd> getIncomingLinks(String space, UUID id, DataStage stage, String property, String type, PaginationParam paginationParam);
     ScopeElement getScopeForInstance(String space, UUID id, DataStage stage, boolean applyRestrictions);
 }

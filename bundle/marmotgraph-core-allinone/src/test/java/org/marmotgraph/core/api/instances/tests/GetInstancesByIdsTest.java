@@ -26,6 +26,7 @@ package org.marmotgraph.core.api.instances.tests;
 
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.core.api.instances.TestContext;
 import org.marmotgraph.core.api.v3.InstancesV3;
 import org.marmotgraph.core.model.ExposedStage;
@@ -40,7 +41,7 @@ import java.util.stream.Stream;
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class GetInstancesByIdsTest extends AbstractInstanceTest {
 
-    public Result<Map<String, Result<NormalizedJsonLd>>> response;
+    public ResultWithExecutionDetails<Map<UUID, Result<NormalizedJsonLd>>> response;
     public NormalizedJsonLd originalInstanceA;
     public NormalizedJsonLd originalInstanceB;
     public Map<UUID, NormalizedJsonLd> originalInstances;
@@ -60,6 +61,6 @@ public class GetInstancesByIdsTest extends AbstractInstanceTest {
 
     @Override
     protected void run() {
-        response = this.instances.getInstancesByIds(ids.stream().map(UUID::toString).collect(Collectors.toList()), ExposedStage.IN_PROGRESS, defaultResponseConfiguration);
+        response = this.instances.getInstancesByIds(ids, ExposedStage.IN_PROGRESS, defaultResponseConfiguration);
     }
 }

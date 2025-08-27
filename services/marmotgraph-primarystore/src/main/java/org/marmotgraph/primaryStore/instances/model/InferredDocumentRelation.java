@@ -24,23 +24,12 @@
 
 package org.marmotgraph.primaryStore.instances.model;
 
-import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.Setter;
 
-import java.util.UUID;
-
-@Table(name="inferred_document_relations", indexes = {@Index(name="byUUID", columnList = "instance_id"), @Index(name="byTargetReference", columnList = "target_reference")})
+@Table(indexes = {@Index(name="byUUID", columnList = "instance_id"), @Index(name="byTargetReference", columnList = "target_reference")})
 @Entity
-@Getter
-@Setter
 public class InferredDocumentRelation extends DocumentRelation {
 
-    @EmbeddedId
-    private DocumentRelation.CompositeId compositeId;
-
-    private UUID resolvedTarget;
 }

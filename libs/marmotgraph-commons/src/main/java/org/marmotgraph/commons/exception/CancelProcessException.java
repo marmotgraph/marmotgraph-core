@@ -24,19 +24,19 @@
 
 package org.marmotgraph.commons.exception;
 
-import org.marmotgraph.commons.model.Result;
+import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 
 public class CancelProcessException extends RuntimeException {
 
-    private final transient Result<?> result;
+    private final transient ResultWithExecutionDetails<?> result;
     private final int status;
 
-    public CancelProcessException(Result<?> result, int status) {
+    public CancelProcessException(ResultWithExecutionDetails<?> result, int status) {
         this.result = result;
         this.status = status;
     }
 
-    public Result<?> getResult() {
+    public ResultWithExecutionDetails<?> getResult() {
         return result;
     }
 

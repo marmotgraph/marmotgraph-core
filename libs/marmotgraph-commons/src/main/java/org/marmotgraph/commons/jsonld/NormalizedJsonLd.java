@@ -118,4 +118,34 @@ public class NormalizedJsonLd extends JsonLdDoc {
         }
     }
 
+    private boolean isEmbeddedItem(Object object){
+        if(object instanceof Map<?,?>){
+            if(!((Map<?,?>)object).containsKey(JsonLdConsts.ID)){
+                //It's a map but not a reference -> it's an embedded element
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void removeEmbedded(){
+        visitKeys((map, key) -> {
+            Object property = map.get(key);
+            if(isEmbeddedItem(property)){
+                map.remove(key);
+            }
+            else if(property instanceof List<?>){
+                List<?> remainingItems = ((List<?>) property).stream().filter(o -> !isEmbeddedItem(o)).toList();
+                if(remainingItems.isEmpty()){
+                    map.remove(key);
+                }
+                else{
+                    map.put(key, remainingItems);
+                }
+            }
+        });
+
+    }
+
+
 }

@@ -83,16 +83,6 @@ public class GraphDBAPI implements GraphDB.Client {
 //            throw new ForbiddenException();
 //        }
     }
-    @Override
-    @ExposesMinimalData
-    public GraphEntity getNeighbors(String space, UUID id, DataStage stage) {
-        return neighbors.getNeighbors(stage, new SpaceName(space), id);
-    }
-
-    @Override
-    public Paginated<NormalizedJsonLd> getIncomingLinks(String space, UUID id, DataStage stage, String property, String type, PaginationParam paginationParam) {
-        return incomingLinks.getIncomingLinks(stage, new SpaceName(space), id, property, type, paginationParam, documents.getInvitationDocuments());
-    }
 
     @Override
     @ExposesMinimalData

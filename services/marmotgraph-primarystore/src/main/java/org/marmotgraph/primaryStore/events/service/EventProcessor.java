@@ -38,9 +38,10 @@ import org.marmotgraph.commons.permissions.controller.Permissions;
 import org.marmotgraph.primaryStore.events.exceptions.FailedEventException;
 import org.marmotgraph.primaryStore.indexing.service.IndexingService;
 import org.marmotgraph.primaryStore.instances.model.InstanceInformation;
+import org.marmotgraph.primaryStore.instances.model.Space;
 import org.marmotgraph.primaryStore.instances.service.PayloadService;
 import org.marmotgraph.primaryStore.instances.service.Reconcile;
-import org.marmotgraph.primaryStore.structures.service.SpaceService;
+import org.marmotgraph.primaryStore.instances.service.SpaceService;
 import org.marmotgraph.primaryStore.users.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,9 +73,19 @@ public class EventProcessor {
     // We spawn the transaction across the whole event persistence to ensure that we don't end up with partial data
     public InstanceId postEvent(Event event) {
         SpaceName space = evaluateSpace(event).orElseThrow(() -> new IllegalStateException(String.format("Space information for instance %s is missing", event.getInstanceId())));
-        PersistedEvent eventToPersist = checkPermission(event, space);
+        //We only require the extended space information for INSERT and UPDATE
+        Optional<Space> spaceInformation;
+        switch (event.getType()){
+            case INSERT:
+            case UPDATE:
+                spaceInformation = spaceService.getSpace(space);
+                break;
+            default:
+                spaceInformation = Optional.empty();
+        }
+        PersistedEvent eventToPersist = checkPermission(event, space, spaceInformation);
         PersistedEvent persistedEvent = persistEvent(eventToPersist);
-        processEvent(persistedEvent);
+        processEvent(persistedEvent, spaceInformation);
         return new InstanceId(persistedEvent.getInstanceId(), persistedEvent.getSpaceName());
     }
 
@@ -87,7 +98,7 @@ public class EventProcessor {
         return space;
     }
 
-    private void processEvent(PersistedEvent persistedEvent) {
+    private void processEvent(PersistedEvent persistedEvent, Optional<Space> spaceInformation) {
         switch(persistedEvent.getType()){
             case INSERT:
             case UPDATE:
@@ -95,9 +106,9 @@ public class EventProcessor {
                 List<NormalizedJsonLd> sourceDocumentsForInstance = Stream.concat(payloadService.getSourceDocumentsForInstanceFromDB(persistedEvent.getInstanceId(), persistedEvent.getUserId()), Stream.of(persistedEvent.getData()).filter(Objects::nonNull)).toList();
                 InferredJsonLdDoc inferredDocument = reconcile.reconcile(sourceDocumentsForInstance);
                 NormalizedJsonLd inferredDocumentPayload = inferredDocument.asIndexed().getDoc();
-                boolean autorelease = spaceService.isAutoRelease(persistedEvent.getSpaceName());
+                boolean autorelease = spaceInformation.isPresent() && spaceInformation.get().isAutoRelease();
                 InstanceInformation instanceInformation = payloadService.upsertInstanceInformation(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), persistedEvent.getData().identifiers());
-                payloadService.upsertInferredPayload(persistedEvent.getInstanceId(), instanceInformation, inferredDocumentPayload, inferredDocumentPayload.findOutgoingRelations(), inferredDocument.getAlternatives(), autorelease, persistedEvent.getReportedTimeStampInMs());
+                payloadService.upsertInferredPayload(persistedEvent.getInstanceId(), instanceInformation, inferredDocumentPayload, inferredDocumentPayload.findOutgoingRelations(), inferredDocument.getAlternatives(), autorelease, persistedEvent.getReportedTimeStampInMs(), spaceInformation.isEmpty());
                 indexing.upsert(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), inferredDocumentPayload, DataStage.IN_PROGRESS);
                 if(autorelease){
                     indexing.upsert(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), persistedEvent.getData(), DataStage.RELEASED);
@@ -119,7 +130,7 @@ public class EventProcessor {
     }
 
 
-    private PersistedEvent checkPermission(Event event, SpaceName space) {
+    private PersistedEvent checkPermission(Event event, SpaceName space, Optional<Space> spaceInformation) {
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
         if (userWithRoles == null) {
             throw new UnauthorizedException("Can not persist an event without user information");
@@ -142,14 +153,13 @@ public class EventProcessor {
                 }
                 break;
             case INSERT:
-                //FIXME implement space creation if space doesn't exist yet.
-//                if (event.getSpace() == null) {
-//                    //The space doesn't exist - this means the user has to have space creation rights to execute this insertion.
-//                    boolean spaceCreationPermission = permissions.hasPermission(userWithRoles, Functionality.MANAGE_SPACE, event.getSpaceName());
-//                    if (!spaceCreationPermission) {
-//                        throw new ForbiddenException(String.format("The creation of this instance involves the creation of the non-existing space %s - you don't have the according rights to do so!", event.getSpaceName()));
-//                    }
-//                }
+                if(spaceInformation.isEmpty()){
+                    //The space doesn't exist - this means the user has to have space creation rights to execute this insertion.
+                    boolean spaceCreationPermission = permissions.hasPermission(userWithRoles, Functionality.MANAGE_SPACE, space);
+                    if (!spaceCreationPermission) {
+                        throw new ForbiddenException(String.format("The creation of this instance involves the creation of the non-existing space %s - you don't have the according rights to do so!", event.getSpaceName()));
+                    }
+                }
                 functionality = Functionality.withSemanticsForOperation(semantics, event.getType(), Functionality.CREATE);
                 if(permissions.hasPermission(userWithRoles, functionality, space, event.getInstanceId())){
                     return new PersistedEvent(event, userWithRoles.getUser(), space);
@@ -169,12 +179,12 @@ public class EventProcessor {
                 }
                 break;
             case RELEASE:
-                if(permissions.hasPermission(userWithRoles, Functionality.withSemanticsForOperation(semantics, event.getType(), Functionality.RELEASE), event.getSpaceName(), event.getInstanceId())){
+                if(permissions.hasPermission(userWithRoles, Functionality.withSemanticsForOperation(semantics, event.getType(), Functionality.RELEASE), space, event.getInstanceId())){
                     return new PersistedEvent(event, userWithRoles.getUser(), space);
                 }
                 break;
             case UNRELEASE:
-                if(permissions.hasPermission(userWithRoles, Functionality.withSemanticsForOperation(semantics, event.getType(), Functionality.UNRELEASE), event.getSpaceName(), event.getInstanceId())){
+                if(permissions.hasPermission(userWithRoles, Functionality.withSemanticsForOperation(semantics, event.getType(), Functionality.UNRELEASE), space, event.getInstanceId())){
                     return new PersistedEvent(event, userWithRoles.getUser(), space);
                 }
                 break;

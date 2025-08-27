@@ -30,7 +30,7 @@ import lombok.*;
 import java.io.Serializable;
 import java.util.UUID;
 
-@Table(name="native_documents", indexes = @Index(name = "byInstanceId", columnList = "instanceId"))
+@Table(indexes = @Index(name = "byInstanceId", columnList = "instanceId"))
 @Entity
 @Getter
 @Setter
