@@ -50,11 +50,11 @@ public class CoreQueryController {
     private final GraphDB.Client graphDB;
     private final CoreInstanceController instanceController;
 
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> createNewQuery(NormalizedJsonLd query, UUID queryId, SpaceName space) {
+    public ResultWithExecutionDetails<NormalizedJsonLd> createNewQuery(NormalizedJsonLd query, UUID queryId, SpaceName space) {
         return instanceController.createNewInstance(query, queryId, space, new ExtendedResponseConfiguration());
     }
 
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> updateQuery(NormalizedJsonLd query, InstanceId instanceId) {
+    public ResultWithExecutionDetails<NormalizedJsonLd> updateQuery(NormalizedJsonLd query, InstanceId instanceId) {
         return instanceController.contributeToInstance(query, instanceId, false, new ExtendedResponseConfiguration());
     }
 

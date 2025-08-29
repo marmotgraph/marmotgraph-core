@@ -25,6 +25,7 @@
 package org.marmotgraph.graphdb.arango;
 
 import jakarta.validation.constraints.NotNull;
+import org.marmotgraph.commons.api.authorization.Authorization;
 import org.marmotgraph.graphdb.arango.model.ArangoCollectionReference;
 import org.marmotgraph.graphdb.arango.model.ArangoDocumentReference;
 import org.marmotgraph.commons.JsonAdapter;
@@ -50,7 +51,7 @@ import java.util.UUID;
 public class AbstractGraphTest {
 
     @MockitoBean
-    protected Authentication.Client authClient;
+    protected Authorization.Client authClient;
 
     @Autowired
     protected TodoListProcessor todoListProcessor;

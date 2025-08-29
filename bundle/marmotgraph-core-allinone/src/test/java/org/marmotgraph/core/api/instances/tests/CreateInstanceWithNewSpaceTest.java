@@ -36,7 +36,7 @@ import org.springframework.http.ResponseEntity;
 public class CreateInstanceWithNewSpaceTest extends AbstractInstanceTest {
 
     public JsonLdDoc testData = TestDataFactory.createTestData(smallPayload, 0, true);
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> response;
+    public ResultWithExecutionDetails<NormalizedJsonLd> response;
 
     public CreateInstanceWithNewSpaceTest(TestContext testContext, InstancesV3 instances) {
         super(testContext, instances);

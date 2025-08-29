@@ -26,9 +26,11 @@ package org.marmotgraph.core.api.v3beta;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.api.authentication.Authentication;
+import org.marmotgraph.commons.api.authorization.Authorization;
 import org.marmotgraph.commons.api.primaryStore.Users;
 import org.marmotgraph.commons.config.openApiGroups.Advanced;
 import org.marmotgraph.commons.config.openApiGroups.Extra;
@@ -40,12 +42,13 @@ import org.marmotgraph.commons.markers.ExposesUserInfo;
 import org.marmotgraph.commons.markers.ExposesUserPicture;
 import org.marmotgraph.commons.model.*;
 import org.marmotgraph.commons.models.UserWithRoles;
+import org.marmotgraph.core.api.NoAuthentication;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.marmotgraph.core.api.v3.UsersV3;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -57,16 +60,15 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping(Version.V3_BETA +"/users")
+@AllArgsConstructor
 public class UsersV3Beta {
 
     private static final String ENDPOINT = "endpoint";
+
     private final Authentication.Client authentication;
     private final Users.Client primaryStoreUsers;
+    private final UsersV3 usersV3;
 
-    public UsersV3Beta(Authentication.Client authentication, Users.Client primaryStoreUsers) {
-        this.authentication = authentication;
-        this.primaryStoreUsers = primaryStoreUsers;
-    }
 
     @Operation(summary = "DEPRECATED: Get the endpoint of the authentication service - please use the harmonized endpoint at /setup/authorization")
     @GetMapping(value = "/authorization", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -74,6 +76,7 @@ public class UsersV3Beta {
     @Extra
     @Deprecated(forRemoval = true)
     @SecurityRequirements
+    @NoAuthentication
     public ResultWithExecutionDetails<JsonLdDoc> getAuthEndpoint() {
         JsonLdDoc ld = new JsonLdDoc();
         ld.addProperty(ENDPOINT, authentication.authEndpoint());
@@ -86,6 +89,7 @@ public class UsersV3Beta {
     @Advanced
     @Deprecated(forRemoval = true)
     @SecurityRequirements
+    @NoAuthentication
     public ResultWithExecutionDetails<JsonLdDoc> getOpenIdConfigUrl() {
         JsonLdDoc ld = new JsonLdDoc();
         ld.addProperty(ENDPOINT, authentication.openIdConfigUrl());
@@ -98,6 +102,7 @@ public class UsersV3Beta {
     @Extra
     @Deprecated(forRemoval = true)
     @SecurityRequirements
+    @NoAuthentication
     public ResultWithExecutionDetails<JsonLdDoc> getTokenEndpoint() {
         JsonLdDoc ld = new JsonLdDoc();
         ld.addProperty(ENDPOINT, authentication.tokenEndpoint());
@@ -109,8 +114,7 @@ public class UsersV3Beta {
     @ExposesUserInfo
     @Simple
     public ResponseEntity<ResultWithExecutionDetails<User>> myUserInfo() {
-        User myUserInfo = authentication.getMyUserInfo();
-        return myUserInfo!=null ? ResponseEntity.ok(ResultWithExecutionDetails.ok(myUserInfo)) : ResponseEntity.notFound().build();
+        return usersV3.myUserInfo();
     }
 
     @Operation(summary = "Retrieve the roles for the current user")
@@ -118,8 +122,7 @@ public class UsersV3Beta {
     @ExposesUserInfo
     @Extra
     public ResponseEntity<ResultWithExecutionDetails<UserWithRoles>> myRoles() {
-        final UserWithRoles roles = authentication.getRoles();
-        return roles!=null ? ResponseEntity.ok(ResultWithExecutionDetails.ok(roles)) : ResponseEntity.notFound().build();
+        return usersV3.myRoles();
     }
 
 

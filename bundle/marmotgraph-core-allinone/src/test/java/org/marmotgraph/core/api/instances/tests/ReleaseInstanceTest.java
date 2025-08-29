@@ -36,7 +36,7 @@ import java.util.UUID;
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class ReleaseInstanceTest extends AbstractInstanceTest {
 
-    public ResponseEntity<ResultWithExecutionDetails<Void>> response;
+    public ResultWithExecutionDetails<Void> response;
     public NormalizedJsonLd originalInstance;
 
     public ReleaseInstanceTest(TestContext testContext, InstancesV3 instances) {
@@ -53,7 +53,7 @@ public class ReleaseInstanceTest extends AbstractInstanceTest {
         response = instances.releaseInstance(getInstanceUUID(), null);
     }
 
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> fetchInstance(){
+    public ResultWithExecutionDetails<NormalizedJsonLd> fetchInstance(){
         return instances.getInstanceById(getInstanceUUID(), ExposedStage.RELEASED, defaultResponseConfiguration);
     }
 

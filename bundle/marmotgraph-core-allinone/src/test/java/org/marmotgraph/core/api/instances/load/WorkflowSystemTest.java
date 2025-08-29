@@ -24,20 +24,18 @@
 
 package org.marmotgraph.core.api.instances.load;
 
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.jsonld.IndexedJsonLdDoc;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.ResultWithExecutionDetails;
+import org.marmotgraph.core.api.testutils.TestDataFactory;
 import org.marmotgraph.core.api.v3.InstancesV3;
 import org.marmotgraph.core.model.ExposedStage;
-import org.marmotgraph.core.api.testutils.TestDataFactory;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 import java.io.IOException;
 
@@ -56,9 +54,9 @@ class WorkflowSystemTest extends AbstractInstancesLoadTest {
     void testReleaseAndUnreleaseAndReReleaseInstance() {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
-        ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
-        JsonLdId id = instance.getBody().getData().id();
-        IndexedJsonLdDoc from = IndexedJsonLdDoc.from(instance.getBody().getData());
+        ResultWithExecutionDetails<NormalizedJsonLd> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
+        JsonLdId id = instance.getData().id();
+        IndexedJsonLdDoc from = IndexedJsonLdDoc.from(instance.getData());
 
 //        //When
 //        instances.releaseInstance(idUtils.getUUID(id), from.getRevision());
@@ -81,18 +79,18 @@ class WorkflowSystemTest extends AbstractInstancesLoadTest {
     void testInsertAndDeleteInstance() throws IOException {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
-        ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
-        JsonLdId id = instance.getBody().getData().id();
+        ResultWithExecutionDetails<NormalizedJsonLd> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
+        JsonLdId id = instance.getData().id();
 
         //When
-        ResponseEntity<ResultWithExecutionDetails<Void>> resultResponseEntity = instances.deleteInstance(idUtils.getUUID(id));
+        ResultWithExecutionDetails<Void> resultResponseEntity = instances.deleteInstance(idUtils.getUUID(id));
 
         //Then
-        assertEquals(HttpStatus.OK, resultResponseEntity.getStatusCode());
+        assertNotNull(resultResponseEntity);
 
-        ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> instanceById = instances.getInstanceById(idUtils.getUUID(id), ExposedStage.IN_PROGRESS, DEFAULT_RESPONSE_CONFIG);
+        ResultWithExecutionDetails<NormalizedJsonLd> instanceById = instances.getInstanceById(idUtils.getUUID(id), ExposedStage.IN_PROGRESS, DEFAULT_RESPONSE_CONFIG);
 
-        assertEquals(HttpStatus.NOT_FOUND, instanceById.getStatusCode());
+        assertNull(instanceById);
 
     }
 
@@ -101,16 +99,16 @@ class WorkflowSystemTest extends AbstractInstancesLoadTest {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
 
-        ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
-        JsonLdId id = instance.getBody().getData().id();
+        ResultWithExecutionDetails<NormalizedJsonLd> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
+        JsonLdId id = instance.getData().id();
 
         //When
         JsonLdDoc doc = new JsonLdDoc();
         doc.addProperty("https://marmotgraph.org/fooE", "fooEUpdated");
-        ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> resultResponseEntity = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), DEFAULT_RESPONSE_CONFIG);
+        ResultWithExecutionDetails<NormalizedJsonLd> result = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), DEFAULT_RESPONSE_CONFIG);
 
         //Then
-        assertEquals("fooEUpdated", resultResponseEntity.getBody().getData().getAs("https://marmotgraph.org/fooE", String.class));
+        assertEquals("fooEUpdated", result.getData().getAs("https://marmotgraph.org/fooE", String.class));
     }
 
     @Disabled("Failing")
@@ -118,18 +116,18 @@ class WorkflowSystemTest extends AbstractInstancesLoadTest {
     void testFullCycle() throws IOException {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
-        ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
-        JsonLdId id = instance.getBody().getData().id();
-        IndexedJsonLdDoc from = IndexedJsonLdDoc.from(instance.getBody().getData());
+        ResultWithExecutionDetails<NormalizedJsonLd> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
+        JsonLdId id = instance.getData().id();
+        IndexedJsonLdDoc from = IndexedJsonLdDoc.from(instance.getData());
 
         //When
         //Update
         JsonLdDoc doc = new JsonLdDoc();
         doc.addProperty("https://marmotgraph.org/fooE", "fooEUpdated");
-        ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> resultResponseEntity = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), DEFAULT_RESPONSE_CONFIG);
+        ResultWithExecutionDetails<NormalizedJsonLd> result = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), DEFAULT_RESPONSE_CONFIG);
 
         //Then
-        assertEquals("fooEUpdated", resultResponseEntity.getBody().getData().getAs("https://marmotgraph.org/fooE", String.class));
+        assertEquals("fooEUpdated", result.getData().getAs("https://marmotgraph.org/fooE", String.class));
 
 //        //When
 //        //Release

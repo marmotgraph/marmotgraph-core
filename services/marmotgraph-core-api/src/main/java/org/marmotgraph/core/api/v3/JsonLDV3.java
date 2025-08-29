@@ -24,6 +24,7 @@
 
 package org.marmotgraph.core.api.v3;
 
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.api.jsonld.JsonLd;
 import org.marmotgraph.commons.config.openApiGroups.Simple;
@@ -41,13 +42,10 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping(Version.V3 + "/jsonld")
+@AllArgsConstructor
 public class JsonLDV3 {
 
     private final JsonLd.Client jsonLd;
-
-    public JsonLDV3(JsonLd.Client jsonLd) {
-        this.jsonLd = jsonLd;
-    }
 
     @Operation(summary = "Normalizes the passed payload according to the MarmotGraph conventions")
     @PostMapping("/normalizedPayload")

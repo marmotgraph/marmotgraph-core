@@ -24,8 +24,10 @@
 
 package org.marmotgraph.core.api.v3;
 
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.api.authentication.Authentication;
+import org.marmotgraph.commons.api.authorization.Authorization;
 import org.marmotgraph.commons.config.openApiGroups.Admin;
 import org.marmotgraph.commons.config.openApiGroups.Simple;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
@@ -34,6 +36,7 @@ import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.permission.roles.RoleMapping;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import org.marmotgraph.core.api.NoAuthentication;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,36 +45,36 @@ import java.util.Map;
 
 @RestController
 @RequestMapping(Version.V3 +"/setup")
+@AllArgsConstructor
 public class SetupV3 {
 
     private final Authentication.Client authentication;
+    private final Authorization.Client authorization;
 
-    public SetupV3(Authentication.Client authentication) {
-        this.authentication = authentication;
-    }
 
     @PatchMapping("/permissions/{role}")
     @Admin
     public JsonLdDoc updateClaimForRole(@PathVariable("role") RoleMapping role, @RequestParam(value = "space", required = false) String space, @RequestBody Map<String, Object> claimPattern, @RequestParam("remove") boolean removeClaim) {
-        return authentication.updateClaimForRole(role, space, claimPattern, removeClaim);
+        return authorization.updateClaimForRole(role, space, claimPattern, removeClaim);
     }
 
     @GetMapping("/permissions/{role}")
     @Admin
     public JsonLdDoc getClaimForRole(@PathVariable("role") RoleMapping role, @RequestParam(value = "space", required = false) String space) {
-        return authentication.getClaimForRole(role, space);
+        return authorization.getClaimForRole(role, space);
     }
 
     @GetMapping("/permissions")
     @Admin
     public List<JsonLdDoc> getAllRoleDefinitions() {
-        return authentication.getAllRoleDefinitions();
+        return authorization.getAllRoleDefinitions();
     }
 
     @Operation(summary = "Get the endpoint of the configured openid configuration")
     @GetMapping(value = "/authentication", produces = MediaType.APPLICATION_JSON_VALUE)
     @ExposesConfigurationInformation
     @SecurityRequirements
+    @NoAuthentication
     @Simple
     public ResultWithExecutionDetails<JsonLdDoc> getOpenIdConfigUrl() {
         JsonLdDoc ld = new JsonLdDoc();

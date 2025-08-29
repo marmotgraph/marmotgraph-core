@@ -36,7 +36,7 @@ import org.springframework.http.ResponseEntity;
 public class CreateInstanceTest extends AbstractInstanceTest {
 
     public JsonLdDoc testData = TestDataFactory.createTestData(smallPayload, 1, true);
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> response;
+    public ResultWithExecutionDetails<NormalizedJsonLd> response;
 
     public CreateInstanceTest(TestContext testContext, InstancesV3 instances) {
         super(testContext, instances);

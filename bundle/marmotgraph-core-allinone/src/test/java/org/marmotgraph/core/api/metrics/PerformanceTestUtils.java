@@ -148,8 +148,8 @@ public class PerformanceTestUtils {
         }
     }
 
-    public <T> List<ResponseEntity<ResultWithExecutionDetails<T>>> executeMany(int numberOfFields, boolean normalize, int numberOfIteration, boolean parallelize, Link link, CallableWithPayload<ResponseEntity<ResultWithExecutionDetails<T>>> r) {
-        List<ResponseEntity<ResultWithExecutionDetails<T>>> result = null;
+    public <T> List<ResultWithExecutionDetails<T>> executeMany(int numberOfFields, boolean normalize, int numberOfIteration, boolean parallelize, Link link, CallableWithPayload<ResultWithExecutionDetails<T>> r) {
+        List<ResultWithExecutionDetails<T>> result = null;
         if (parallelize) {
             for (int i = 0; i < THREADS_ORDER.length; i++) {
                 result = runWithThreads(numberOfFields, normalize, link, numberOfIteration, i * numberOfIteration, r, THREADS_ORDER[i]);
@@ -164,17 +164,15 @@ public class PerformanceTestUtils {
     }
 
 
-    private <T> List<ResponseEntity<ResultWithExecutionDetails<T>>> runWithThreads(int numberOfFields, boolean normalize, Link link, int numberOfIteration, int idOffset, CallableWithPayload<ResponseEntity<ResultWithExecutionDetails<T>>> r, int threads) {
-        List<ResponseEntity<ResultWithExecutionDetails<T>>> result;
+    private <T> List<ResultWithExecutionDetails<T>> runWithThreads(int numberOfFields, boolean normalize, Link link, int numberOfIteration, int idOffset, CallableWithPayload<ResultWithExecutionDetails<T>> r, int threads) {
+        List<ResultWithExecutionDetails<T>> result;
         Instant start = Instant.now();
         ExecutorService executorService = Executors.newFixedThreadPool(threads);
         //When
-        List<Future<ResponseEntity<ResultWithExecutionDetails<T>>>> futureResults = new ArrayList<>();
+        List<Future<ResultWithExecutionDetails<T>>> futureResults = new ArrayList<>();
         for (int i = 0; i < numberOfIteration; i++) {
             final int iteration = i + idOffset;
-            futureResults.add(executorService.submit(() -> {
-                return r.call(TestDataFactory.createTestData(numberOfFields, !normalize, iteration, link == null ? null : link == Link.NEXT ? iteration + 1 : iteration - 1));
-            }));
+            futureResults.add(executorService.submit(() -> r.call(TestDataFactory.createTestData(numberOfFields, !normalize, iteration, link == null ? null : link == Link.NEXT ? iteration + 1 : iteration - 1))));
         }
         try {
             executorService.shutdown();
@@ -182,22 +180,22 @@ public class PerformanceTestUtils {
             Instant end = Instant.now();
             result = futureResults.stream().map(tempres -> {
                 try {
-                    ResponseEntity<ResultWithExecutionDetails<T>> resultResponseEntity = tempres.get();
-                    System.out.printf("Result: %d ms%n", Objects.requireNonNull(resultResponseEntity.getBody()).getDurationInMs());
+                    ResultWithExecutionDetails<T> resultResponseEntity = tempres.get();
+                    System.out.printf("Result: %d ms%n", Objects.requireNonNull(resultResponseEntity).getDurationInMs());
                     return resultResponseEntity;
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                     return null;
                 }
             }).collect(Collectors.toList());
-
-            List<GoogleCharts.Value> values = new ArrayList<>();
-            Long startTime = result.stream().min(Comparator.comparing(res -> res.getBody().getStartTime())).get().getBody().getStartTime();
-            for (ResponseEntity<ResultWithExecutionDetails<T>> res : result) {
-                values.add(new GoogleCharts.Value(String.valueOf(values.size()), String.valueOf(res.getStatusCode()), res.getBody().getStartTime()-startTime, res.getBody().getStartTime()-startTime+res.getBody().getDurationInMs()));
-            }
-            double[] durations = result.stream().mapToDouble(res -> Objects.requireNonNull(res.getBody()).getDurationInMs().doubleValue()).toArray();
-            plotter.addPlot(String.format("Run %d iterations with %d thread(s) in %dms (avg: %.2fms, median: %.2fms)", numberOfIteration, threads, Duration.between(start, end).toMillis(), new Mean().evaluate(durations), new Median().evaluate(durations)), values, false,false, Duration.between(start, end).toMillis());
+//
+//            List<GoogleCharts.Value> values = new ArrayList<>();
+//            Long startTime = result.stream().min(Comparator.comparing(res -> res.getStartTime())).get().getStartTime();
+//            for (ResultWithExecutionDetails<T> res : result) {
+//                values.add(new GoogleCharts.Value(String.valueOf(values.size()), String.valueOf(res.getStatusCode()), res.getStartTime()-startTime, res.getStartTime()-startTime+res.getDurationInMs()));
+//            }
+//            double[] durations = result.stream().mapToDouble(res -> Objects.requireNonNull(res).getDurationInMs().doubleValue()).toArray();
+//            plotter.addPlot(String.format("Run %d iterations with %d thread(s) in %dms (avg: %.2fms, median: %.2fms)", numberOfIteration, threads, Duration.between(start, end).toMillis(), new Mean().evaluate(durations), new Median().evaluate(durations)), values, false,false, Duration.between(start, end).toMillis());
 
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

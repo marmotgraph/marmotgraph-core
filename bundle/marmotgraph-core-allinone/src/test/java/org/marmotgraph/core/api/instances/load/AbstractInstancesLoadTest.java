@@ -67,11 +67,11 @@ public abstract class AbstractInstancesLoadTest extends AbstractLoadTest {
         utils.addSection(title.toString());
 
         // When
-        List<ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>>> results = utils.executeMany(numberOfFields, normalize, numberOfIterations, parallelize, link, p -> instances.createNewInstance(p, "test", DEFAULT_RESPONSE_CONFIG));
+        List<ResultWithExecutionDetails<NormalizedJsonLd>> results = utils.executeMany(numberOfFields, normalize, numberOfIterations, parallelize, link, p -> instances.createNewInstance(p, "test", DEFAULT_RESPONSE_CONFIG));
 
         //Then
         for (int i = 0; i < results.size(); i++) {
-            System.out.printf("Result %d: %d ms%n", i, Objects.requireNonNull(results.get(i).getBody()).getDurationInMs());
+            System.out.printf("Result %d: %d ms%n", i, Objects.requireNonNull(results.get(i)).getDurationInMs());
         }
     }
 

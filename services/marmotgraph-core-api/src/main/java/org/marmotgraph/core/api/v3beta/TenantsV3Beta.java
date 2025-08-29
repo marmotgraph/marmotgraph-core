@@ -25,12 +25,14 @@
 package org.marmotgraph.core.api.v3beta;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.config.openApiGroups.Tenants;
 import org.marmotgraph.commons.model.tenant.ColorScheme;
 import org.marmotgraph.commons.model.tenant.Font;
 import org.marmotgraph.commons.model.tenant.TenantDefinition;
-import org.marmotgraph.core.controller.CoreTenantsController;
+import org.marmotgraph.core.api.NoAuthentication;
+import org.marmotgraph.core.api.v3.TenantsV3;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -40,79 +42,76 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 
+@AllArgsConstructor
 @RestController
-@RequestMapping(Version.V3_BETA +"/tenants")
+@RequestMapping(Version.V3_BETA + "/tenants")
 public class TenantsV3Beta {
 
-    private final CoreTenantsController controller;
-
-    public TenantsV3Beta(CoreTenantsController controller) {
-        this.controller = controller;
-    }
+    private final TenantsV3 tenantsV3;
 
     @Tenants
     @PutMapping("{name}")
-    public void createTenant(@PathVariable String name, @RequestBody TenantDefinition tenantDefinition){
-        this.controller.createTenant(name, tenantDefinition);
+    public void createTenant(@PathVariable String name, @RequestBody TenantDefinition tenantDefinition) {
+        tenantsV3.createTenant(name, tenantDefinition);
     }
-
 
     @Tenants
     @GetMapping("{name}")
     @SecurityRequirements
-    public TenantDefinition getTenant(@PathVariable String name){
-        return this.controller.getTenant(name);
+    @NoAuthentication
+    public TenantDefinition getTenant(@PathVariable String name) {
+        return tenantsV3.getTenant(name);
     }
-
 
     @Tenants
     @GetMapping
     @SecurityRequirements
-    public List<String> listTenants(){
-        return this.controller.listTenants();
+    @NoAuthentication
+    public List<String> listTenants() {
+        return tenantsV3.listTenants();
     }
-
 
     @Tenants
     @PutMapping("{name}/theme/font")
-    public void setFont(@PathVariable String name, @RequestBody Font font){
-        this.controller.setFont(name, font);
+    public void setFont(@PathVariable String name, @RequestBody Font font) {
+        tenantsV3.setFont(name, font);
     }
 
     @Tenants
     @PutMapping("{name}/theme/colors")
-    public void setColorScheme(@PathVariable String name, @RequestBody ColorScheme colorScheme){
-        this.controller.setColorScheme(name, colorScheme);
+    public void setColorScheme(@PathVariable String name, @RequestBody ColorScheme colorScheme) {
+        tenantsV3.setColorScheme(name, colorScheme);
     }
 
     @Tenants
     @PutMapping(value = "{name}/theme/customCss", consumes = MediaType.TEXT_PLAIN_VALUE)
-    public void setCustomCSS(@PathVariable String name, @RequestBody String css){
-        this.controller.setCustomCSS(name, css);
+    public void setCustomCSS(@PathVariable String name, @RequestBody String css) {
+        tenantsV3.setCustomCSS(name, css);
     }
 
 
     @Tenants
-    @GetMapping("{name}/theme/css")
+    @GetMapping(value = "{name}/theme/css", produces = "text/css")
     @SecurityRequirements
-    public String getCSS(@PathVariable String name){
-       return this.controller.getCSS(name);
+    @NoAuthentication
+    public String getCSS(@PathVariable String name) {
+        return tenantsV3.getCSS(name);
     }
-
 
     @Tenants
     @GetMapping("{name}/theme/favicon")
     @ResponseBody
     @SecurityRequirements
-    public ResponseEntity<Resource> getFavicon(@PathVariable String name){
-       return this.controller.getFavicon(name);
+    @NoAuthentication
+    public ResponseEntity<Resource> getFavicon(@PathVariable String name) {
+        return tenantsV3.getFavicon(name);
     }
 
 
     @Tenants
     @PutMapping(value = "{name}/theme/favicon", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public void setFavicon(@PathVariable String name, @RequestBody MultipartFile file){
-        this.controller.setFavicon(name, file);
+    public void setFavicon(@PathVariable String name, @RequestBody MultipartFile file) {
+        tenantsV3.setFavicon(name, file);
     }
 
 
@@ -120,15 +119,16 @@ public class TenantsV3Beta {
     @GetMapping("{name}/theme/background")
     @ResponseBody
     @SecurityRequirements
-    public ResponseEntity<Resource> getBackgroundImage(@PathVariable String name, @RequestParam(required = false) boolean darkMode){
-        return this.controller.getBackgroundImage(name, darkMode);
+    @NoAuthentication
+    public ResponseEntity<Resource> getBackgroundImage(@PathVariable String name, @RequestParam(defaultValue = "true") boolean darkMode) {
+        return tenantsV3.getBackgroundImage(name, darkMode);
     }
 
 
     @Tenants
-    @PutMapping(value= "{name}/theme/background", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public void setBackgroundImage(@PathVariable String name, @RequestBody MultipartFile file, @RequestParam(value = "darkMode", required = false) boolean darkMode){
-        this.controller.setBackgroundImage(name, file, darkMode);
+    @PutMapping(value = "{name}/theme/background", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public void setBackgroundImage(@PathVariable String name, @RequestBody MultipartFile file, @RequestParam(defaultValue = "true") boolean darkMode) {
+        tenantsV3.setBackgroundImage(name, file, darkMode);
     }
 
 
@@ -136,15 +136,16 @@ public class TenantsV3Beta {
     @GetMapping("{name}/theme/logo")
     @ResponseBody
     @SecurityRequirements
-    public ResponseEntity<Resource> getLogo(@PathVariable String name, @RequestParam(required = false) boolean darkMode){
-       return this.controller.getLogo(name, darkMode);
+    @NoAuthentication
+    public ResponseEntity<Resource> getLogo(@PathVariable String name, @RequestParam(defaultValue = "true") boolean darkMode) {
+        return tenantsV3.getLogo(name, darkMode);
     }
 
 
     @Tenants
     @PutMapping(value = "{name}/theme/logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public void setLogo(@PathVariable String name, @RequestBody MultipartFile file, @RequestParam(value = "darkMode", required = false) boolean darkMode){
-        this.controller.setLogo(name, file, darkMode);
+    public void setLogo(@PathVariable String name, @RequestBody MultipartFile file, @RequestParam(defaultValue = "true") boolean darkMode) {
+        tenantsV3.setLogo(name, file, darkMode);
     }
 
 

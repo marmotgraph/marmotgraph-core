@@ -56,7 +56,7 @@ public class CacheController {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    @PostConstruct
+    //@PostConstruct
     public void setup() {
         metaDataController.initializeCache();
     }

@@ -36,7 +36,7 @@ import org.springframework.http.ResponseEntity;
 public class ContributeToInstanceFullReplacementTest extends AbstractInstanceTest {
     public NormalizedJsonLd originalInstance;
     public JsonLdDoc update;
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> response;
+    public ResultWithExecutionDetails<NormalizedJsonLd> response;
 
     public ContributeToInstanceFullReplacementTest(TestContext testContext, InstancesV3 instances) {
         super(testContext, instances);

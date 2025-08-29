@@ -41,12 +41,14 @@
         <module>libs-4-test/marmotgraph-test-utils</module>
         <module>config/marmotgraph-microservice</module>
         <module>services/marmotgraph-authentication</module>
+        <module>services/marmotgraph-authorization</module>
         <module>services/marmotgraph-core-api</module>
         <module>services/marmotgraph-tenants</module>
         <module>services/marmotgraph-graphdb-arango</module>
         <module>services/marmotgraph-graphdb-neo4j</module>
         <module>services/marmotgraph-jsonld</module>
         <module>services/marmotgraph-primarystore</module>
+        <module>services/marmotgraph-queries</module>
         <module>bundle/marmotgraph-core-allinone</module>
     </modules>
     <profiles>

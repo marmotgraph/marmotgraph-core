@@ -24,6 +24,8 @@
 
 package org.marmotgraph.core.api.instances;
 
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.marmotgraph.commons.exception.ForbiddenException;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.*;
@@ -31,15 +33,11 @@ import org.marmotgraph.commons.permission.roles.RoleMapping;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import org.marmotgraph.core.api.instances.tests.*;
-import org.marmotgraph.core.api.v3.InstancesV3;
-import org.marmotgraph.core.model.ExposedStage;
 import org.marmotgraph.core.api.testutils.AbstractFunctionalityTest;
 import org.marmotgraph.core.api.testutils.TestDataFactory;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+import org.marmotgraph.core.api.v3.InstancesV3;
+import org.marmotgraph.core.model.ExposedStage;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 import java.util.Objects;
@@ -448,7 +446,7 @@ class InstancesTest extends AbstractFunctionalityTest {
             assertTrue(test.response.getData().containsKey(test.identifier));
             Result<NormalizedJsonLd> result = test.response.getData().get(test.identifier);
             assertNotNull(result.getData());
-            assertEquals(result.getData(), Objects.requireNonNull(test.updateResult.getBody()).getData());
+            assertEquals(result.getData(), Objects.requireNonNull(test.updateResult).getData());
 
         });
 
@@ -481,8 +479,8 @@ class InstancesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> instanceById = test.fetchInstance();
-            assertEquals(HttpStatus.NOT_FOUND, instanceById.getStatusCode(), "We expect a 404 to be returned from instanceById");
+            ResultWithExecutionDetails<NormalizedJsonLd> instanceById = test.fetchInstance();
+            assertNull(instanceById);
         });
     }
 
@@ -505,7 +503,7 @@ class InstancesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> instanceById = test.fetchInstance();
+            ResultWithExecutionDetails<NormalizedJsonLd> instanceById = test.fetchInstance();
             NormalizedJsonLd releasedInstance = test.assureValidPayloadIncludingId(instanceById);
             final String firstRelease = releasedInstance.getAs(EBRAINSVocabulary.META_FIRST_RELEASED_AT, String.class);
             assertNotNull(firstRelease);
@@ -549,11 +547,11 @@ class InstancesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> releasedInstanceById = test.fetchInstance(ExposedStage.RELEASED);
-            assertEquals(HttpStatus.NOT_FOUND, releasedInstanceById.getStatusCode(), "We expect a 404 to be returned from instanceById in released scope");
+            ResultWithExecutionDetails<NormalizedJsonLd> releasedInstanceById = test.fetchInstance(ExposedStage.RELEASED);
+            assertNull(releasedInstanceById);
 
             //Just to be sure - we want to check if the instance is still available in the inferred space.
-            ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> inferredInstanceById = test.fetchInstance(ExposedStage.IN_PROGRESS);
+            ResultWithExecutionDetails<NormalizedJsonLd> inferredInstanceById = test.fetchInstance(ExposedStage.IN_PROGRESS);
             test.assureValidPayloadIncludingId(inferredInstanceById);
         });
     }

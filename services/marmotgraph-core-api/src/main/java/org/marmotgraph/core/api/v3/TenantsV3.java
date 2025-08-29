@@ -25,11 +25,13 @@
 package org.marmotgraph.core.api.v3;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.config.openApiGroups.Tenants;
 import org.marmotgraph.commons.model.tenant.ColorScheme;
 import org.marmotgraph.commons.model.tenant.Font;
 import org.marmotgraph.commons.model.tenant.TenantDefinition;
+import org.marmotgraph.core.api.NoAuthentication;
 import org.marmotgraph.core.controller.CoreTenantsController;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
@@ -42,13 +44,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping(Version.V3 +"/tenants")
+@AllArgsConstructor
 public class TenantsV3 {
 
     private final CoreTenantsController controller;
-
-    public TenantsV3(CoreTenantsController controller) {
-        this.controller = controller;
-    }
 
     @Tenants
     @PutMapping("{name}")
@@ -60,6 +59,7 @@ public class TenantsV3 {
     @Tenants
     @GetMapping("{name}")
     @SecurityRequirements
+    @NoAuthentication
     public TenantDefinition getTenant(@PathVariable String name){
         return this.controller.getTenant(name);
     }
@@ -68,6 +68,7 @@ public class TenantsV3 {
     @Tenants
     @GetMapping
     @SecurityRequirements
+    @NoAuthentication
     public List<String> listTenants(){
         return this.controller.listTenants();
     }
@@ -95,6 +96,7 @@ public class TenantsV3 {
     @Tenants
     @GetMapping(value = "{name}/theme/css", produces = "text/css")
     @SecurityRequirements
+    @NoAuthentication
     public String getCSS(@PathVariable String name){
        return this.controller.getCSS(name);
     }
@@ -104,6 +106,7 @@ public class TenantsV3 {
     @GetMapping("{name}/theme/favicon")
     @ResponseBody
     @SecurityRequirements
+    @NoAuthentication
     public ResponseEntity<Resource> getFavicon(@PathVariable String name){
        return this.controller.getFavicon(name);
     }
@@ -120,6 +123,7 @@ public class TenantsV3 {
     @GetMapping("{name}/theme/background")
     @ResponseBody
     @SecurityRequirements
+    @NoAuthentication
     public ResponseEntity<Resource> getBackgroundImage(@PathVariable String name, @RequestParam(defaultValue = "true") boolean darkMode){
         return this.controller.getBackgroundImage(name, darkMode);
     }
@@ -136,6 +140,7 @@ public class TenantsV3 {
     @GetMapping("{name}/theme/logo")
     @ResponseBody
     @SecurityRequirements
+    @NoAuthentication
     public ResponseEntity<Resource> getLogo(@PathVariable String name, @RequestParam(defaultValue = "true") boolean darkMode){
        return this.controller.getLogo(name, darkMode);
     }

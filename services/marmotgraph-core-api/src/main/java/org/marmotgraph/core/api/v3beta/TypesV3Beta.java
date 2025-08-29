@@ -24,31 +24,25 @@
 
 package org.marmotgraph.core.api.v3beta;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.Version;
-import org.marmotgraph.commons.api.primaryStore.Types;
 import org.marmotgraph.commons.config.openApiGroups.Admin;
 import org.marmotgraph.commons.config.openApiGroups.Advanced;
 import org.marmotgraph.commons.config.openApiGroups.Simple;
-import org.marmotgraph.commons.exception.InstanceNotFoundException;
 import org.marmotgraph.commons.jsonld.DynamicJson;
-import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.markers.ExposesType;
-import org.marmotgraph.commons.markers.WritesData;
 import org.marmotgraph.commons.model.PaginatedResult;
 import org.marmotgraph.commons.model.PaginationParam;
 import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
-import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.core.api.v3.TypesV3;
 import org.marmotgraph.core.model.ExposedStage;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -57,68 +51,48 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping(Version.V3_BETA)
+@AllArgsConstructor
 public class TypesV3Beta {
-
-    private final Types.Client graphDBTypes;
-
-    public TypesV3Beta(Types.Client graphDBTypes) {
-        this.graphDBTypes = graphDBTypes;
-    }
+    private final TypesV3 typesV3;
 
     @Operation(summary = "Returns the types available - either with property information or without")
     @GetMapping("/types")
-    @ExposesType
     @Simple
     public PaginatedResult<TypeInformation> listTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @ParameterObject PaginationParam paginationParam) {
-        return PaginatedResult.ok(graphDBTypes.listTypes(stage.getStage(), space, withProperties, withIncomingLinks, paginationParam));
+        return typesV3.listTypes(stage, space, withProperties, withIncomingLinks, paginationParam);
     }
 
     @Operation(summary = "Returns the types according to the list of names - either with property information or without")
     @PostMapping("/typesByName")
-    @ExposesType
     @Advanced
     public ResultWithExecutionDetails<Map<String, ResultWithExecutionDetails<TypeInformation>>> getTypesByName(@RequestBody List<String> typeNames, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space) {
-        return ResultWithExecutionDetails.ok(graphDBTypes.getTypesByName(typeNames, stage.getStage(), space, withProperties, withIncomingLinks));
+        return typesV3.getTypesByName(typeNames, stage, withProperties, withIncomingLinks, space);
     }
 
     @Operation(summary = "Get type specification")
     @GetMapping("/types/specification")
-    @ExposesType
     @Admin
     public DynamicJson getTypeSpecification(
             @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")
             @RequestParam(value = "global", required = false) boolean global,
             @RequestParam("type") String type
     ) {
-        DynamicJson informations = graphDBTypes.getSpecifyType(type, global);
-
-        if (informations != null) {
-            return informations;
-        }
-        throw new InstanceNotFoundException(String.format("Type %s was not found", type));
+        return typesV3.getTypeSpecification(global, type);
     }
 
     @Operation(summary = "Specify a type")
     //In theory, this could also go into /types only. But since Swagger doesn't allow the discrimination of groups with the same path (there is already the same path registered as GET for simple), we want to discriminate it properly
     @PutMapping("/types/specification")
-    @WritesData
     @Admin
     public void createTypeDefinition(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)") @RequestParam(value = "global", required = false) boolean global, @RequestParam("type") String type) {
-        JsonLdId typeFromPayload = payload.getAs(EBRAINSVocabulary.META_TYPE, JsonLdId.class);
-        String decodedType = URLDecoder.decode(type, StandardCharsets.UTF_8);
-        if(typeFromPayload!=null){
-            throw new IllegalArgumentException("You are not supposed to provide a @type in the payload of the type specifications to avoid ambiguity");
-        }
-        graphDBTypes.specifyType(new JsonLdId(decodedType), payload, global);
+        typesV3.createTypeDefinition(payload, global, type);
     }
 
 
     @Operation(summary = "Remove a type definition", description = "Allows to deprecate a type specification")
     @DeleteMapping("/types/specification")
-    @WritesData
     @Admin
     public void removeTypeDefinition(@RequestParam(value = "type", required = false) String type,  @RequestParam(value = "global", required = false) boolean global) {
-        String decodedType = URLDecoder.decode(type, StandardCharsets.UTF_8);
-        graphDBTypes.removeTypeSpecification(new JsonLdId(decodedType), global);
+        typesV3.removeTypeDefinition(type, global);
     }
 }

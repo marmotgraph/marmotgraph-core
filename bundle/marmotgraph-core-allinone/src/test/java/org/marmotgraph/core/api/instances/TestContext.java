@@ -25,8 +25,8 @@
 package org.marmotgraph.core.api.instances;
 
 import org.marmotgraph.graphdb.arango.model.ArangoDatabaseProxy;
-import org.marmotgraph.authentication.api.AuthenticationAPI;
-import org.marmotgraph.authentication.service.InvitationsService;
+import org.marmotgraph.authorization.api.AuthorizationAPI;
+import org.marmotgraph.authorization.service.InvitationsService;
 import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.SetupLogic;
 import org.marmotgraph.commons.permission.roles.Role;
@@ -39,18 +39,18 @@ import java.util.stream.Collectors;
 
 public class TestContext {
     private final List<ArangoDatabaseProxy> databaseProxies;
-    private final AuthenticationAPI authentication;
+    private final AuthorizationAPI authentication;
     private final Collection<List<Role>> roleCollections;
     private final IdUtils idUtils;
     private final CacheManager cacheManager;
     private final List<SetupLogic> setupLogics;
     private final InvitationsService invitationsService;
 
-    public TestContext(IdUtils idUtils, List<ArangoDatabaseProxy> databaseProxies, AuthenticationAPI authentication, RoleMapping[] roleMappings, List<SetupLogic> setupLogics, InvitationsService invitationsService, CacheManager cacheManager) {
+    public TestContext(IdUtils idUtils, List<ArangoDatabaseProxy> databaseProxies, AuthorizationAPI authentication, RoleMapping[] roleMappings, List<SetupLogic> setupLogics, InvitationsService invitationsService, CacheManager cacheManager) {
         this(idUtils, databaseProxies, authentication,  Arrays.stream(roleMappings).filter(Objects::nonNull).map(r -> Collections.singletonList(r.toRole(null))).collect(Collectors.toSet()), setupLogics, invitationsService, cacheManager);
     }
 
-    public TestContext(IdUtils idUtils, List<ArangoDatabaseProxy> databaseProxies, AuthenticationAPI authentication, Collection<List<Role>> roleCollections, List<SetupLogic> setupLogics, InvitationsService invitationsService, CacheManager cacheManager) {
+    public TestContext(IdUtils idUtils, List<ArangoDatabaseProxy> databaseProxies, AuthorizationAPI authentication, Collection<List<Role>> roleCollections, List<SetupLogic> setupLogics, InvitationsService invitationsService, CacheManager cacheManager) {
         this.databaseProxies = databaseProxies;
         this.authentication = authentication;
         this.roleCollections = roleCollections;
@@ -64,7 +64,7 @@ public class TestContext {
         return databaseProxies;
     }
 
-    public AuthenticationAPI getAuthentication() {
+    public AuthorizationAPI getAuthentication() {
         return authentication;
     }
 

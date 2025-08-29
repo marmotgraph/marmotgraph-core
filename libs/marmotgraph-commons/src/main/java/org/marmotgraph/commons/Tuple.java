@@ -24,9 +24,10 @@
 
 package org.marmotgraph.commons;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public class Tuple<A, B> {
+public class Tuple<A, B> implements Serializable {
     private A a;
     private B b;
 

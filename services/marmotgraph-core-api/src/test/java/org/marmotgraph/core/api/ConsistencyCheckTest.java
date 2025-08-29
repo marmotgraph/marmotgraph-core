@@ -76,8 +76,8 @@ class ConsistencyCheckTest {
             JsonLdDoc doc = new JsonLdDoc();
             doc.addTypes(type);
             doc.addProperty("http://schema.hbp.eu/foo", "instance" + i);
-            ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> document = instances.createNewInstance(doc, "foo", DEFAULT_RESPONSE_CONFIG);
-            JsonLdId id = Objects.requireNonNull(document.getBody()).getData().id();
+            ResultWithExecutionDetails<NormalizedJsonLd> document = instances.createNewInstance(doc, "foo", DEFAULT_RESPONSE_CONFIG);
+            JsonLdId id = Objects.requireNonNull(document).getData().id();
             System.out.printf("Created instance %s%n", id.getId());
         }
         assertEquals(createInstances, getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());

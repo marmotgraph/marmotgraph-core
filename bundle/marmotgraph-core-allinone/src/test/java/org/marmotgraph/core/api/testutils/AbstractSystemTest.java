@@ -25,11 +25,8 @@
 package org.marmotgraph.core.api.testutils;
 
 import org.marmotgraph.MarmotGraphCoreAllInOne;
-import org.marmotgraph.graphdb.arango.model.ArangoDatabaseProxy;
-import org.marmotgraph.authentication.api.AuthenticationAPI;
-import org.marmotgraph.authentication.service.InvitationsService;
-import org.marmotgraph.authentication.service.keycloak.KeycloakClient;
-import org.marmotgraph.authentication.service.keycloak.KeycloakController;
+import org.marmotgraph.authorization.api.AuthorizationAPI;
+import org.marmotgraph.authorization.service.InvitationsService;
 import org.marmotgraph.commons.AuthTokenContext;
 import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.SetupLogic;
@@ -38,6 +35,7 @@ import org.marmotgraph.commons.model.PaginationParam;
 import org.marmotgraph.commons.permission.roles.Role;
 import org.marmotgraph.commons.permission.roles.RoleMapping;
 import org.marmotgraph.core.api.instances.TestContext;
+import org.marmotgraph.graphdb.arango.model.ArangoDatabaseProxy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.CacheManager;
@@ -63,17 +61,7 @@ public abstract class AbstractSystemTest {
     protected AuthTokenContext authTokenContext;
 
     @MockitoBean
-    protected AuthenticationAPI authenticationAPI;
-
-
-    //We mock the keycloak controller bean to prevent it to initialize
-    @MockitoBean
-    protected KeycloakController keycloakController;
-
-
-    //We mock the keycloak client bean to prevent it to initialize
-    @MockitoBean
-    protected KeycloakClient keycloakClient;
+    protected AuthorizationAPI authenticationAPI;
 
     @Autowired
     protected IdUtils idUtils;

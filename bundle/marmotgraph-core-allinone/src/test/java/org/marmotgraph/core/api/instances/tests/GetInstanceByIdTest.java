@@ -34,7 +34,7 @@ import org.springframework.http.ResponseEntity;
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class GetInstanceByIdTest extends AbstractInstanceTest {
 
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> response;
+    public ResultWithExecutionDetails<NormalizedJsonLd> response;
     public NormalizedJsonLd originalInstance;
 
     public GetInstanceByIdTest(TestContext testContext, InstancesV3 instances) {

@@ -27,6 +27,7 @@ package org.marmotgraph.core.api.v3;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.cache.CacheConstant;
 import org.marmotgraph.commons.config.openApiGroups.Admin;
@@ -37,13 +38,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping(Version.V3 +"/cache")
+@AllArgsConstructor
 public class CacheV3 {
 
     private final CoreCacheController cacheController;
-
-    public CacheV3(CoreCacheController cacheController) {
-        this.cacheController = cacheController;
-    }
 
     @Operation(summary = "Get all keys")
     @GetMapping("/keys")

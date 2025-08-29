@@ -32,7 +32,7 @@ import java.util.UUID;
 public class ResultWithExecutionDetails<T> extends Result<T> {
 
     protected Long startTime;
-    protected Long durationInMs;
+    protected Double durationInMs;
     protected UUID transactionId;
 
     public static <T> ResultWithExecutionDetails<T> ok(){
@@ -67,9 +67,9 @@ public class ResultWithExecutionDetails<T> extends Result<T> {
         return result;
     }
 
-    public ResultWithExecutionDetails<T> setExecutionDetails(Date startTime, Date endTime){
-        this.startTime = startTime.getTime();
-        this.durationInMs = endTime.getTime() - this.startTime;
+    public ResultWithExecutionDetails<T> setExecutionDetails(Long startTimeInNs, Long endTimeInNs){
+        this.startTime = startTimeInNs/1000000;
+        this.durationInMs = (endTimeInNs-startTimeInNs)/1000000.0;
         return this;
     }
 

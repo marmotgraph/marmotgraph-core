@@ -24,6 +24,7 @@
 
 package org.marmotgraph.core.api.v3;
 
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.api.primaryStore.Types;
 import org.marmotgraph.commons.config.openApiGroups.Admin;
@@ -57,12 +58,10 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping(Version.V3)
+@AllArgsConstructor
 public class TypesV3 {
-    private final Types.Client graphDBTypes;
 
-    public TypesV3(Types.Client graphDBTypes) {
-        this.graphDBTypes = graphDBTypes;
-    }
+    private final Types.Client graphDBTypes;
 
     @Operation(summary = "Returns the types available - either with property information or without")
     @GetMapping("/types")

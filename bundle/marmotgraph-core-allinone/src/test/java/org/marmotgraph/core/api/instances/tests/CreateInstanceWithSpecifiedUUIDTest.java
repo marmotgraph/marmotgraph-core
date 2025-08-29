@@ -38,7 +38,7 @@ import java.util.UUID;
 public class CreateInstanceWithSpecifiedUUIDTest extends AbstractInstanceTest {
 
     public JsonLdDoc testData = TestDataFactory.createTestData(smallPayload, 1, true);
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> response;
+    public ResultWithExecutionDetails<NormalizedJsonLd> response;
     public UUID clientSpecifiedUUID = UUID.randomUUID();
 
     public CreateInstanceWithSpecifiedUUIDTest(TestContext testContext, InstancesV3 instances) {

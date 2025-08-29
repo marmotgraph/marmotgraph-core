@@ -41,7 +41,7 @@ import java.util.UUID;
 public class GetInstancesByIdentifiersTest extends AbstractInstanceTest {
 
     public ResultWithExecutionDetails<Map<String, Result<NormalizedJsonLd>>> response;
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> updateResult;
+    public ResultWithExecutionDetails<NormalizedJsonLd> updateResult;
     public NormalizedJsonLd originalInstance;
     public String identifier = "https://foo/bar";
     public JsonLdDoc doc;

@@ -35,7 +35,7 @@ import org.springframework.http.ResponseEntity;
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class GetInstanceNeighborsSimpleTest extends AbstractInstanceTest {
 
-    public ResponseEntity<ResultWithExecutionDetails<GraphEntity>> response;
+    public ResultWithExecutionDetails<GraphEntity> response;
     public NormalizedJsonLd originalInstance;
 
     public GetInstanceNeighborsSimpleTest(TestContext testContext, InstancesV3 instances) {

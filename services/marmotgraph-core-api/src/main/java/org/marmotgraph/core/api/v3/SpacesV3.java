@@ -24,10 +24,13 @@
 
 package org.marmotgraph.core.api.v3;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.config.openApiGroups.Admin;
@@ -42,13 +45,11 @@ import org.marmotgraph.commons.model.PaginatedResult;
 import org.marmotgraph.commons.model.PaginationParam;
 import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.model.SpaceName;
-import org.marmotgraph.commons.model.external.types.TypeInSpace;
 import org.marmotgraph.commons.model.external.spaces.SpaceInformation;
 import org.marmotgraph.commons.model.external.spaces.SpaceSpecification;
+import org.marmotgraph.commons.model.external.types.TypeInSpace;
 import org.marmotgraph.core.controller.CoreInferenceController;
 import org.marmotgraph.core.controller.CoreSpaceController;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.*;
 
@@ -57,16 +58,12 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping(Version.V3 + "/spaces")
+@AllArgsConstructor
 public class SpacesV3 {
     private final CoreInferenceController inferenceController;
     private final AuthContext authContext;
     private final CoreSpaceController spaceController;
 
-    public SpacesV3(CoreInferenceController inferenceController, AuthContext authContext, CoreSpaceController spaceController) {
-        this.inferenceController = inferenceController;
-        this.authContext = authContext;
-        this.spaceController = spaceController;
-    }
 
     @GetMapping("{space}")
     @ExposesSpace

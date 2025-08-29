@@ -38,7 +38,7 @@ public class ContributeToInstancePartialReplacementTest extends AbstractInstance
 
     public NormalizedJsonLd originalInstance;
     public JsonLdDoc update;
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> response;
+    public ResultWithExecutionDetails<NormalizedJsonLd> response;
     private final ExtendedResponseConfiguration responseConfiguration;
     public static final String MANIPULATED_PROPERTY = TestDataFactory.DYNAMIC_FIELD_PREFIX + "0";
 

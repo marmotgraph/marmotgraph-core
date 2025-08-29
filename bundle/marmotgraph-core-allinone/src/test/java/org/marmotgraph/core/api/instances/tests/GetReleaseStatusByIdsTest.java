@@ -26,6 +26,7 @@ package org.marmotgraph.core.api.instances.tests;
 
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.ReleaseStatus;
+import org.marmotgraph.commons.model.Result;
 import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.params.ReleaseTreeScope;
 import org.marmotgraph.core.api.instances.TestContext;
@@ -38,7 +39,7 @@ import java.util.UUID;
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class GetReleaseStatusByIdsTest extends AbstractInstanceTest {
 
-    public ResultWithExecutionDetails<Map<UUID, ResultWithExecutionDetails<ReleaseStatus>>> response;
+    public ResultWithExecutionDetails<Map<UUID, Result<ReleaseStatus>>> response;
     public NormalizedJsonLd originalInstanceA;
     public UUID uuidA;
     public UUID uuidB;

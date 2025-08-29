@@ -24,9 +24,12 @@
 
 package org.marmotgraph.commons.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.semantics.vocabularies.HBPVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
+
+import java.util.Optional;
 
 public class User extends NormalizedJsonLd {
     public User() {
@@ -78,6 +81,16 @@ public class User extends NormalizedJsonLd {
 
     private boolean isSame(Object o1, Object o2){
         return o1==null && o2==null || (o1!=null && o1.equals(o2));
+    }
+
+    @JsonIgnore
+    public boolean isServiceAccount(){
+        return getUserName().startsWith("service-account-");
+    }
+
+    @JsonIgnore
+    public Optional<String> getSimpleServiceAccountName(){
+        return isServiceAccount() && getUserName() != null ? Optional.of(getUserName().substring("service-account-".length())) : Optional.empty();
     }
 
 }

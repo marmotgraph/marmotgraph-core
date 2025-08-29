@@ -24,13 +24,13 @@
 
 package org.marmotgraph.core.api.v3beta;
 
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.Version;
-import org.marmotgraph.commons.api.jsonld.JsonLd;
 import org.marmotgraph.commons.config.openApiGroups.Simple;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.markers.ExposesInputWithoutEnrichedSensitiveData;
 import io.swagger.v3.oas.annotations.Operation;
+import org.marmotgraph.core.api.v3.JsonLDV3;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,19 +41,16 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping(Version.V3_BETA + "/jsonld")
+@AllArgsConstructor
 public class JsonLDV3Beta {
-    private final JsonLd.Client jsonLd;
 
-    public JsonLDV3Beta(JsonLd.Client jsonLd) {
-        this.jsonLd = jsonLd;
-    }
+    private final JsonLDV3 jsonLdV3;
 
     @Operation(summary = "Normalizes the passed payload according to the MarmotGraph conventions")
     @PostMapping("/normalizedPayload")
-    @ExposesInputWithoutEnrichedSensitiveData
     @Simple
     public NormalizedJsonLd normalizePayload(@RequestBody JsonLdDoc payload) {
-        return jsonLd.normalize(payload, true);
+        return jsonLdV3.normalizePayload(payload);
     }
 
 }

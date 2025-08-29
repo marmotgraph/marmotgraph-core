@@ -59,8 +59,8 @@ public class GetTypesForInvitation extends AbstractTest {
     @Override
     protected void setup() {
         // We create a new instance so the type is implicitly created.
-        final ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> instance = instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), "functionalityTest", new ExtendedResponseConfiguration());
-        instances.inviteUserForInstance(testContext.getIdUtils().getUUID(instance.getBody().getData().id()), USER_ID);
+        final ResultWithExecutionDetails<NormalizedJsonLd> instance = instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), "functionalityTest", new ExtendedResponseConfiguration());
+        instances.inviteUserForInstance(testContext.getIdUtils().getUUID(instance.getData().id()), USER_ID);
     }
 
     @Override

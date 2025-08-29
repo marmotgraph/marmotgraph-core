@@ -24,15 +24,16 @@
 
 package org.marmotgraph.core.api.v3;
 
+import io.swagger.v3.oas.annotations.Operation;
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.Version;
-import org.marmotgraph.commons.api.authentication.Authentication;
+import org.marmotgraph.commons.api.authorization.Authorization;
 import org.marmotgraph.commons.config.openApiGroups.Extra;
 import org.marmotgraph.commons.config.openApiGroups.Simple;
 import org.marmotgraph.commons.markers.ExposesUserInfo;
 import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.model.User;
 import org.marmotgraph.commons.models.UserWithRoles;
-import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -44,19 +45,17 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping(Version.V3 +"/users")
+@AllArgsConstructor
 public class UsersV3 {
-    private final Authentication.Client authentication;
+    private final Authorization.Client authorization;
 
-    public UsersV3(Authentication.Client authentication) {
-        this.authentication = authentication;
-    }
 
     @Operation(summary = "Retrieve user information from the passed token (including detailed information such as e-mail address)")
     @GetMapping("/me")
     @ExposesUserInfo
     @Simple
     public ResponseEntity<ResultWithExecutionDetails<User>> myUserInfo() {
-        User myUserInfo = authentication.getMyUserInfo();
+        User myUserInfo = authorization.getMyUserInfo();
         return myUserInfo!=null ? ResponseEntity.ok(ResultWithExecutionDetails.ok(myUserInfo)) : ResponseEntity.notFound().build();
     }
 
@@ -65,7 +64,7 @@ public class UsersV3 {
     @ExposesUserInfo
     @Extra
     public ResponseEntity<ResultWithExecutionDetails<UserWithRoles>> myRoles() {
-        final UserWithRoles roles = authentication.getRoles();
+        final UserWithRoles roles = authorization.getRoles();
         return roles!=null ? ResponseEntity.ok(ResultWithExecutionDetails.ok(roles)) : ResponseEntity.notFound().build();
     }
 

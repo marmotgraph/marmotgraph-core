@@ -34,7 +34,7 @@ import org.springframework.http.ResponseEntity;
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class UnreleaseInstanceTest extends AbstractInstanceTest {
 
-    public ResponseEntity<ResultWithExecutionDetails<Void>> response;
+    public ResultWithExecutionDetails<Void> response;
     public NormalizedJsonLd originalInstance;
 
     public UnreleaseInstanceTest(TestContext testContext, InstancesV3 instances) {
@@ -53,7 +53,7 @@ public class UnreleaseInstanceTest extends AbstractInstanceTest {
         response = instances.unreleaseInstance(testContext.getIdUtils().getUUID(originalInstance.id()));
     }
 
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> fetchInstance(ExposedStage stage){
+    public ResultWithExecutionDetails<NormalizedJsonLd> fetchInstance(ExposedStage stage){
         return instances.getInstanceById(testContext.getIdUtils().getUUID(originalInstance.id()), stage, defaultResponseConfiguration);
     }
 }

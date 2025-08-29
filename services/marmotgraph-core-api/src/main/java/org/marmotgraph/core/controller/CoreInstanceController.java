@@ -47,7 +47,6 @@ import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.time.ZoneOffset;
@@ -199,7 +198,7 @@ public class CoreInstanceController {
      *
      * @throws CancelProcessException in case an instance with the same id (or one of the given identifiers in http://schema.org/identifier) already exists in the DB
      */
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> createNewInstance(NormalizedJsonLd normalizedJsonLd, UUID id, SpaceName spaceName, ExtendedResponseConfiguration responseConfiguration) {
+    public ResultWithExecutionDetails<NormalizedJsonLd> createNewInstance(NormalizedJsonLd normalizedJsonLd, UUID id, SpaceName spaceName, ExtendedResponseConfiguration responseConfiguration) {
         checkIdForCreation(id, normalizedJsonLd.allIdentifiersIncludingId());
         normalizedJsonLd.setFieldUpdateTimes(new NormalizedJsonLd.FieldUpdateTimes(normalizedJsonLd.keySet().stream().collect(Collectors.toMap(k -> k, k -> ZonedDateTime.now().withZoneSameInstant(ZoneOffset.UTC)))));
         Event upsertEvent = createUpsertEvent(id, normalizedJsonLd, spaceName);
@@ -208,7 +207,7 @@ public class CoreInstanceController {
     }
 
 
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> contributeToInstance(NormalizedJsonLd normalizedJsonLd, InstanceId instanceId, boolean removeNonDeclaredProperties, ResponseConfiguration responseConfiguration) {
+    public ResultWithExecutionDetails<NormalizedJsonLd> contributeToInstance(NormalizedJsonLd normalizedJsonLd, InstanceId instanceId, boolean removeNonDeclaredProperties, ResponseConfiguration responseConfiguration) {
         normalizedJsonLd = patchInstance(instanceId, normalizedJsonLd, removeNonDeclaredProperties);
         Event upsertEvent = createUpsertEvent(instanceId.getUuid(), normalizedJsonLd, instanceId.getSpace());
         InstanceId updatedInstanceId = events.postEvent(upsertEvent);
@@ -220,7 +219,7 @@ public class CoreInstanceController {
         try {
             ReleaseStatus releaseStatus = instances.getReleaseStatus(uuid, ReleaseTreeScope.TOP_INSTANCE_ONLY);
             if(releaseStatus != ReleaseStatus.UNRELEASED){
-                return ResultWithExecutionDetails.nok(HttpStatus.CONFLICT.value(), "Was not able to remove instance because it is released still", uuid);
+                throw new ResultBasedException(ResultWithExecutionDetails.nok(HttpStatus.CONFLICT.value(), "Was not able to remove instance because it is released still", uuid));
             }
             events.postEvent(Event.createDeleteEvent(uuid));
         }
@@ -230,10 +229,10 @@ public class CoreInstanceController {
         return ResultWithExecutionDetails.ok();
     }
 
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> moveInstance(UUID id, SpaceName targetSpace, ExtendedResponseConfiguration responseConfiguration) {
+    public ResultWithExecutionDetails<NormalizedJsonLd> moveInstance(UUID id, SpaceName targetSpace, ExtendedResponseConfiguration responseConfiguration) {
         ReleaseStatus releaseStatus = getReleaseStatus(id, ReleaseTreeScope.TOP_INSTANCE_ONLY);
         if (releaseStatus != null && releaseStatus != ReleaseStatus.UNRELEASED) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ResultWithExecutionDetails.nok(HttpStatus.CONFLICT.value(), "Was not able to move an instance because it is released still", id));
+            throw new ResultBasedException(ResultWithExecutionDetails.nok(HttpStatus.CONFLICT.value(), "Was not able to move an instance because it is released still", id));
         }
         NormalizedJsonLd instance = instances.getInstanceById(id, DataStage.IN_PROGRESS, true);
         if (instance == null) {
@@ -311,7 +310,7 @@ public class CoreInstanceController {
         return instancesByType;
     }
 
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> handleIngestionResponse(ResponseConfiguration responseConfiguration, Set<InstanceId> instanceIds) {
+    public ResultWithExecutionDetails<NormalizedJsonLd> handleIngestionResponse(ResponseConfiguration responseConfiguration, Set<InstanceId> instanceIds) {
         ResultWithExecutionDetails<NormalizedJsonLd> result;
         final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
         if (responseConfiguration.isReturnPayload()) {
@@ -334,7 +333,7 @@ public class CoreInstanceController {
                 return jsonLd;
             }).collect(Collectors.toList()));
         }
-        return result instanceof AmbiguousResult ? ResponseEntity.status(HttpStatus.CONFLICT).body(result) : ResponseEntity.ok(result);
+        return result;
     }
 
     public Paginated<NormalizedJsonLd> getIncomingLinks(UUID id, DataStage stage, String property, Type type, PaginationParam pagination) {

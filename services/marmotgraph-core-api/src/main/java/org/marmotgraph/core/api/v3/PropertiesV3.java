@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.api.primaryStore.Types;
 import org.marmotgraph.commons.config.openApiGroups.Admin;
@@ -52,12 +53,9 @@ import java.nio.charset.StandardCharsets;
  */
 @RestController
 @RequestMapping(Version.V3)
+@AllArgsConstructor
 public class PropertiesV3 {
     private final Types.Client graphDBTypes;
-
-    public PropertiesV3(Types.Client graphDBTypes) {
-        this.graphDBTypes = graphDBTypes;
-    }
 
     @Operation(summary = "Get a property specification")
     @GetMapping("/properties")

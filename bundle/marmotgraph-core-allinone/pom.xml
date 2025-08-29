@@ -52,6 +52,12 @@
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
+            <artifactId>marmotgraph-authorization</artifactId>
+            <version>4.0</version>
+            <classifier>library</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-core-api</artifactId>
             <version>4.0</version>
             <classifier>library</classifier>
@@ -83,6 +89,12 @@
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-primarystore</artifactId>
+            <version>4.0</version>
+            <classifier>library</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.marmotgraph</groupId>
+            <artifactId>marmotgraph-queries</artifactId>
             <version>4.0</version>
             <classifier>library</classifier>
         </dependency>

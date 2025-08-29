@@ -35,7 +35,7 @@ import org.springframework.http.ResponseEntity;
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class GetInstanceScopeSimpleTest extends AbstractInstanceTest {
 
-    public ResponseEntity<ResultWithExecutionDetails<ScopeElement>> response;
+    public ResultWithExecutionDetails<ScopeElement> response;
     public NormalizedJsonLd originalInstance;
 
     public GetInstanceScopeSimpleTest(TestContext testContext, InstancesV3 instances) {

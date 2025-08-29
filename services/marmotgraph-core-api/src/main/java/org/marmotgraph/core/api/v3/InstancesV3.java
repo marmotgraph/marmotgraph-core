@@ -26,7 +26,6 @@ package org.marmotgraph.core.api.v3;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -46,7 +45,6 @@ import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.markers.*;
 import org.marmotgraph.commons.model.*;
 import org.marmotgraph.commons.params.ReleaseTreeScope;
-import org.marmotgraph.core.api.examples.InstancesExamples;
 import org.marmotgraph.core.controller.CoreInstanceController;
 import org.marmotgraph.core.controller.VirtualSpaceController;
 import org.marmotgraph.core.model.ExposedStage;
@@ -54,7 +52,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URLDecoder;
@@ -86,16 +83,24 @@ public class InstancesV3 {
                     
                     Please note that any "@id" specified in the payload will be interpreted as an additional identifier and therefore added to the "http://schema.org/identifier" array.
                     """)
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(examples = {
-            @ExampleObject(name = InstancesExamples.PAYLOAD_MINIMAL_NAME, description = InstancesExamples.PAYLOAD_MINIMAL_DESC, value = InstancesExamples.PAYLOAD_MINIMAL),
-            @ExampleObject(name = InstancesExamples.PAYLOAD_WITH_PROPERTY_NAME, description = InstancesExamples.PAYLOAD_WITH_PROPERTY_DESC, value = InstancesExamples.PAYLOAD_WITH_PROPERTY),
-            @ExampleObject(name = InstancesExamples.PAYLOAD_WITH_LINK_NAME, description = InstancesExamples.PAYLOAD_WITH_LINK_DESC, value = InstancesExamples.PAYLOAD_WITH_LINK)
-    }))
+//    @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(examples = {
+//            @ExampleObject(name = InstancesExamples.PAYLOAD_MINIMAL_NAME, description = InstancesExamples.PAYLOAD_MINIMAL_DESC, value = InstancesExamples.PAYLOAD_MINIMAL),
+//            @ExampleObject(name = InstancesExamples.PAYLOAD_WITH_PROPERTY_NAME, description = InstancesExamples.PAYLOAD_WITH_PROPERTY_DESC, value = InstancesExamples.PAYLOAD_WITH_PROPERTY),
+//            @ExampleObject(name = InstancesExamples.PAYLOAD_WITH_LINK_NAME, description = InstancesExamples.PAYLOAD_WITH_LINK_DESC, value = InstancesExamples.PAYLOAD_WITH_LINK)
+//    }))
     @PostMapping("/instances")
     @WritesData
     @ExposesData
     @Simple
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \"" + SpaceName.PRIVATE_SPACE + "\" if you want to store it to your private space") String space, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
+    public ResultWithExecutionDetails<NormalizedJsonLd> createNewInstance(
+            @RequestBody JsonLdDoc jsonLdDoc,
+
+            @RequestParam(value = "space")
+            @Parameter(description = "The space name the instance shall be stored in or \"" + SpaceName.PRIVATE_SPACE + "\" if you want to store it to your private space")
+            String space,
+
+            @ParameterObject ExtendedResponseConfiguration responseConfiguration
+    ) {
         return createNewInstanceWithId(jsonLdDoc, UUID.randomUUID(), space, responseConfiguration);
     }
 
@@ -110,22 +115,25 @@ public class InstancesV3 {
     @PostMapping("/instances/{id}")
     @ExposesData
     @WritesData
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(examples = {
-            @ExampleObject(name = InstancesExamples.PAYLOAD_MINIMAL_NAME, description = InstancesExamples.PAYLOAD_MINIMAL_DESC, value = InstancesExamples.PAYLOAD_MINIMAL),
-            @ExampleObject(name = InstancesExamples.PAYLOAD_WITH_PROPERTY_NAME, description = InstancesExamples.PAYLOAD_WITH_PROPERTY_DESC, value = InstancesExamples.PAYLOAD_WITH_PROPERTY),
-            @ExampleObject(name = InstancesExamples.PAYLOAD_WITH_LINK_NAME, description = InstancesExamples.PAYLOAD_WITH_LINK_DESC, value = InstancesExamples.PAYLOAD_WITH_LINK)
-    }))
+//    @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(examples = {
+//            @ExampleObject(name = InstancesExamples.PAYLOAD_MINIMAL_NAME, description = InstancesExamples.PAYLOAD_MINIMAL_DESC, value = InstancesExamples.PAYLOAD_MINIMAL),
+//            @ExampleObject(name = InstancesExamples.PAYLOAD_WITH_PROPERTY_NAME, description = InstancesExamples.PAYLOAD_WITH_PROPERTY_DESC, value = InstancesExamples.PAYLOAD_WITH_PROPERTY),
+//            @ExampleObject(name = InstancesExamples.PAYLOAD_WITH_LINK_NAME, description = InstancesExamples.PAYLOAD_WITH_LINK_DESC, value = InstancesExamples.PAYLOAD_WITH_LINK)
+//    }))
     @Simple
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> createNewInstanceWithId(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \"" + SpaceName.PRIVATE_SPACE + "\" if you want to store it to your private space") String space, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
-        Date startTime = new Date();
+    public ResultWithExecutionDetails<NormalizedJsonLd> createNewInstanceWithId(
+            @RequestBody JsonLdDoc jsonLdDoc,
+            @PathVariable("id") UUID id,
+
+            @RequestParam(value = "space")
+            @Parameter(description = "The space name the instance shall be stored in or \"" + SpaceName.PRIVATE_SPACE + "\" if you want to store it to your private space")
+            String space,
+
+            @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
         SpaceName spaceName = authContext.resolveSpaceName(space);
         logger.debug(String.format("Creating new instance with id %s", id));
-        ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> newInstance = instanceController.createNewInstance(normalizePayload(jsonLdDoc, true), id, spaceName, responseConfiguration);
+        ResultWithExecutionDetails<NormalizedJsonLd> newInstance = instanceController.createNewInstance(normalizePayload(jsonLdDoc, true), id, spaceName, responseConfiguration);
         logger.debug(String.format("Done creating new instance with id %s", id));
-        final ResultWithExecutionDetails<NormalizedJsonLd> body = newInstance.getBody();
-        if (body != null) {
-            body.setExecutionDetails(startTime, new Date());
-        }
         return newInstance;
     }
 
@@ -142,20 +150,15 @@ public class InstancesV3 {
         return new NormalizedJsonLd(jsonLdDoc);
     }
 
-    private ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> contributeToInstance(NormalizedJsonLd normalizedJsonLd, UUID id, ExtendedResponseConfiguration responseConfiguration, boolean removeNonDeclaredFields) {
-        Date startTime = new Date();
+    private ResultWithExecutionDetails<NormalizedJsonLd> contributeToInstance(NormalizedJsonLd normalizedJsonLd, UUID id, ExtendedResponseConfiguration responseConfiguration, boolean removeNonDeclaredFields) {
         logger.debug(String.format("Contributing to instance with id %s", id));
         final InstanceId instanceId = instanceController.findIdForContribution(id, normalizedJsonLd.identifiers());
         if (instanceId == null) {
-            return ResponseEntity.notFound().build();
+            return null;
         }
-        ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> resultResponseEntity = instanceController.contributeToInstance(normalizedJsonLd, instanceId, removeNonDeclaredFields, responseConfiguration);
+        ResultWithExecutionDetails<NormalizedJsonLd> result = instanceController.contributeToInstance(normalizedJsonLd, instanceId, removeNonDeclaredFields, responseConfiguration);
         logger.debug(String.format("Done contributing to instance with id %s", id));
-        ResultWithExecutionDetails<NormalizedJsonLd> body = resultResponseEntity.getBody();
-        if (body != null) {
-            body.setExecutionDetails(startTime, new Date());
-        }
-        return resultResponseEntity;
+        return result;
     }
 
     @Operation(summary = "Replace contribution to an existing instance")
@@ -163,7 +166,11 @@ public class InstancesV3 {
     @ExposesData
     @WritesData
     @Simple
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> contributeToInstanceFullReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
+    public ResultWithExecutionDetails<NormalizedJsonLd> contributeToInstanceFullReplacement(
+            @RequestBody JsonLdDoc jsonLdDoc,
+            @PathVariable("id") UUID id,
+            @ParameterObject ExtendedResponseConfiguration responseConfiguration
+    ) {
         return contributeToInstance(normalizePayload(jsonLdDoc, true), id, responseConfiguration, true);
     }
 
@@ -172,7 +179,11 @@ public class InstancesV3 {
     @ExposesData
     @WritesData
     @Simple
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> contributeToInstancePartialReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
+    public ResultWithExecutionDetails<NormalizedJsonLd> contributeToInstancePartialReplacement(
+            @RequestBody JsonLdDoc jsonLdDoc,
+            @PathVariable("id") UUID id,
+            @ParameterObject ExtendedResponseConfiguration responseConfiguration
+    ) {
         return contributeToInstance(normalizePayload(jsonLdDoc, false), id, responseConfiguration, false);
     }
 
@@ -180,17 +191,26 @@ public class InstancesV3 {
     @GetMapping("/instances/{id}")
     @ExposesData
     @Simple
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> getInstanceById(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
-        Date startTime = new Date();
+    public ResultWithExecutionDetails<NormalizedJsonLd> getInstanceById(
+            @PathVariable("id") UUID id,
+            @RequestParam("stage") ExposedStage stage,
+            @ParameterObject ExtendedResponseConfiguration responseConfiguration
+    ) {
         NormalizedJsonLd instanceById = instanceController.getInstanceById(id, stage.getStage(), responseConfiguration);
-        return instanceById != null ? ResponseEntity.ok(ResultWithExecutionDetails.ok(instanceById).setExecutionDetails(startTime, new Date())) : ResponseEntity.notFound().build();
+        return instanceById != null ? ResultWithExecutionDetails.ok(instanceById) : null;
     }
 
     @Operation(summary = "Get incoming links for a specific instance (paginated)")
     @GetMapping("/instances/{id}/incomingLinks")
     @ExposesData
     @Advanced
-    public PaginatedResult<NormalizedJsonLd> getIncomingLinks(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage, @RequestParam("property") String property, @RequestParam("type") String type, @ParameterObject PaginationParam paginationParam) {
+    public PaginatedResult<NormalizedJsonLd> getIncomingLinks(
+            @PathVariable("id") UUID id,
+            @RequestParam("stage") ExposedStage stage,
+            @RequestParam("property") String property,
+            @RequestParam("type") String type,
+            @ParameterObject PaginationParam paginationParam
+    ) {
         return PaginatedResult.ok(instanceController.getIncomingLinks(id, stage.getStage(), URLDecoder.decode(property, StandardCharsets.UTF_8), type != null ? new Type(type) : null, paginationParam));
     }
 
@@ -203,20 +223,26 @@ public class InstancesV3 {
     @GetMapping("/instances/{id}/scope")
     @ExposesMinimalData
     @Advanced
-    public ResponseEntity<ResultWithExecutionDetails<ScopeElement>> getInstanceScope(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "returnPermissions", required = false, defaultValue = "false") boolean returnPermissions, @RequestParam(value = "applyRestrictions", required = false, defaultValue = "false") boolean applyRestrictions) {
-        Date startTime = new Date();
+    public ResultWithExecutionDetails<ScopeElement> getInstanceScope(
+            @PathVariable("id") UUID id,
+            @RequestParam("stage") ExposedStage stage,
+            @RequestParam(value = "returnPermissions", required = false, defaultValue = "false") boolean returnPermissions,
+            @RequestParam(value = "applyRestrictions", required = false, defaultValue = "false") boolean applyRestrictions
+    ) {
         ScopeElement scope = instanceController.getScopeForInstance(id, stage.getStage(), returnPermissions, applyRestrictions);
-        return scope != null ? ResponseEntity.ok(ResultWithExecutionDetails.ok(scope).setExecutionDetails(startTime, new Date())) : ResponseEntity.notFound().build();
+        return scope != null ? ResultWithExecutionDetails.ok(scope) : null;
     }
 
     @Operation(summary = "Get the neighborhood for the instance by its MarmotGraph-internal ID")
     @GetMapping("/instances/{id}/neighbors")
     @ExposesMinimalData
     @Extra
-    public ResponseEntity<ResultWithExecutionDetails<GraphEntity>> getNeighbors(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage) {
-        Date startTime = new Date();
+    public ResultWithExecutionDetails<GraphEntity> getNeighbors(
+            @PathVariable("id") UUID id,
+            @RequestParam("stage") ExposedStage stage
+    ) {
         GraphEntity scope = instanceController.getNeighbors(id, stage.getStage());
-        return scope != null ? ResponseEntity.ok(ResultWithExecutionDetails.ok(scope).setExecutionDetails(startTime, new Date())) : ResponseEntity.notFound().build();
+        return scope != null ? ResultWithExecutionDetails.ok(scope) : null;
     }
 
 
@@ -224,9 +250,39 @@ public class InstancesV3 {
     @GetMapping("/instances")
     @ExposesData
     @Simple
-    public PaginatedResult<NormalizedJsonLd> listInstances(@RequestParam("stage") ExposedStage stage, @RequestParam("type") @Parameter(examples = {@ExampleObject(name = "person", value = "https://openminds.ebrains.eu/core/Person", description = "An openminds person"), @ExampleObject(name = "datasetVersion", value = "https://openminds.ebrains.eu/core/DatasetVersion", description = "An openminds dataset version")}) String type, @RequestParam(value = "space", required = false) @Parameter(description = "The space of the instances to be listed or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space", examples = {@ExampleObject(name = "myspace", value = "myspace"), @ExampleObject(name = "dataset", value = "dataset")}) String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "filterProperty", required = false) String filterProperty, @RequestParam(value = "filterValue", required = false) String filterValue, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject PaginationParam paginationParam) {
+    public PaginatedResult<NormalizedJsonLd> listInstances(
+            @RequestParam("stage")
+            ExposedStage stage,
+
+            @RequestParam("type")
+//            @Parameter(
+//                    examples = {@ExampleObject(name = "person", value = "https://openminds.ebrains.eu/core/Person", description = "An openminds person"), @ExampleObject(name = "datasetVersion", value = "https://openminds.ebrains.eu/core/DatasetVersion", description = "An openminds dataset version")}
+//            )
+            String type,
+
+            @RequestParam(value = "space", required = false)
+            @Parameter(
+                    //examples = {@ExampleObject(name = "myspace", value = "myspace"), @ExampleObject(name = "dataset", value = "dataset")},
+                    description = "The space of the instances to be listed or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space"
+            )
+            String space,
+
+            @RequestParam(value = "searchByLabel", required = false)
+            String searchByLabel,
+
+            @RequestParam(value = "filterProperty", required = false)
+            String filterProperty,
+
+            @RequestParam(value = "filterValue", required = false)
+            String filterValue,
+
+            @ParameterObject
+            ResponseConfiguration responseConfiguration,
+
+            @ParameterObject
+            PaginationParam paginationParam
+    ) {
         PaginatedResult<NormalizedJsonLd> result;
-        Date startTime = new Date();
         if (virtualSpaceController.isVirtualSpace(space)) {
             List<NormalizedJsonLd> instancesByInvitation = virtualSpaceController.getInstancesByInvitation(responseConfiguration, stage.getStage(), type);
             int total = instancesByInvitation.size();
@@ -239,7 +295,6 @@ public class InstancesV3 {
             searchByLabel = enrichSearchTermIfItIsAUUID(searchByLabel, stage.getStage());
             result = PaginatedResult.ok(instanceController.getInstances(stage.getStage(), new Type(type), SpaceName.fromString(space), searchByLabel, filterProperty, filterValue, responseConfiguration, paginationParam));
         }
-        result.setExecutionDetails(startTime, new Date());
         return result;
     }
 
@@ -247,9 +302,12 @@ public class InstancesV3 {
     @PostMapping("/instancesByIds")
     @ExposesData
     @Advanced
-    public ResultWithExecutionDetails<Map<UUID, Result<NormalizedJsonLd>>> getInstancesByIds(@RequestBody List<UUID> ids, @RequestParam("stage") ExposedStage stage, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
-        Date startTime = new Date();
-        return ResultWithExecutionDetails.ok(instanceController.getInstancesByIds(ids, stage.getStage(), responseConfiguration, null)).setExecutionDetails(startTime, new Date());
+    public ResultWithExecutionDetails<Map<UUID, Result<NormalizedJsonLd>>> getInstancesByIds(
+            @RequestBody List<UUID> ids,
+            @RequestParam("stage") ExposedStage stage,
+            @ParameterObject ExtendedResponseConfiguration responseConfiguration
+    ) {
+        return ResultWithExecutionDetails.ok(instanceController.getInstancesByIds(ids, stage.getStage(), responseConfiguration, null));
     }
 
 
@@ -257,12 +315,15 @@ public class InstancesV3 {
     @PostMapping("/instancesByIdentifiers")
     @ExposesData
     @Advanced
-    public ResultWithExecutionDetails<Map<String, Result<NormalizedJsonLd>>> getInstancesByIdentifiers(@RequestBody List<String> identifiers, @RequestParam("stage") ExposedStage stage, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
-        Date startDate = new Date();
+    public ResultWithExecutionDetails<Map<String, Result<NormalizedJsonLd>>> getInstancesByIdentifiers(
+            @RequestBody List<String> identifiers,
+            @RequestParam("stage") ExposedStage stage,
+            @ParameterObject ExtendedResponseConfiguration responseConfiguration
+    ) {
         List<IdWithAlternatives> idWithAlternatives = identifiers.stream().filter(Objects::nonNull).distinct().map(identifier -> new IdWithAlternatives(UUID.nameUUIDFromBytes(identifier.getBytes(StandardCharsets.UTF_8)), null, Collections.singleton(identifier))).toList();
         Map<UUID, InstanceId> uuidInstanceIdMap = instanceController.resolveIds(idWithAlternatives, stage.getStage());
         Map<UUID, Result<NormalizedJsonLd>> instancesByIds = instanceController.getInstancesByInstanceIds(uuidInstanceIdMap.values(), stage.getStage(), responseConfiguration, null);
-        ResultWithExecutionDetails<Map<String, Result<NormalizedJsonLd>>> result = ResultWithExecutionDetails.ok(identifiers.stream().collect(Collectors.toMap(k -> k, v -> {
+        return ResultWithExecutionDetails.ok(identifiers.stream().collect(Collectors.toMap(k -> k, v -> {
             UUID mapKey = UUID.nameUUIDFromBytes(v.getBytes(StandardCharsets.UTF_8));
             InstanceId instanceId = uuidInstanceIdMap.get(mapKey);
             if (instanceId != null) {
@@ -271,9 +332,8 @@ public class InstancesV3 {
                     return payload;
                 }
             }
-            return Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase());
+            return ResultWithExecutionDetails.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase());
         })));
-        return result.setExecutionDetails(startDate, new Date());
     }
 
     @Operation(summary = "Move an instance to another space")
@@ -281,7 +341,11 @@ public class InstancesV3 {
     @WritesData
     @ExposesIds
     @Simple
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> moveInstance(@PathVariable("id") UUID id, @PathVariable("space") String targetSpace, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
+    public ResultWithExecutionDetails<NormalizedJsonLd> moveInstance(
+            @PathVariable("id") UUID id,
+            @PathVariable("space") String targetSpace,
+            @ParameterObject ExtendedResponseConfiguration responseConfiguration
+    ) {
         return instanceController.moveInstance(id, authContext.resolveSpaceName(targetSpace), responseConfiguration);
     }
 
@@ -292,14 +356,10 @@ public class InstancesV3 {
     //It only indirectly exposes the ids due to its status codes (you can tell if an id exists based on the return code this method provides)
     @ExposesIds
     @Simple
-    public ResponseEntity<ResultWithExecutionDetails<Void>> deleteInstance(@PathVariable("id") UUID id) {
-        Date startTime = new Date();
-        ResultWithExecutionDetails<Void> result = instanceController.deleteInstance(id);
-        result.setExecutionDetails(startTime, new Date());
-        if(result.getError() != null) {
-            return ResponseEntity.status(result.getError().getCode()).body(result);
-        }
-        return ResponseEntity.ok(result);
+    public ResultWithExecutionDetails<Void> deleteInstance(
+            @PathVariable("id") UUID id
+    ) {
+        return instanceController.deleteInstance(id);
     }
 
 
@@ -310,10 +370,12 @@ public class InstancesV3 {
     @ExposesIds
     @WritesData
     @Simple
-    public ResponseEntity<ResultWithExecutionDetails<Void>> releaseInstance(@PathVariable("id") UUID id, @RequestParam(value = "revision", required = false) String revision) {
-        Date startTime = new Date();
+    public ResultWithExecutionDetails<Void> releaseInstance(
+            @PathVariable("id") UUID id,
+            @RequestParam(value = "revision", required = false) String revision
+    ) {
         instanceController.release(id);
-        return ResponseEntity.ok(ResultWithExecutionDetails.<Void>ok().setExecutionDetails(startTime, new Date()));
+        return ResultWithExecutionDetails.ok();
     }
 
     @Operation(summary = "Unrelease an instance")
@@ -323,10 +385,11 @@ public class InstancesV3 {
     @ExposesIds
     @WritesData
     @Simple
-    public ResponseEntity<ResultWithExecutionDetails<Void>> unreleaseInstance(@PathVariable("id") UUID id) {
-        Date startTime = new Date();
+    public ResultWithExecutionDetails<Void> unreleaseInstance(
+            @PathVariable("id") UUID id
+    ) {
         instanceController.unrelease(id);
-        return ResponseEntity.ok(ResultWithExecutionDetails.<Void>ok().setExecutionDetails(startTime, new Date()));
+        return ResultWithExecutionDetails.ok();
     }
 
     @Operation(summary = "Get the release status for an instance")
@@ -338,9 +401,11 @@ public class InstancesV3 {
     @ExposesIds
     @ExposesReleaseStatus
     @Simple
-    public ResultWithExecutionDetails<ReleaseStatus> getReleaseStatus(@PathVariable("id") UUID id, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope) {
-        Date startDate = new Date();
-        return ResultWithExecutionDetails.ok(instanceController.getReleaseStatus(id, releaseTreeScope)).setExecutionDetails(startDate, new Date());
+    public ResultWithExecutionDetails<ReleaseStatus> getReleaseStatus(
+            @PathVariable("id") UUID id,
+            @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope
+    ) {
+        return ResultWithExecutionDetails.ok(instanceController.getReleaseStatus(id, releaseTreeScope));
     }
 
     @Operation(summary = "Get the release status for multiple instances")
@@ -352,10 +417,12 @@ public class InstancesV3 {
     @ExposesIds
     @ExposesReleaseStatus
     @Advanced
-    public ResultWithExecutionDetails<Map<UUID, Result<ReleaseStatus>>> getReleaseStatusByIds(@RequestBody List<UUID> listOfIds, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope) {
-        Date startDate = new Date();
+    public ResultWithExecutionDetails<Map<UUID, Result<ReleaseStatus>>> getReleaseStatusByIds(
+            @RequestBody List<UUID> listOfIds,
+            @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope
+    ) {
         final Map<UUID, ReleaseStatus> result = instanceController.getReleaseStatus(listOfIds, releaseTreeScope);
-        return ResultWithExecutionDetails.ok(result.keySet().stream().collect(Collectors.toMap(k -> k, v -> Result.ok(result.get(v))))).setExecutionDetails(startDate, new Date());
+        return ResultWithExecutionDetails.ok(result.keySet().stream().collect(Collectors.toMap(k -> k, v -> Result.ok(result.get(v)))));
     }
 
 
@@ -363,7 +430,29 @@ public class InstancesV3 {
     @GetMapping("/instances/{id}/suggestedLinksForProperty")
     @ExposesMinimalData
     @Extra
-    public ResultWithExecutionDetails<SuggestionResult> getSuggestedLinksForProperty(@RequestParam("stage") ExposedStage stage, @PathVariable("id") UUID id, @RequestParam(value = "property") String propertyName, @RequestParam(value = "sourceType", required = false) @Parameter(description = "The source type for which the given property shall be evaluated. If not provided, the API tries to figure out the type by analyzing the type of the root object of the persisted instance. Please note, that this parameter is mandatory for embedded structures.") String sourceType, @RequestParam(value = "targetType", required = false) @Parameter(description = "The target type of the suggestions. If not provided, suggestions of all possible target types will be returned.") String targetType, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
+    public ResultWithExecutionDetails<SuggestionResult> getSuggestedLinksForProperty(
+            @RequestParam("stage")
+            ExposedStage stage,
+
+            @PathVariable("id")
+            UUID id,
+
+            @RequestParam(value = "property")
+            String propertyName,
+
+            @RequestParam(value = "sourceType", required = false)
+            @Parameter(description = "The source type for which the given property shall be evaluated. If not provided, the API tries to figure out the type by analyzing the type of the root object of the persisted instance. Please note, that this parameter is mandatory for embedded structures.")
+            String sourceType,
+
+            @RequestParam(value = "targetType", required = false)
+            @Parameter(description = "The target type of the suggestions. If not provided, suggestions of all possible target types will be returned.")
+            String targetType,
+
+            @RequestParam(value = "search", required = false)
+            String search,
+
+            @ParameterObject PaginationParam paginationParam
+    ) {
         return getSuggestedLinksForProperty(null, stage, propertyName, id, sourceType, targetType, search, paginationParam);
     }
 
@@ -371,11 +460,36 @@ public class InstancesV3 {
     @PostMapping("/instances/{id}/suggestedLinksForProperty")
     @ExposesMinimalData
     @Extra
-    public ResultWithExecutionDetails<SuggestionResult> getSuggestedLinksForProperty(@RequestBody NormalizedJsonLd payload, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "property") String propertyName, @PathVariable("id") UUID id, @Parameter(description = "The source type for which the given property shall be evaluated. If not provided, the API tries to figure out the type by analyzing the type of the root object originating from the payload. Please note, that this parameter is mandatory for embedded structures.") @RequestParam(value = "sourceType", required = false) String sourceType, @Parameter(description = "The target type of the suggestions. If not provided, suggestions of all possible target types will be returned.") @RequestParam(value = "targetType", required = false) String targetType, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
-        Date start = new Date();
+    public ResultWithExecutionDetails<SuggestionResult> getSuggestedLinksForProperty(
+            @RequestBody
+            NormalizedJsonLd payload,
+
+            @RequestParam("stage")
+            ExposedStage stage,
+
+            @RequestParam("property")
+            String propertyName,
+
+            @PathVariable("id")
+            UUID id,
+
+            @Parameter(description = "The source type for which the given property shall be evaluated. If not provided, the API tries to figure out the type by analyzing the type of the root object originating from the payload. Please note, that this parameter is mandatory for embedded structures.")
+            @RequestParam(value = "sourceType", required = false)
+            String sourceType,
+
+            @Parameter(description = "The target type of the suggestions. If not provided, suggestions of all possible target types will be returned.")
+            @RequestParam(value = "targetType", required = false)
+            String targetType,
+
+            @RequestParam(value = "search", required = false)
+            String search,
+
+            @ParameterObject
+            PaginationParam paginationParam
+    ) {
         InstanceId instanceId = instanceController.resolveId(id, stage.getStage());
         search = enrichSearchTermIfItIsAUUID(search, stage.getStage());
-        return ResultWithExecutionDetails.ok(instances.getSuggestedLinksForProperty(payload, stage.getStage(), instanceId != null && instanceId.getSpace() != null ? instanceId.getSpace().getName() : null, id, propertyName, sourceType != null && !sourceType.isBlank() ? new Type(sourceType).getName() : null, targetType != null && !targetType.isBlank() ? new Type(targetType).getName() : null, search, paginationParam)).setExecutionDetails(start, new Date());
+        return ResultWithExecutionDetails.ok(instances.getSuggestedLinksForProperty(payload, stage.getStage(), instanceId != null && instanceId.getSpace() != null ? instanceId.getSpace().getName() : null, id, propertyName, sourceType != null && !sourceType.isBlank() ? new Type(sourceType).getName() : null, targetType != null && !targetType.isBlank() ? new Type(targetType).getName() : null, search, paginationParam));
     }
 
     private String enrichSearchTermIfItIsAUUID(String search, DataStage stage) {
@@ -397,28 +511,38 @@ public class InstancesV3 {
     @Operation(summary = "Create or update an invitation for the given user to review the given instance")
     @PutMapping("/instances/{id}/invitedUsers/{userId}")
     @Advanced
-    public void inviteUserForInstance(@PathVariable("id") UUID id, @PathVariable("userId") UUID userId) {
+    public void inviteUserForInstance(
+            @PathVariable("id") UUID id,
+            @PathVariable("userId") UUID userId
+    ) {
         instanceController.createInvitation(id, userId);
     }
 
     @Operation(summary = "Revoke an invitation for the given user to review the given instance")
     @DeleteMapping("/instances/{id}/invitedUsers/{userId}")
     @Advanced
-    public void revokeUserInvitation(@PathVariable("id") UUID id, @PathVariable("userId") UUID userId) {
+    public void revokeUserInvitation(
+            @PathVariable("id") UUID id,
+            @PathVariable("userId") UUID userId
+    ) {
         instanceController.revokeInvitation(id, userId);
     }
 
     @Operation(summary = "List invitations for review for the given instance")
     @GetMapping("/instances/{id}/invitedUsers")
     @Advanced
-    public ResultWithExecutionDetails<List<String>> listInvitations(@PathVariable("id") UUID id) {
+    public ResultWithExecutionDetails<List<String>> listInvitations(
+            @PathVariable("id") UUID id
+    ) {
         return ResultWithExecutionDetails.ok(instanceController.listInvitedUserIds(id));
     }
 
     @Operation(summary = "Update invitation scope for this instance")
     @PutMapping("/instances/{id}/invitationScope")
     @Admin
-    public void calculateInstanceInvitationScope(@PathVariable("id") UUID id) {
+    public void calculateInstanceInvitationScope(
+            @PathVariable("id") UUID id
+    ) {
         instanceController.calculateInstanceInvitationScope(id);
     }
 

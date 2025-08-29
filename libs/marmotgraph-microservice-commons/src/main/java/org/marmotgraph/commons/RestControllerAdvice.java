@@ -27,6 +27,7 @@ package org.marmotgraph.commons;
 import org.marmotgraph.commons.exception.*;
 import org.marmotgraph.commons.model.PaginationParam;
 import org.marmotgraph.commons.model.ResponseConfiguration;
+import org.marmotgraph.commons.model.Result;
 import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -100,6 +101,12 @@ public class RestControllerAdvice {
     @ExceptionHandler({IllegalStateException.class})
     protected ResponseEntity<?> handleIllegalState(RuntimeException ex, WebRequest request) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ResultWithExecutionDetails.nok(HttpStatus.CONFLICT.value(), ex.getMessage()));
+    }
+
+    @ExceptionHandler({ResultBasedException.class})
+    protected ResponseEntity<?> handleConflictingInstance(RuntimeException ex, WebRequest request) {
+        Result<?> result = ((ResultBasedException) ex).getResult();
+        return ResponseEntity.status(result.getError().getCode()).body(result);
     }
 
     @ExceptionHandler({CancelProcessException.class})

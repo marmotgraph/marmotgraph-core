@@ -27,9 +27,11 @@ package org.marmotgraph.core.api.v3beta;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.cache.CacheConstant;
 import org.marmotgraph.commons.config.openApiGroups.Admin;
+import org.marmotgraph.core.api.v3.CacheV3;
 import org.marmotgraph.core.controller.CoreCacheController;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,19 +39,16 @@ import java.util.List;
 
 @RestController
 @RequestMapping(Version.V3_BETA +"/cache")
+@AllArgsConstructor
 public class CacheV3Beta {
 
-    private final CoreCacheController cacheController;
-
-    public CacheV3Beta(CoreCacheController cacheController) {
-        this.cacheController = cacheController;
-    }
+    private final CacheV3 cacheV3;
 
     @Operation(summary = "Get all keys")
     @GetMapping("/keys")
     @Admin
     public List<String> getCacheKeys() {
-        return this.cacheController.getKeys();
+        return cacheV3.getCacheKeys();
     }
 
     @Operation(summary = "Flush keys")
@@ -61,12 +60,7 @@ public class CacheV3Beta {
     @Admin
     public List<String> flushCache(@RequestBody List<String> keys)
     {
-        if (keys.contains("*") || keys.isEmpty() || keys.contains("all")) {
-            return this.cacheController.clearAllKeys();
-        }
-
-        return this.cacheController.clearKeys(keys);
+        return cacheV3.flushCache(keys);
     }
-
 
 }

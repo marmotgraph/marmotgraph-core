@@ -160,7 +160,7 @@ public abstract class AbstractTest {
         return assureValidPayload(response.getBody());
     }
 
-    public NormalizedJsonLd assureValidPayloadIncludingId(ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> response) {
+    public NormalizedJsonLd assureValidPayloadIncludingId(ResultWithExecutionDetails<NormalizedJsonLd> response) {
         NormalizedJsonLd data = assureValidPayload(response);
         JsonLdId id = data.id();
         notNull(id, "The id shouldn't be null when creating an instance");

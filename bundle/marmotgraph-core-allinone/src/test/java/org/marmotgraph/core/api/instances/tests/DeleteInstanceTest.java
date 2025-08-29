@@ -34,7 +34,7 @@ import org.springframework.http.ResponseEntity;
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class DeleteInstanceTest extends AbstractInstanceTest {
 
-    public ResponseEntity<ResultWithExecutionDetails<Void>> response;
+    public ResultWithExecutionDetails<Void> response;
     public NormalizedJsonLd originalInstance;
 
     public DeleteInstanceTest(TestContext testContext, InstancesV3 instances) {
@@ -51,7 +51,7 @@ public class DeleteInstanceTest extends AbstractInstanceTest {
         response = instances.deleteInstance(testContext.getIdUtils().getUUID(originalInstance.id()));
     }
 
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> fetchInstance(){
+    public ResultWithExecutionDetails<NormalizedJsonLd> fetchInstance(){
         return instances.getInstanceById(testContext.getIdUtils().getUUID(originalInstance.id()), ExposedStage.IN_PROGRESS, defaultResponseConfiguration);
     }
 }

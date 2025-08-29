@@ -31,7 +31,9 @@ import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.api.jsonld.JsonLd;
 import org.marmotgraph.commons.config.openApiGroups.Simple;
+import org.marmotgraph.commons.exception.ResultBasedException;
 import org.marmotgraph.commons.exception.InstanceNotFoundException;
+import org.marmotgraph.commons.exception.InvalidRequestException;
 import org.marmotgraph.commons.jsonld.InstanceId;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
@@ -50,7 +52,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -58,7 +63,7 @@ import java.util.stream.Collectors;
  */
 @AllArgsConstructor
 @RestController
-@RequestMapping(Version.V3 +"/queries")
+@RequestMapping(Version.V3 + "/queries")
 public class QueriesV3 {
 
     private final CoreQueryController queryController;
@@ -76,16 +81,16 @@ public class QueriesV3 {
     @Simple
     public PaginatedResult<NormalizedJsonLd> listQueriesPerRootType(@ParameterObject PaginationParam paginationParam, @RequestParam(value = "type", required = false) String rootType, @RequestParam(value = "search", required = false) String search) {
         Paginated<NormalizedJsonLd> data;
-        if(rootType != null){
+        if (rootType != null) {
             data = queryController.listQueriesPerRootType(search, new Type(rootType), paginationParam);
         } else {
-            data =queryController.listQueries(search, paginationParam);
+            data = queryController.listQueries(search, paginationParam);
         }
         handleResponse(data);
         return PaginatedResult.ok(data);
     }
 
-    private void handleResponse(Paginated<NormalizedJsonLd> data){
+    private void handleResponse(Paginated<NormalizedJsonLd> data) {
         final SpaceName privateSpace = authContext.getUserWithRoles().getPrivateSpace();
         data.getData().forEach(d -> d.renameSpace(privateSpace, queryController.isInvited(d)));
     }
@@ -104,14 +109,11 @@ public class QueriesV3 {
         NormalizedJsonLd normalizedJsonLd = jsonLd.normalize(query, true);
         KgQuery q = new KgQuery(normalizedJsonLd, stage.getStage());
         q.setIdRestriction(instances.resolveId(instanceId, stage.getStage()));
-        if(restrictToSpaces!=null){
+        if (restrictToSpaces != null) {
             q.setRestrictToSpaces(restrictToSpaces.stream().filter(Objects::nonNull).map(r -> SpaceName.getInternalSpaceName(r, authContext.getUserWithRoles().getPrivateSpace())).collect(Collectors.toList()));
         }
-        Date startTime = new Date();
         final PaginatedStream<? extends JsonLdDoc> data = queryController.executeQuery(q, allRequestParams, paginationParam);
-        PaginatedStreamResult<? extends JsonLdDoc> result = PaginatedStreamResult.ok(data);
-        result.setExecutionDetails(startTime, new Date());
-        return result;
+        return PaginatedStreamResult.ok(data);
     }
 
 
@@ -121,9 +123,9 @@ public class QueriesV3 {
     @Simple
     public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> getQuerySpecification(@PathVariable("queryId") UUID queryId) {
         InstanceId instanceId = instances.resolveId(queryId, DataStage.IN_PROGRESS);
-        if(instanceId != null) {
+        if (instanceId != null) {
             NormalizedJsonLd kgQuery = queryController.fetchQueryById(instanceId);
-            if(kgQuery == null){
+            if (kgQuery == null) {
                 return ResponseEntity.notFound().build();
             }
             return ResponseEntity.ok(ResultWithExecutionDetails.ok(kgQuery.renameSpace(authContext.getUserWithRoles().getPrivateSpace(), queryController.isInvited(kgQuery))));
@@ -144,38 +146,32 @@ public class QueriesV3 {
     @WritesData
     @ExposesInputWithoutEnrichedSensitiveData
     @Simple
-    public ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> saveQuery(@RequestBody JsonLdDoc query, @PathVariable(value = "queryId") UUID queryId, @RequestParam(value = "space", required = false) @Parameter(description = "Required only when the instance is created to specify where it should be stored (" + SpaceName.PRIVATE_SPACE + " for your private space) - but not if it's updated.") String space) {
+    public ResultWithExecutionDetails<NormalizedJsonLd> saveQuery(@RequestBody JsonLdDoc query, @PathVariable(value = "queryId") UUID queryId, @RequestParam(value = "space", required = false) @Parameter(description = "Required only when the instance is created to specify where it should be stored (" + SpaceName.PRIVATE_SPACE + " for your private space) - but not if it's updated.") String space) {
         NormalizedJsonLd normalizedJsonLd = jsonLd.normalize(query, true);
         normalizedJsonLd.addTypes(EBRAINSVocabulary.META_QUERY_TYPE);
         InstanceId resolveId = instances.resolveId(queryId, DataStage.IN_PROGRESS);
         SpaceName spaceName = authContext.resolveSpaceName(space);
-        if(resolveId != null){
-            if(spaceName!=null && !resolveId.getSpace().equals(spaceName)){
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(ResultWithExecutionDetails.nok(HttpStatus.CONFLICT.value(), "The query with this UUID already exists in a different space", resolveId.getUuid()));
+        if (resolveId != null) {
+            if (spaceName != null && !resolveId.getSpace().equals(spaceName)) {
+                throw new ResultBasedException(ResultWithExecutionDetails.nok(HttpStatus.CONFLICT.value(), "The query with this UUID already exists in a different space", resolveId.getUuid()));
             }
-            final ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> result = queryController.updateQuery(normalizedJsonLd, resolveId);
-            if(result != null) {
-                final ResultWithExecutionDetails<NormalizedJsonLd> body = result.getBody();
-                if(body!=null) {
-                    final NormalizedJsonLd data = body.getData();
-                    if (data != null) {
-                        data.renameSpace(authContext.getUserWithRoles().getPrivateSpace(), queryController.isInvited(data));
-                    }
+            final ResultWithExecutionDetails<NormalizedJsonLd> result = queryController.updateQuery(normalizedJsonLd, resolveId);
+            if (result != null) {
+                final NormalizedJsonLd data = result.getData();
+                if (data != null) {
+                    data.renameSpace(authContext.getUserWithRoles().getPrivateSpace(), queryController.isInvited(data));
                 }
             }
             return result;
         }
-        if(spaceName==null){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ResultWithExecutionDetails.nok(HttpStatus.BAD_REQUEST.value(), "The query with this UUID doesn't exist yet. You therefore need to specify the space where it should be stored."));
+        if (spaceName == null) {
+            throw new ResultBasedException(ResultWithExecutionDetails.nok(HttpStatus.BAD_REQUEST.value(), "The query with this UUID doesn't exist yet. You therefore need to specify the space where it should be stored."));
         }
-        final ResponseEntity<ResultWithExecutionDetails<NormalizedJsonLd>> result = queryController.createNewQuery(normalizedJsonLd, queryId, spaceName);
-        if(result != null) {
-            final ResultWithExecutionDetails<NormalizedJsonLd> body = result.getBody();
-            if (body != null) {
-                final NormalizedJsonLd data = body.getData();
-                if (data != null) {
-                    data.renameSpace(authContext.getUserWithRoles().getPrivateSpace(), queryController.isInvited(data));
-                }
+        final ResultWithExecutionDetails<NormalizedJsonLd> result = queryController.createNewQuery(normalizedJsonLd, queryId, spaceName);
+        if (result != null) {
+            final NormalizedJsonLd data = result.getData();
+            if (data != null) {
+                data.renameSpace(authContext.getUserWithRoles().getPrivateSpace(), queryController.isInvited(data));
             }
         }
         return result;
@@ -193,20 +189,17 @@ public class QueriesV3 {
         allRequestParams.remove("size");
         InstanceId queryInstance = instances.resolveId(queryId, DataStage.IN_PROGRESS);
         final NormalizedJsonLd queryPayload = queryController.fetchQueryById(queryInstance);
-        if(queryPayload==null){
+        if (queryPayload == null) {
             throw new InstanceNotFoundException(String.format("Query with id %s not found", queryId));
         }
         KgQuery query = new KgQuery(queryPayload, stage.getStage());
 
         query.setIdRestriction(instances.resolveId(instanceId, stage.getStage()));
-        if(restrictToSpaces!=null){
+        if (restrictToSpaces != null) {
             query.setRestrictToSpaces(restrictToSpaces.stream().filter(Objects::nonNull).map(r -> SpaceName.getInternalSpaceName(r, authContext.getUserWithRoles().getPrivateSpace())).collect(Collectors.toList()));
         }
-        Date startTime = new Date();
         final PaginatedStream<? extends JsonLdDoc> data = queryController.executeQuery(query, allRequestParams, paginationParam);
-        PaginatedStreamResult<? extends JsonLdDoc> result = PaginatedStreamResult.ok(data);
-        result.setExecutionDetails(startTime, new Date());
-        return result;
+        return PaginatedStreamResult.ok(data);
     }
 
 }

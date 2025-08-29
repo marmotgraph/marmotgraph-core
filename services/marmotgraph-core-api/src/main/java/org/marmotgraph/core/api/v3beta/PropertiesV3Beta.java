@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.api.primaryStore.Types;
 import org.marmotgraph.commons.config.openApiGroups.Admin;
@@ -42,6 +43,7 @@ import org.marmotgraph.commons.model.external.types.PropertyInType;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import org.marmotgraph.core.api.v3.PropertiesV3;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URLDecoder;
@@ -53,44 +55,31 @@ import java.nio.charset.StandardCharsets;
 @RestController
 @RequestMapping(Version.V3_BETA)
 @Admin
+@AllArgsConstructor
 public class PropertiesV3Beta {
-    private final Types.Client graphDBTypes;
 
-    public PropertiesV3Beta(Types.Client graphDBTypes) {
-        this.graphDBTypes = graphDBTypes;
-    }
+    private final PropertiesV3 propertiesV3;
 
     @Operation(summary = "Get a property specification")
     @GetMapping("/properties")
     @Admin
-    @ExposesProperty
     public DynamicJson properties(
             @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)") @RequestParam(value = "global", required = false) boolean global,
             @RequestParam(value = "property", required = false) String property) {
-
-        DynamicJson propertySpecification = graphDBTypes.getSpecifyProperty(property, global);
-
-        if (propertySpecification != null) {
-            return propertySpecification;
-        }
-        throw new InstanceNotFoundException(String.format("Property %s was not found", property));
+        return propertiesV3.properties(global, property);
 
     }
 
     @Operation(summary = "Upload a property specification either globally or for the requesting client")
     @PutMapping("/properties")
-    @WritesData
     public void defineProperty(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property) {
-        String decodedProperty = URLDecoder.decode(property, StandardCharsets.UTF_8);
-        graphDBTypes.specifyProperty(new JsonLdId(decodedProperty), payload, global);
+        propertiesV3.defineProperty(payload, global, property);
     }
 
     @Operation(summary = "Upload a property specification either globally or for the requesting client")
     @DeleteMapping("/properties")
-    @WritesData
     public void deprecateProperty(@Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property) {
-        String decodedProperty = URLDecoder.decode(property, StandardCharsets.UTF_8);
-        graphDBTypes.removePropertySpecification(new JsonLdId(decodedProperty), global);
+        propertiesV3.deprecateProperty(global, property);
     }
 
     @Operation(summary = "Check type for a specific property either globally for the requesting client")
@@ -105,34 +94,21 @@ public class PropertiesV3Beta {
             @RequestParam(value = "global", required = false) boolean global,
             @RequestParam("property") String property,
             @RequestParam("type") String type) {
-
-        if (graphDBTypes.checkPropertyInType(type, property, global)) {
-            return new PropertyInType(property, type);
-        } else {
-            throw new NoContentException("No Content");
-        }
+        return propertiesV3.getPropertyForType(global, property, type);
     }
 
     @Operation(summary = "Define a property specification either globally for the requesting client")
     @PutMapping("/propertiesForType")
     @WritesData
     public void definePropertyForType(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property, @RequestParam("type") String type) {
-        String decodedProperty = URLDecoder.decode(property, StandardCharsets.UTF_8);
-        String decodedType = URLDecoder.decode(type, StandardCharsets.UTF_8);
-        JsonLdId typeFromPayload = payload.getAs(EBRAINSVocabulary.META_TYPE, JsonLdId.class);
-        if(typeFromPayload!=null){
-            throw new IllegalArgumentException("You are not supposed to provide a @type in the payload of the type specifications to avoid ambiguity");
-        }
-        graphDBTypes.addOrUpdatePropertyToType(decodedType, decodedProperty, payload, global);
+        propertiesV3.getPropertyForType(global, property, type);
     }
 
     @Operation(summary = "Deprecate a property specification for a specific type either globally or for the requesting client")
     @DeleteMapping("/propertiesForType")
     @WritesData
     public void deprecatePropertyForType(@Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property, @RequestParam("type") String type) {
-        String decodedProperty = URLDecoder.decode(property, StandardCharsets.UTF_8);
-        String decodedType = URLDecoder.decode(type, StandardCharsets.UTF_8);
-        graphDBTypes.removePropertyFromType(decodedType, decodedProperty, global);
+        propertiesV3.deprecatePropertyForType(global, property, type);
     }
 
 }

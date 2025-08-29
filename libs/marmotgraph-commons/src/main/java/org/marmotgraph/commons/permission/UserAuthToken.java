@@ -41,4 +41,8 @@ public class UserAuthToken implements Serializable {
         return null;
     }
 
+    public String getRawToken() {
+        return userToken != null && userToken.toLowerCase().startsWith("bearer ") ? userToken.substring(7) : userToken;
+    }
+
 }

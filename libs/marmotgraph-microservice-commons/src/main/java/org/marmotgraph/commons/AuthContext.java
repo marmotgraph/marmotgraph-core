@@ -24,27 +24,23 @@
 
 package org.marmotgraph.commons;
 
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.api.authentication.Authentication;
+import org.marmotgraph.commons.api.authorization.Authorization;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.internal.spaces.Space;
 import org.marmotgraph.commons.models.UserWithRoles;
 import org.springframework.stereotype.Component;
 
 @Component
+@AllArgsConstructor
 public class AuthContext {
 
-
     private final AuthTokenContext authTokenContext;
-    private final Authentication.Client authentication;
-
-
-    public AuthContext(AuthTokenContext authTokenContext, Authentication.Client authentication) {
-        this.authTokenContext = authTokenContext;
-        this.authentication = authentication;
-    }
+    private final Authorization.Client authorization;
 
     public UserWithRoles getUserWithRoles() {
-        return authentication.getRoles();
+        return authorization.getRoles();
     }
 
     public Space getClientSpace(){

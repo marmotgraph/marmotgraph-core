@@ -26,16 +26,17 @@ package org.marmotgraph;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * This is the main application for the MarmotGraph core API service
+ */
 @SpringBootApplication
 @Configuration
-@EnableCaching
 public class MarmotGraphAuthenticationApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(MarmotGraphAuthenticationApplication.class, args);
-    }
+	public static void main(String[] args) {
+		SpringApplication.run(MarmotGraphAuthenticationApplication.class, args);
+	}
 
 }
