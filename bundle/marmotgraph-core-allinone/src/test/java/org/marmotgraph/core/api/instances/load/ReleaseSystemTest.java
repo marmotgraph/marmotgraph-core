@@ -24,24 +24,23 @@
 
 package org.marmotgraph.core.api.instances.load;
 
+import org.junit.jupiter.api.Test;
 import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.jsonld.IndexedJsonLdDoc;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
-import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.ResultWithExecutionDetails;
+import org.marmotgraph.core.api.testutils.TestDataFactory;
 import org.marmotgraph.core.api.v3.InstancesV3;
 import org.marmotgraph.core.model.ExposedStage;
-import org.marmotgraph.core.api.testutils.TestDataFactory;
-import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -64,7 +63,7 @@ class ReleaseSystemTest extends AbstractInstancesLoadTest {
         for (int i = 0; i < allInstancesFromInProgress.size(); i++) {
             Mockito.doReturn(i).when(testInformation).getExecutionNumber();
             IndexedJsonLdDoc from = IndexedJsonLdDoc.from(allInstancesFromInProgress.get(i));
-            ResultWithExecutionDetails<Void> resultResponseEntity = instances.releaseInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).id()), from.getRevision());
+            ResultWithExecutionDetails<Void> resultResponseEntity = instances.releaseInstance(allInstancesFromInProgress.get(i).idAsUUID(), from.getRevision());
             System.out.printf("Result %d: %d ms%n", i, resultResponseEntity.getDurationInMs());
         }
         System.out.printf("Total time for %d releases: %d ms%n", batchInsertion, new Date().getTime() - startTime);
@@ -83,7 +82,7 @@ class ReleaseSystemTest extends AbstractInstancesLoadTest {
             int finalI = i;
             executorService.execute(() -> {
                 IndexedJsonLdDoc from = IndexedJsonLdDoc.from(allInstancesFromInProgress.get(finalI));
-                ResultWithExecutionDetails<Void> resultResponseEntity = instances.releaseInstance(idUtils.getUUID(allInstancesFromInProgress.get(finalI).id()), from.getRevision());
+                ResultWithExecutionDetails<Void> resultResponseEntity = instances.releaseInstance(allInstancesFromInProgress.get(finalI).idAsUUID(), from.getRevision());
                 System.out.printf("Result %d: %d ms%n", finalI, resultResponseEntity.getDurationInMs());
             });
         }
@@ -107,9 +106,9 @@ class ReleaseSystemTest extends AbstractInstancesLoadTest {
         //When
         long startTime = new Date().getTime();
         for (int i = 0; i < l.size(); i++) {
-            JsonLdId id = l.get(i).getData().id();
+            UUID id = l.get(i).getData().idAsUUID();
             IndexedJsonLdDoc from = IndexedJsonLdDoc.from(l.get(i).getData());
-            ResultWithExecutionDetails<Void> resultResponseEntity = instances.releaseInstance(idUtils.getUUID(id), from.getRevision());
+            ResultWithExecutionDetails<Void> resultResponseEntity = instances.releaseInstance(id, from.getRevision());
             System.out.printf("Result %d: %d ms%n", i, resultResponseEntity.getDurationInMs());
         }
         System.out.printf("Total time for %d releases: %d ms%n", batchInsertion, new Date().getTime() - startTime);
@@ -124,7 +123,7 @@ class ReleaseSystemTest extends AbstractInstancesLoadTest {
         long startTime = new Date().getTime();
         for (int i = 0; i < allInstancesFromInProgress.size(); i++) {
             Mockito.doReturn(i).when(testInformation).getExecutionNumber();
-            ResultWithExecutionDetails<Void> resultResponseEntity = instances.unreleaseInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).id()));
+            ResultWithExecutionDetails<Void> resultResponseEntity = instances.unreleaseInstance(allInstancesFromInProgress.get(i).idAsUUID());
             System.out.printf("Result %d: %d ms%n", i, resultResponseEntity.getDurationInMs());
         }
         System.out.printf("Total time for %d unreleases: %d ms%n", batchInsertion, new Date().getTime() - startTime);

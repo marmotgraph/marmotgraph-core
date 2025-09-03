@@ -45,15 +45,15 @@ public class UnreleaseInstanceTest extends AbstractInstanceTest {
     @Override
     protected void setup() {
         originalInstance = createInstanceWithServerDefinedUUID(0);
-        instances.releaseInstance(testContext.getIdUtils().getUUID(originalInstance.id()), null);
+        instances.releaseInstance(originalInstance.idAsUUID(), null);
     }
 
     @Override
     protected void run() {
-        response = instances.unreleaseInstance(testContext.getIdUtils().getUUID(originalInstance.id()));
+        response = instances.unreleaseInstance(originalInstance.idAsUUID());
     }
 
     public ResultWithExecutionDetails<NormalizedJsonLd> fetchInstance(ExposedStage stage){
-        return instances.getInstanceById(testContext.getIdUtils().getUUID(originalInstance.id()), stage, defaultResponseConfiguration);
+        return instances.getInstanceById(originalInstance.idAsUUID(), stage, defaultResponseConfiguration);
     }
 }

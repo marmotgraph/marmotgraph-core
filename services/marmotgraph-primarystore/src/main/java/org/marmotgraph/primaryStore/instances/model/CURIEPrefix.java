@@ -22,22 +22,21 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.commons.api.graphDB;
+package org.marmotgraph.primaryStore.instances.model;
 
-import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.model.*;
-import org.marmotgraph.commons.model.relations.IncomingRelation;
-import org.marmotgraph.commons.query.KgQuery;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-public interface GraphDB {
-    interface Client extends GraphDB {}
-
-    void delete(UUID instanceId, SpaceName spaceName, DataStage dataStage);
-    void upsert(UUID instanceId, SpaceName spaceName, NormalizedJsonLd payload, DataStage stage, Set<IncomingRelation> incomingRelations);
-    StreamedQueryResult executeQuery(KgQuery query, Map<String, String> params, PaginationParam paginationParam);
-    ScopeElement getScopeForInstance(String space, UUID id, DataStage stage, boolean applyRestrictions);
+@Table(indexes = @Index(name="byPrefix", columnList = "prefix", unique = true))
+@Entity
+@Getter
+@Setter
+public class CURIEPrefix {
+    @Id
+    private String namespace;
+    private String prefix;
 }

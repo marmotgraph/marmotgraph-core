@@ -192,7 +192,7 @@ public class IncomingLinksRepository extends AbstractRepository{
                                 .map(el -> ((Map<String, Object>) el))
                                 .forEach(el -> {
                                     NormalizedJsonLd normalizedJsonLd = new NormalizedJsonLd(el);
-                                    String label = labelsForInstances.get(idUtils.getUUID(normalizedJsonLd.id()));
+                                    String label = labelsForInstances.get(normalizedJsonLd.idAsUUID());
                                     el.put(EBRAINSVocabulary.LABEL, label);
                                 });
                     }
@@ -227,7 +227,7 @@ public class IncomingLinksRepository extends AbstractRepository{
                     }
                     return normalizedJsonLds;
                 }).flatMap(Collection::stream).map(normalizedJsonLd ->
-                        new InstanceId(idUtils.getUUID(normalizedJsonLd.id()), new SpaceName(normalizedJsonLd.getAs(EBRAINSVocabulary.META_SPACE, String.class)))
+                        new InstanceId(normalizedJsonLd.idAsUUID(), new SpaceName(normalizedJsonLd.getAs(EBRAINSVocabulary.META_SPACE, String.class)))
                 ).collect(Collectors.toSet());
     }
 

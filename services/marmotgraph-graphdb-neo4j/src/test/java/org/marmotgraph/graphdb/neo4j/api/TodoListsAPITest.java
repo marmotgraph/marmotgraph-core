@@ -35,6 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
@@ -55,7 +56,7 @@ class TodoListsAPITest {
         NormalizedJsonLd payload = new NormalizedJsonLd(Map.of("@type", "https://marmotgraph.org/types/Test", "https://marmotgraph.org/properties/hello", "marmot"));
 
         //when
-        api.upsert(documentID, SpaceName.fromString("test"), payload, DataStage.IN_PROGRESS);
+        api.upsert(documentID, SpaceName.fromString("test"), payload, DataStage.IN_PROGRESS, Collections.emptySet());
 
         //then
         //TODO

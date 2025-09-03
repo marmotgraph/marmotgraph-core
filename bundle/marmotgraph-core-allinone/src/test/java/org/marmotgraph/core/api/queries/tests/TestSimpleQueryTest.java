@@ -131,9 +131,9 @@ public class TestSimpleQueryTest extends AbstractTest {
         docA.put(relationToB, instanceB.id());
         instanceA = createTestInstance(docA, "a");
         if(release) {
-            instances.releaseInstance(testContext.getIdUtils().getUUID(instanceA.id()), null);
-            instances.releaseInstance(testContext.getIdUtils().getUUID(instanceB.id()), null);
-            instances.releaseInstance(testContext.getIdUtils().getUUID(instanceArelated.id()), null);
+            instances.releaseInstance(instanceA.idAsUUID(), null);
+            instances.releaseInstance(instanceB.idAsUUID(), null);
+            instances.releaseInstance(instanceArelated.idAsUUID(), null);
         }
     }
 

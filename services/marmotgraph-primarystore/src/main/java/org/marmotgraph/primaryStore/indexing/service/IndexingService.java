@@ -29,8 +29,10 @@ import org.marmotgraph.commons.api.graphDB.GraphDB;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.SpaceName;
+import org.marmotgraph.commons.model.relations.IncomingRelation;
 import org.springframework.stereotype.Component;
 
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -47,7 +49,7 @@ public class IndexingService {
         graphDB.delete(instanceId, spaceName, stage);
     }
 
-    public void upsert(UUID instanceId, SpaceName spaceName, NormalizedJsonLd payload, DataStage stage) {
-        graphDB.upsert(instanceId, spaceName, payload, stage);
+    public void upsert(UUID instanceId, SpaceName spaceName, NormalizedJsonLd payload, DataStage stage, Set<IncomingRelation> incomingRelations) {
+        graphDB.upsert(instanceId, spaceName, payload, stage, incomingRelations);
     }
 }

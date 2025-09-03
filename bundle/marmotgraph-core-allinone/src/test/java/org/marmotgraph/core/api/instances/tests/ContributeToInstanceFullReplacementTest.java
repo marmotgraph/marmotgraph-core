@@ -50,7 +50,7 @@ public class ContributeToInstanceFullReplacementTest extends AbstractInstanceTes
 
     @Override
     protected void run(){
-       response = instances.contributeToInstanceFullReplacement(update, testContext.getIdUtils().getUUID(originalInstance.id()), defaultResponseConfiguration);
+       response = instances.contributeToInstanceFullReplacement(update, originalInstance.idAsUUID(), defaultResponseConfiguration);
     }
 
 }

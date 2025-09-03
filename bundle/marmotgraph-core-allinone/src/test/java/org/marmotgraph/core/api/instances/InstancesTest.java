@@ -97,7 +97,7 @@ class InstancesTest extends AbstractFunctionalityTest {
         test.execute(() -> {
             //Then
             NormalizedJsonLd document = test.assureValidPayloadIncludingId(test.response);
-            assertEquals(test.clientSpecifiedUUID, idUtils.getUUID(document.id()));
+            assertEquals(test.clientSpecifiedUUID, document.idAsUUID());
         });
     }
 

@@ -55,7 +55,7 @@ public class GetInstancesByIdentifiersTest extends AbstractInstanceTest {
         originalInstance = createInstanceWithServerDefinedUUID(0);
         doc = new JsonLdDoc();
         doc.addIdentifiers(identifier);
-        updateResult = instances.contributeToInstancePartialReplacement(doc, testContext.getIdUtils().getUUID(originalInstance.id()), defaultResponseConfiguration);
+        updateResult = instances.contributeToInstancePartialReplacement(doc, originalInstance.idAsUUID(), defaultResponseConfiguration);
 
     }
 

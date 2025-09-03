@@ -34,15 +34,15 @@ public enum DataStage {
     /**
      * The native space is the space containing the individual instances in their original state. No additional logic is applied.
      **/
-    NATIVE("ntv"),
+    NATIVE("NTV"),
     /**
      * The in_progress space is built based on the native space by applying inference logic (e.g. merging instances which contribute to the same entity)
      **/
-    IN_PROGRESS("ipr"),
+    IN_PROGRESS("PRGRS"),
     /**
      * The released space contains instances looking similar to the inferred, but "copied-away" in the specific released revision. Typically, data is moved from the inferred to the released stage when its content has been validated.
      */
-    RELEASED("rel");
+    RELEASED("RLSD");
 
     private final String abbreviation;
 

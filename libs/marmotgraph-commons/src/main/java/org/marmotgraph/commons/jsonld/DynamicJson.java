@@ -181,7 +181,15 @@ public class DynamicJson extends LinkedHashMap<String, Object> {
             }
         }
         if(clazz == UUID.class && o instanceof String string){
-            return (T)UUID.fromString(string);
+            try {
+                return (T) UUID.fromString(string);
+            }
+            catch (IllegalArgumentException e){
+                if(throwException){
+                    throw e;
+                }
+                return null;
+            }
         }
         if(clazz == SpaceName.class && o instanceof String string){
             return (T)new SpaceName(string);

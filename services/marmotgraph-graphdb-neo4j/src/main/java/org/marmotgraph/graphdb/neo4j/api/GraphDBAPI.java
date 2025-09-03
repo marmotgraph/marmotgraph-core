@@ -30,12 +30,15 @@ import org.marmotgraph.commons.api.graphDB.GraphDB;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.markers.ExposesMinimalData;
 import org.marmotgraph.commons.model.*;
+import org.marmotgraph.commons.model.relations.IncomingRelation;
 import org.marmotgraph.commons.query.KgQuery;
 import org.marmotgraph.graphdb.neo4j.service.Neo4jService;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Profile("neo4j")
@@ -51,8 +54,8 @@ public class GraphDBAPI implements GraphDB.Client {
     }
 
     @Override
-    public void upsert(UUID instanceId, SpaceName spaceName, NormalizedJsonLd payload, DataStage stage) {
-        service.upsert(instanceId, stage, payload);
+    public void upsert(UUID instanceId, SpaceName spaceName, NormalizedJsonLd payload, DataStage stage, Set<IncomingRelation> incomingRelations) {
+        service.upsert(instanceId, stage, spaceName, payload, incomingRelations);
     }
 
     @Override

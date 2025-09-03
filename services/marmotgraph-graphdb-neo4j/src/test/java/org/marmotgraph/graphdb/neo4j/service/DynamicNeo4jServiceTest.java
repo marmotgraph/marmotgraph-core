@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
+import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.test.TestCategories;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
@@ -53,7 +55,7 @@ class DynamicNeo4jServiceTest {
 
     @Test
     public void testNeo4jIngestion(){
-        service.upsert(UUID.randomUUID(), DataStage.NATIVE, new NormalizedJsonLd(Map.of("@type", "https://marmotgraph.org/types/Test", "hello", "world")));
+        service.upsert(UUID.randomUUID(), DataStage.NATIVE, SpaceName.fromString("foobar"), new NormalizedJsonLd(Map.of("@type", "https://marmotgraph.org/types/Test", "hello", "world")), Collections.emptySet());
         logger.info("Running test 4 neo4j");
 
     }

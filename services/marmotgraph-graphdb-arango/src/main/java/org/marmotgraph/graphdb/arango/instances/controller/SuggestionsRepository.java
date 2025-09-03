@@ -74,8 +74,7 @@ public class SuggestionsRepository extends AbstractRepository {
                 final List<String> types = result.types();
                 if (!types.isEmpty()) {
                     SuggestedLink l = new SuggestedLink();
-                    UUID uuid = idUtils.getUUID(result.id());
-                    l.setId(uuid);
+                    l.setId(result.idAsUUID());
                     l.setLabel(result.getAs(IndexedJsonLdDoc.LABEL, String.class));
                     l.setType(types.get(0));
                     l.setSpace(result.getAs(EBRAINSVocabulary.META_SPACE, String.class, null));
@@ -149,9 +148,8 @@ public class SuggestionsRepository extends AbstractRepository {
             Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = ArangoQueries.queryDocuments(databases.getByStage(stage), new AQLQuery(aql, bindVars), null);
             List<SuggestedLink> links = normalizedJsonLdPaginated.getData().stream().map(payload -> {
                 SuggestedLink link = new SuggestedLink();
-                UUID uuid = idUtils.getUUID(payload.id());
-                link.setId(uuid);
-                link.setLabel(payload.getAs(EBRAINSVocabulary.LABEL, String.class, uuid != null ? uuid.toString() : null));
+                link.setId(payload.idAsUUID());
+                link.setLabel(payload.getAs(EBRAINSVocabulary.LABEL, String.class, payload.id()));
                 link.setType(payload.getAs(EBRAINSVocabulary.META_TYPE, String.class, null));
                 link.setSpace(payload.getAs(EBRAINSVocabulary.META_SPACE, String.class, null));
                 link.setAdditionalInformation(payload.getAs(EBRAINSVocabulary.ADDITIONAL_INFO, String.class, null));

@@ -28,10 +28,14 @@ import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.IdUtils;
+import org.marmotgraph.commons.JsonAdapter;
+import org.marmotgraph.commons.Tuple;
 import org.marmotgraph.commons.exception.ForbiddenException;
 import org.marmotgraph.commons.exception.UnauthorizedException;
 import org.marmotgraph.commons.jsonld.*;
 import org.marmotgraph.commons.model.*;
+import org.marmotgraph.commons.model.relations.IncomingRelation;
+import org.marmotgraph.commons.model.relations.OutgoingRelation;
 import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permissions.controller.Permissions;
@@ -48,10 +52,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 
 @AllArgsConstructor
@@ -66,6 +67,7 @@ public class EventProcessor {
     private final EventService eventService;
     private final PayloadService payloadService;
     private final SpaceService spaceService;
+    private final JsonAdapter jsonAdapter;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -108,10 +110,15 @@ public class EventProcessor {
                 NormalizedJsonLd inferredDocumentPayload = inferredDocument.asIndexed().getDoc();
                 boolean autorelease = spaceInformation.isPresent() && spaceInformation.get().isAutoRelease();
                 InstanceInformation instanceInformation = payloadService.upsertInstanceInformation(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), persistedEvent.getData().identifiers());
-                payloadService.upsertInferredPayload(persistedEvent.getInstanceId(), instanceInformation, inferredDocumentPayload, inferredDocumentPayload.findOutgoingRelations(), inferredDocument.getAlternatives(), autorelease, persistedEvent.getReportedTimeStampInMs(), spaceInformation.isEmpty());
-                indexing.upsert(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), inferredDocumentPayload, DataStage.IN_PROGRESS);
+                Set<String> outgoingRelations = inferredDocumentPayload.findOutgoingRelations();
+                inferredDocumentPayload.addIdsToEmbedded(persistedEvent.getInstanceId());
+                Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> incomingAndOutgoingRelations = payloadService.upsertInferredPayload(persistedEvent.getInstanceId(), instanceInformation, inferredDocumentPayload, outgoingRelations, inferredDocument.getAlternatives(), autorelease, persistedEvent.getReportedTimeStampInMs(), spaceInformation.isEmpty());
+                Tuple<NormalizedJsonLd, Set<IncomingRelation>> preparedToIndex = payloadService.prepareToIndex(inferredDocumentPayload, incomingAndOutgoingRelations);
+                indexing.upsert(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), preparedToIndex.getA(), DataStage.IN_PROGRESS, preparedToIndex.getB());
                 if(autorelease){
-                    indexing.upsert(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), persistedEvent.getData(), DataStage.RELEASED);
+                    Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> releasedIncomingAndOutgoingRelations = payloadService.releasePayload(persistedEvent.getInstanceId(), jsonAdapter.toJson(inferredDocumentPayload), inferredDocumentPayload.findOutgoingRelations(), persistedEvent.getReportedTimeStampInMs(), instanceInformation, inferredDocumentPayload.types());
+                    Tuple<NormalizedJsonLd, Set<IncomingRelation>> releasedPreparedToIndex = payloadService.prepareToIndex(inferredDocumentPayload, releasedIncomingAndOutgoingRelations);
+                    indexing.upsert(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), releasedPreparedToIndex.getA(), DataStage.RELEASED, releasedPreparedToIndex.getB());
                 }
                 break;
             case DELETE:
@@ -119,8 +126,10 @@ public class EventProcessor {
                 indexing.delete(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), DataStage.IN_PROGRESS);
                 break;
             case RELEASE:
-                NormalizedJsonLd inferredPayload = payloadService.releaseExistingPayload(persistedEvent.getInstanceId(), persistedEvent.getReportedTimeStampInMs());
-                indexing.upsert(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), inferredPayload, DataStage.RELEASED);
+                NormalizedJsonLd payloadToRelease = payloadService.getPayloadToRelease(persistedEvent.getInstanceId());
+                Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> releasedIncomingAndOutgoingRelations = payloadService.releasePayload(persistedEvent.getInstanceId(), jsonAdapter.toJson(payloadToRelease), payloadToRelease.findOutgoingRelations(), persistedEvent.getReportedTimeStampInMs(), payloadService.getOrCreateGlobalInstanceInformation(persistedEvent.getInstanceId()), payloadToRelease.types());
+                Tuple<NormalizedJsonLd, Set<IncomingRelation>> releasedPreparedToIndex = payloadService.prepareToIndex(payloadToRelease, releasedIncomingAndOutgoingRelations);
+                indexing.upsert(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), releasedPreparedToIndex.getA(), DataStage.RELEASED, releasedPreparedToIndex.getB());
                 break;
             case UNRELEASE:
                 payloadService.removeReleasedPayload(persistedEvent.getInstanceId());
@@ -221,13 +230,12 @@ public class EventProcessor {
 
     private void ensureInternalIdInPayload(@NonNull PersistedEvent persistedEvent) {
         if (persistedEvent.getData() != null) {
-            JsonLdId idFromPayload = persistedEvent.getData().id();
+            String idFromPayload = persistedEvent.getData().id();
             if (idFromPayload != null) {
                 //Save the original id as an "identifier"
-                persistedEvent.getData().addIdentifiers(idFromPayload.getId());
+                persistedEvent.getData().addIdentifiers(idFromPayload);
             }
-            //TODO don't prefix with absolute url
-            persistedEvent.getData().setId(idUtils.buildAbsoluteUrl(persistedEvent.getInstanceId()));
+            persistedEvent.getData().setId(persistedEvent.getInstanceId().toString());
         }
     }
 

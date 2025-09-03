@@ -187,7 +187,7 @@ public class InstancesAPI implements Instances.Client {
         else{
             String space = result.getAs(EBRAINSVocabulary.META_SPACE, String.class);
             result = new NormalizedJsonLd();
-            result.setId(idUtils.buildAbsoluteUrl(id));
+            result.setId(id.toString());
             result.put(EBRAINSVocabulary.META_SPACE, space);
         }
         return result;

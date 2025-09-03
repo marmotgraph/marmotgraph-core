@@ -58,7 +58,12 @@ public class SpaceService {
     private final AuthContext authContext;
 
     public Optional<Space> getSpace(SpaceName spaceName){
-        return spaceRepository.findById(spaceName.getName());
+        Optional<Space> byId = spaceRepository.findById(spaceName.getName());
+        Set<SpaceName> whitelistedSpaceReads = whitelistedSpaceReads(authContext.getUserWithRoles());
+        if(byId.isPresent() && (whitelistedSpaceReads == null || whitelistedSpaceReads.contains(SpaceName.fromString(byId.get().getName())))){
+            return byId;
+        }
+        return Optional.empty();
     }
 
     public boolean isAutoRelease(SpaceName spaceName){
@@ -75,7 +80,6 @@ public class SpaceService {
     }
 
 
-
     public Paginated<SpaceInformation> listSpaces(PaginationParam paginationParam) {
         Set<SpaceName> whitelistedSpaceReads = whitelistedSpaceReads(authContext.getUserWithRoles());
         TypedQuery<Space> query;
@@ -88,9 +92,9 @@ public class SpaceService {
         if(paginationParam.getSize()!=null) {
             query = query.setFirstResult((int) paginationParam.getFrom()).setMaxResults(paginationParam.getSize().intValue());
         }
-        List<SpaceInformation> result = query.getResultStream().map(Space::toSpaceInformation).toList();
+        List<SpaceInformation> result = query.getResultList().stream().map(Space::toSpaceInformation).toList();
         //FIXME we need to count the total results.
-        return new Paginated<>(result, 0L, result.size(), paginationParam.getFrom());
+        return new Paginated<>(result, null, result.size(), paginationParam.getFrom());
 
     }
 }

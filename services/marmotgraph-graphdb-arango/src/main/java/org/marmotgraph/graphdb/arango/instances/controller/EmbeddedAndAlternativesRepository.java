@@ -112,7 +112,7 @@ public class EmbeddedAndAlternativesRepository {
 
     private void addEmbeddedInstancesToDocument(List<NormalizedJsonLd> documentsToBeResolved, List<NormalizedJsonLd[]> embeddedDocuments) {
         for (int i = 0; i < documentsToBeResolved.size(); i++) {
-            Map<String, NormalizedJsonLd> embeddedDocs = Arrays.stream(embeddedDocuments.get(i)).filter(Objects::nonNull).collect(Collectors.toMap(e -> e.id().getId(), e -> e));
+            Map<String, NormalizedJsonLd> embeddedDocs = Arrays.stream(embeddedDocuments.get(i)).filter(Objects::nonNull).collect(Collectors.toMap(JsonLdDoc::id, e -> e));
             embeddedDocs.values().forEach(e -> {
                 e.removeAllInternalProperties();
                 e.remove(JsonLdConsts.ID);

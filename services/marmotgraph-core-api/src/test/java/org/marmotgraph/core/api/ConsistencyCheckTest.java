@@ -61,8 +61,6 @@ class ConsistencyCheckTest {
     @Autowired
     InstancesV3 instances;
     @Autowired
-    IdUtils idUtils;
-    @Autowired
     TypesV3 types;
     PaginationParam EMPTY_PAGINATION = new PaginationParam();
     ExtendedResponseConfiguration DEFAULT_RESPONSE_CONFIG = new ExtendedResponseConfiguration();
@@ -77,8 +75,8 @@ class ConsistencyCheckTest {
             doc.addTypes(type);
             doc.addProperty("http://schema.hbp.eu/foo", "instance" + i);
             ResultWithExecutionDetails<NormalizedJsonLd> document = instances.createNewInstance(doc, "foo", DEFAULT_RESPONSE_CONFIG);
-            JsonLdId id = Objects.requireNonNull(document).getData().id();
-            System.out.printf("Created instance %s%n", id.getId());
+            String id = Objects.requireNonNull(document).getData().id();
+            System.out.printf("Created instance %s%n", id);
         }
         assertEquals(createInstances, getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
         assertEquals(1, types.listTypes(ExposedStage.IN_PROGRESS, null, false, false, EMPTY_PAGINATION).getSize());
@@ -102,7 +100,7 @@ class ConsistencyCheckTest {
                 JsonLdDoc doc = new JsonLdDoc();
                 doc.addTypes(type);
                 doc.addProperty("http://schema.hbp.eu/foo", "updatedValue" + updated);
-                this.instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(instance.id()), DEFAULT_RESPONSE_CONFIG);
+                this.instances.contributeToInstancePartialReplacement(doc, instance.idAsUUID(), DEFAULT_RESPONSE_CONFIG);
                 updated++;
             }
         }
@@ -116,7 +114,7 @@ class ConsistencyCheckTest {
         int released = 0;
         for (NormalizedJsonLd instance : getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS)) {
             if (released < createInstances * releaseRatio) {
-                this.instances.releaseInstance(idUtils.getUUID(instance.id()), IndexedJsonLdDoc.from(instance).getRevision());
+                this.instances.releaseInstance(instance.idAsUUID(), IndexedJsonLdDoc.from(instance).getRevision());
                 released++;
             }
         }
@@ -132,7 +130,7 @@ class ConsistencyCheckTest {
         int deleted = 0;
         for (NormalizedJsonLd instance : getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS)) {
             if (deleted < createInstances * deleteRatio) {
-                this.instances.deleteInstance(idUtils.getUUID(instance.id()));
+                this.instances.deleteInstance(instance.idAsUUID());
                 deleted++;
             }
         }
@@ -149,7 +147,7 @@ class ConsistencyCheckTest {
             if (updated < createInstances * updateRatio) {
                 JsonLdDoc doc = new JsonLdDoc();
                 doc.addProperty("http://schema.hbp.eu/foo", "valueWithoutType" + updated);
-                this.instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(instance.id()), DEFAULT_RESPONSE_CONFIG);
+                this.instances.contributeToInstancePartialReplacement(doc, instance.idAsUUID(), DEFAULT_RESPONSE_CONFIG);
                 updated++;
             }
         }
@@ -160,7 +158,7 @@ class ConsistencyCheckTest {
     void testDeleteAllAfterUpdate() {
         testUpdate();
         for (NormalizedJsonLd instance : getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS)) {
-            this.instances.deleteInstance(idUtils.getUUID(instance.id()));
+            this.instances.deleteInstance(instance.idAsUUID());
         }
         assertEquals(0, getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
     }

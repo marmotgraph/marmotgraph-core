@@ -24,7 +24,7 @@
 
 package org.marmotgraph.core.api.testutils;
 
-import org.marmotgraph.graphdb.arango.model.ArangoDatabaseProxy;
+import org.junit.jupiter.api.*;
 import org.marmotgraph.commons.AuthTokens;
 import org.marmotgraph.commons.SetupLogic;
 import org.marmotgraph.commons.model.User;
@@ -35,10 +35,10 @@ import org.marmotgraph.core.api.AbstractTest;
 import org.marmotgraph.core.api.metrics.MethodExecution;
 import org.marmotgraph.core.api.metrics.PerformanceTestUtils;
 import org.marmotgraph.core.api.metrics.TestInformation;
+import org.marmotgraph.graphdb.arango.model.ArangoDatabaseProxy;
 import org.marmotgraph.test.TestCategories;
-import org.junit.jupiter.api.*;
 import org.mockito.Mockito;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.io.IOException;
 import java.util.*;
@@ -51,7 +51,7 @@ public abstract class AbstractLoadTest extends AbstractSystemTest {
     protected final static int bigBatchInsertion = 10000;
 
 
-    @MockBean
+    @MockitoBean
     protected TestInformation testInformation;
 
     protected String testRunId;

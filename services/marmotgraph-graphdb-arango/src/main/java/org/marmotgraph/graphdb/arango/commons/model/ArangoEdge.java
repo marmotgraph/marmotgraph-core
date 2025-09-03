@@ -110,8 +110,8 @@ public class ArangoEdge implements ArangoInstance {
         return this.originalTo != null ? new JsonLdId(this.originalTo) : null;
     }
 
-    public void setOriginalTo(JsonLdId originalTo){
-        this.originalTo = originalTo!=null ? originalTo.getId() : null;
+    public void setOriginalTo(String originalTo){
+        this.originalTo = originalTo;
     }
 
     @JsonIgnore

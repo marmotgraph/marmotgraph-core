@@ -47,7 +47,7 @@ class DeleteSystemTest extends AbstractInstancesLoadTest {
         //When
         for (int i = 0; i < allInstancesFromInProgress.size(); i++) {
             Mockito.doReturn(i).when(testInformation).getExecutionNumber();
-            ResultWithExecutionDetails<Void> resultResponseEntity = instances.deleteInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).id()));
+            ResultWithExecutionDetails<Void> resultResponseEntity = instances.deleteInstance(allInstancesFromInProgress.get(i).idAsUUID());
             System.out.printf("Result %d: %d ms%n", i, resultResponseEntity.getDurationInMs());
         }
     }

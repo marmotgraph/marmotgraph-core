@@ -92,12 +92,12 @@ public class Reconcile {
         return merge(sourceDocuments);
     }
 
-    private JsonLdDoc createAlternative(String key, Object value, boolean selected, List<JsonLdId> users) {
+    private JsonLdDoc createAlternative(String key, Object value, boolean selected, List<UUID> users) {
         if (!DynamicJson.isInternalKey(key) && !JsonLdConsts.isJsonLdConst(key) && !SchemaOrgVocabulary.IDENTIFIER.equals(key) && !EBRAINSVocabulary.META_USER.equals(key) && !EBRAINSVocabulary.META_SPACE.equals(key) && !EBRAINSVocabulary.META_PROPERTYUPDATES.equals(key)) {
             JsonLdDoc alternative = new JsonLdDoc();
             alternative.put(EBRAINSVocabulary.META_SELECTED, selected);
             //We always save the users of an alternative as string only to prevent links to be created - the resolution happens lazily.
-            alternative.put(EBRAINSVocabulary.META_USER, users.stream().filter(Objects::nonNull).map(JsonLdId::getId).collect(Collectors.toList()));
+            alternative.put(EBRAINSVocabulary.META_USER, users.stream().filter(Objects::nonNull).map(UUID::toString).collect(Collectors.toList()));
             alternative.put(EBRAINSVocabulary.META_VALUE, value);
             return alternative;
         }
@@ -122,7 +122,7 @@ public class Reconcile {
                 if (value != null) {
                     inferredDocument.asIndexed().getDoc().addProperty(key, value);
                 }
-                JsonLdDoc alternative = createAlternative(key, doc.get(key), true, Collections.singletonList(doc.getAs(EBRAINSVocabulary.META_USER, JsonLdId.class)));
+                JsonLdDoc alternative = createAlternative(key, doc.get(key), true, Collections.singletonList(doc.getAs(EBRAINSVocabulary.META_USER, UUID.class)));
                 if (alternative != null) {
                     alternatives.put(key, Collections.singletonList(alternative));
                 }
@@ -131,7 +131,7 @@ public class Reconcile {
                 NormalizedJsonLd firstDoc = documentsForKey.getFirst();
                 switch (key) {
                     case JsonLdConsts.ID:
-                        List<JsonLdId> distinctIds = documentsForKey.stream().map(JsonLdDoc::id).distinct().toList();
+                        List<String> distinctIds = documentsForKey.stream().map(JsonLdDoc::id).distinct().toList();
                         if (distinctIds.size() == 1) {
                             inferredDocument.asIndexed().getDoc().setId(distinctIds.getFirst());
                         }
@@ -151,7 +151,7 @@ public class Reconcile {
                         Map<Object, List<NormalizedJsonLd>> documentsByValue = documentsForKey.stream().collect(Collectors.groupingBy(d -> d.getOrDefault(key, nullGroup)));
                         final List<JsonLdDoc> alternativePayloads = documentsByValue.keySet().stream().map(value -> {
                             List<NormalizedJsonLd> docs = documentsByValue.get(value);
-                            return createAlternative(key, value == nullGroup ? null : value, docs.contains(firstDoc), docs.stream().filter(d -> d.getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class) != null).map(doc -> doc.getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class).id()).distinct().collect(Collectors.toList()));
+                            return createAlternative(key, value == nullGroup ? null : value, docs.contains(firstDoc), docs.stream().filter(d -> d.getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class) != null).map(doc -> doc.getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class).idAsUUID()).distinct().collect(Collectors.toList()));
                         }).filter(Objects::nonNull).collect(Collectors.toList());
                         if (!CollectionUtils.isEmpty(alternativePayloads)) {
                             alternatives.put(key, alternativePayloads);

@@ -40,9 +40,10 @@ import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permissions.controller.Permissions;
 import org.marmotgraph.primaryStore.instances.model.Space;
 import org.marmotgraph.primaryStore.instances.service.SpaceRepository;
+import org.marmotgraph.primaryStore.instances.service.SpaceService;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.Optional;
 
 @AllArgsConstructor
 @Service
@@ -53,42 +54,39 @@ public class SpacesAPI implements Spaces.Client {
     private final Permissions permissions;
     private final AuthContext authContext;
     private final SpaceRepository spaceDefinitionRepository;
-
-
-    private static org.marmotgraph.commons.model.internal.spaces.Space createSpaceRepresentation(String name) {
-        return new org.marmotgraph.commons.model.internal.spaces.Space(new SpaceName(name), false, false, false);
-    }
-
-    private List<org.marmotgraph.commons.model.internal.spaces.Space> getSpaces() {
-        throw new NotImplementedException();
-//        List<Space> spaces = this.metaDataController.getSpaces(DataStage.IN_PROGRESS, authContext.getUserWithRoles());
-//        final SpaceName privateSpace = authContext.getUserWithRoles().getPrivateSpace();
-//        final Optional<Space> existingPrivateSpace = spaces.stream().filter(s -> s.getName().equals(privateSpace)).findAny();
-//        if (existingPrivateSpace.isPresent()) {
-//            //Rename the existing private space
-//            existingPrivateSpace.get().setName(SpaceName.fromString(SpaceName.PRIVATE_SPACE));
-//            existingPrivateSpace.get().setIdentifier(SpaceName.PRIVATE_SPACE);
-//        } else {
-//            //The private space doesn't exist yet -> we create it virtually.
-//            spaces.add(createSpaceRepresentation(SpaceName.PRIVATE_SPACE));
-//        }
-//        if (authContext.getUserWithRoles().hasInvitations()) {
-//            spaces.add(createSpaceRepresentation(SpaceName.REVIEW_SPACE));
-//        }
-//        spaces.sort(Comparator.comparing(s -> s.getName().getName()));
-//        return spaces;
-    }
+    private final SpaceService spaceService;
 
     @Override
     public SpaceInformation getSpace(SpaceName space, boolean permissions) {
-        throw new NotImplementedException();
-        //return getSpaces().stream().filter(s -> s.getName().equals(space)).findFirst().orElse(null);
+        Optional<Space> s = spaceService.getSpace(space);
+        if(s.isPresent()){
+            Space foundSpace = s.get();
+            final SpaceName privateSpace = authContext.getUserWithRoles().getPrivateSpace();
+            if(foundSpace.getName().equals(privateSpace.getName())){
+                foundSpace.setName(SpaceName.PRIVATE_SPACE);
+            }
+            //TODO permissions
+            return foundSpace.toSpaceInformation();
+        }
+        return null;
     }
 
     @Override
     public Paginated<SpaceInformation> listSpaces(PaginationParam paginationParam) {
-        throw new NotImplementedException();
-       // return PaginationParam.paginate(getSpaces(), paginationParam);
+        final SpaceName privateSpace = authContext.getUserWithRoles().getPrivateSpace();
+        Paginated<SpaceInformation> spaceInformationPaginated = spaceService.listSpaces(paginationParam);
+        spaceInformationPaginated.getData().stream().filter(s -> s.getName().equals(privateSpace.getName())).findFirst().ifPresent(s -> s.setName(SpaceName.PRIVATE_SPACE));
+        if (authContext.getUserWithRoles().hasInvitations()) {
+            if(spaceInformationPaginated.getTotalResults()-spaceInformationPaginated.getSize()<=spaceInformationPaginated.getFrom()){
+                //We're on the last page -> let's add the virtual space
+                SpaceInformation spaceInformation = new SpaceInformation();
+                spaceInformation.setIdentifier(SpaceName.REVIEW_SPACE);
+                spaceInformation.setName(SpaceName.REVIEW_SPACE);
+                spaceInformationPaginated.addItemToData(spaceInformation);
+            }
+            spaceInformationPaginated.increaseTotalResult();
+        }
+        return spaceInformationPaginated;
     }
 
     @Override

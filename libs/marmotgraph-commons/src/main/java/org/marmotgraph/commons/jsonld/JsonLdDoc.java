@@ -84,13 +84,16 @@ public class JsonLdDoc extends DynamicJson {
         put(SchemaOrgVocabulary.IDENTIFIER, allIdentifiers);
     }
 
-    public void setId(JsonLdId id) {
-        put(JsonLdConsts.ID, id != null ? id.getId() : null);
+    public void setId(String id) {
+        put(JsonLdConsts.ID, id);
     }
 
-    public JsonLdId id() {
-        String id = getAs(JsonLdConsts.ID, String.class);
-        return id != null ? new JsonLdId(id) : null;
+    public String id() {
+        return getAs(JsonLdConsts.ID, String.class);
+    }
+
+    public UUID idAsUUID() {
+        return getAs(JsonLdConsts.ID, UUID.class);
     }
 
     public void addProperty(Object key, Object value) {
@@ -177,50 +180,5 @@ public class JsonLdDoc extends DynamicJson {
         return value instanceof String && ((String) value).matches("http(s?)://.*");
     }
 
-    public String primaryIdentifier() {
-        if (this.containsKey(SchemaOrgVocabulary.IDENTIFIER)) {
-            Object identifier = get(SchemaOrgVocabulary.IDENTIFIER);
-            if (identifier instanceof List && !((List) identifier).isEmpty()) {
-                for (Object o : ((List) identifier)) {
-                    if (o instanceof String) {
-                        return (String) o;
-                    }
-                }
-            } else if (identifier instanceof String) {
-                return (String) identifier;
-            }
-        }
-        return null;
-    }
-
-    private void processLinks(Consumer<Map> referenceConsumer, Map currentMap, boolean root) {
-        //Skip root-id
-        if (!root && currentMap.containsKey(JsonLdConsts.ID)) {
-            Object id = currentMap.get(JsonLdConsts.ID);
-            if (id != null) {
-                referenceConsumer.accept(currentMap);
-            }
-        } else {
-            for (Object key : currentMap.keySet()) {
-                Object value = currentMap.get(key);
-                if (value instanceof Map) {
-                    processLinks(referenceConsumer, (Map) value, false);
-                }
-            }
-        }
-    }
-
-    private void replaceNamespace(String oldNamespace, String newNamespace, Map currentMap) {
-        HashSet keyList = new HashSet<>(currentMap.keySet());
-        for (Object key : keyList) {
-            if (key instanceof String && ((String) key).startsWith(oldNamespace)) {
-                Object value = currentMap.remove(key);
-                if (value instanceof Map) {
-                    replaceNamespace(oldNamespace, newNamespace, (Map) value);
-                }
-                currentMap.put(newNamespace + ((String) key).substring(oldNamespace.length()), value);
-            }
-        }
-    }
 
 }

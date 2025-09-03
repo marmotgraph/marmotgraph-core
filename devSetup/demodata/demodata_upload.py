@@ -44,12 +44,12 @@ def upload():
             if result.error:
                 print(f"Wasn't able to upload the instance {testdata} - error: {result.error}")
             else:
-                print(f"Upload of {testdata} was successful", flush=True)
-                error = client.instances.release(result.data.uuid)
+                print(f"Upload of {testdata} was successful in {result.duration_in_ms}ms", flush=True)
+                error = client.instances.release(result.data.instance_id)
                 if error:
                     print(f"Wasn't able to release the instance {testdata} - error: {error}")
                 else:
-                    print(f"Release of {testdata} was successful", flush=True)
+                    print(f"Release of {testdata} was successful in {result.duration_in_ms}ms", flush=True)
 
 endpoint_with_protocol = f"http://{endpoint}" if endpoint.startswith("172.") or endpoint.startswith("localhost") else f"https://{endpoint}"
 number_of_retries = 30

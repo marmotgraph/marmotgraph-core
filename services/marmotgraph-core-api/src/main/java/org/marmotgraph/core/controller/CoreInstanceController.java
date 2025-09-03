@@ -89,7 +89,7 @@ public class CoreInstanceController {
 
 
     public List<InstanceId> resolveIdsByUUID(List<UUID> ids, boolean returnUnresolved, DataStage stage) {
-        List<IdWithAlternatives> idWithAlternatives = ids.stream().map(id -> new IdWithAlternatives().setId(id).setAlternatives(Collections.singleton(idUtils.buildAbsoluteUrl(id).getId()))).collect(Collectors.toList());
+        List<IdWithAlternatives> idWithAlternatives = ids.stream().map(id -> new IdWithAlternatives().setId(id).setAlternatives(Collections.singleton(id.toString()))).collect(Collectors.toList());
         return resolveIds(idWithAlternatives, returnUnresolved, stage);
     }
 
@@ -327,7 +327,7 @@ public class CoreInstanceController {
         } else {
             result = AmbiguousResult.ok(instanceIds.stream().map(id -> {
                 NormalizedJsonLd jsonLd = new NormalizedJsonLd();
-                jsonLd.setId(idUtils.buildAbsoluteUrl(id.getUuid()));
+                jsonLd.setId(id.getUuid().toString());
                 jsonLd.addProperty(EBRAINSVocabulary.META_SPACE, id.getSpace().getName());
                 jsonLd.renameSpace(privateSpaceName, isInvited(jsonLd));
                 return jsonLd;
@@ -356,8 +356,7 @@ public class CoreInstanceController {
     }
 
     public boolean isInvited(NormalizedJsonLd normalizedJsonLd) {
-        final UUID uuid = idUtils.getUUID(normalizedJsonLd.id());
-        if (authContext.getUserWithRoles().getInvitations().contains(uuid)) {
+        if (authContext.getUserWithRoles().getInvitations().contains(normalizedJsonLd.id())) {
             //The user is invited for this instance
             final String space = normalizedJsonLd.getAs(EBRAINSVocabulary.META_SPACE, String.class, null);
             if (space != null) {
@@ -379,7 +378,7 @@ public class CoreInstanceController {
                         // standard SpaceName or resolves the real one if it's a private space
                         SpaceName sp = space != null ? authContext.resolveSpaceName(space) : null;
 
-                        Set<Functionality> functionalities = permissions.stream().filter(p -> Functionality.FunctionalityGroup.INSTANCE == p.getFunctionality().getFunctionalityGroup() && stage != null && stage == p.getFunctionality().getStage()).filter(p -> p.appliesTo(sp, idUtils.getUUID(doc.id()))).map(FunctionalityInstance::getFunctionality).collect(Collectors.toSet());
+                        Set<Functionality> functionalities = permissions.stream().filter(p -> Functionality.FunctionalityGroup.INSTANCE == p.getFunctionality().getFunctionalityGroup() && stage != null && stage == p.getFunctionality().getStage()).filter(p -> p.appliesTo(sp, doc.idAsUUID())).map(FunctionalityInstance::getFunctionality).collect(Collectors.toSet());
                         doc.put(EBRAINSVocabulary.META_PERMISSIONS, functionalities);
                     }
                 }

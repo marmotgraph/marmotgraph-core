@@ -162,7 +162,7 @@ public class ScopeRepository {
         final Map<String, Set<ScopeElement>> typeToUUID = new HashMap<>();
         List<ScopeElement> elements;
         if (data == null || data.isEmpty()) {
-            elements = Collections.singletonList(new ScopeElement(idUtils.getUUID(instance.id()), instance.types(), null, instance.getAs(ArangoVocabulary.ID, String.class), instance.getAs(EBRAINSVocabulary.META_SPACE, String.class), instance.getAs(IndexedJsonLdDoc.LABEL, String.class)));
+            elements = Collections.singletonList(new ScopeElement(instance.idAsUUID(), instance.types(), null, instance.getAs(ArangoVocabulary.ID, String.class), instance.getAs(EBRAINSVocabulary.META_SPACE, String.class), instance.getAs(IndexedJsonLdDoc.LABEL, String.class)));
         } else {
             elements = data.stream().map(d -> handleSubElement(d, typeToUUID, applyRestrictions, d)).filter(Objects::nonNull).flatMap(Collection::stream).collect(Collectors.toList());
         }

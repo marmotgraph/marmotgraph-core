@@ -50,7 +50,7 @@ public class GetReleaseStatusTest extends AbstractInstanceTest {
     @Override
     protected void setup() {
         originalInstance = createInstanceWithServerDefinedUUID(0);
-        uuid = testContext.getIdUtils().getUUID(originalInstance.id());
+        uuid = originalInstance.idAsUUID();
     }
 
     @Override

@@ -22,22 +22,16 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.commons.api.graphDB;
+package org.marmotgraph.primaryStore.instances.service;
 
-import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.model.*;
-import org.marmotgraph.commons.model.relations.IncomingRelation;
-import org.marmotgraph.commons.query.KgQuery;
+import org.marmotgraph.primaryStore.instances.model.CURIEPrefix;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+@Repository
+public interface CURIEPrefixRepository extends JpaRepository<CURIEPrefix, String> {
 
-public interface GraphDB {
-    interface Client extends GraphDB {}
-
-    void delete(UUID instanceId, SpaceName spaceName, DataStage dataStage);
-    void upsert(UUID instanceId, SpaceName spaceName, NormalizedJsonLd payload, DataStage stage, Set<IncomingRelation> incomingRelations);
-    StreamedQueryResult executeQuery(KgQuery query, Map<String, String> params, PaginationParam paginationParam);
-    ScopeElement getScopeForInstance(String space, UUID id, DataStage stage, boolean applyRestrictions);
+    @Query("SELECT count(c) FROM CURIEPrefix c WHERE c.prefix LIKE :prefix%")
+    Long countByPrefixPattern(String prefix);
 }

@@ -24,6 +24,7 @@
 
 package org.marmotgraph.core.api.instances.tests;
 
+import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.Result;
 import org.marmotgraph.commons.model.ResultWithExecutionDetails;
@@ -55,8 +56,8 @@ public class GetInstancesByIdsTest extends AbstractInstanceTest {
     protected void setup() {
         originalInstanceA = createInstanceWithServerDefinedUUID(0);
         originalInstanceB = createInstanceWithServerDefinedUUID(1);
-        originalInstances = Stream.of(originalInstanceA, originalInstanceB).collect(Collectors.toMap(k -> testContext.getIdUtils().getUUID(k.id()), v -> v));
-        ids = Arrays.asList(testContext.getIdUtils().getUUID(originalInstanceA.id()), testContext.getIdUtils().getUUID(originalInstanceB.id()));
+        originalInstances = Stream.of(originalInstanceA, originalInstanceB).collect(Collectors.toMap(JsonLdDoc::idAsUUID, v -> v));
+        ids = Arrays.asList(originalInstanceA.idAsUUID(), originalInstanceB.idAsUUID());
     }
 
     @Override

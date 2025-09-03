@@ -47,7 +47,7 @@ public class GetInstanceByIdTest extends AbstractInstanceTest {
     }
 
     protected void run(){
-        response = instances.getInstanceById(testContext.getIdUtils().getUUID(originalInstance.id()), ExposedStage.IN_PROGRESS, defaultResponseConfiguration);
+        response = instances.getInstanceById(originalInstance.idAsUUID(), ExposedStage.IN_PROGRESS, defaultResponseConfiguration);
     }
 
 }

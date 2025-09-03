@@ -58,7 +58,7 @@ public class ReleaseInstanceTest extends AbstractInstanceTest {
     }
 
     public UUID getInstanceUUID(){
-        return testContext.getIdUtils().getUUID(originalInstance.id());
+        return originalInstance.idAsUUID();
     }
 
 }

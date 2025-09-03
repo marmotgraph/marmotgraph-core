@@ -52,7 +52,7 @@ public class PrimaryStoreTest {
     public void testRandomEvent(){
         NormalizedJsonLd data = new NormalizedJsonLd();
         data.addProperty("name", "test");
-        data.setId(new JsonLdId("https://kg.ebrains.eu/api/instances/foo/bar"));
+        data.setId("https://kg.ebrains.eu/api/instances/foo/bar");
         Event e = new Event(Simpsons.SPACE_NAME, UUID.randomUUID(), data, Event.Type.INSERT, new Date().getTime());
         primaryStore.postEvent(e);
     }

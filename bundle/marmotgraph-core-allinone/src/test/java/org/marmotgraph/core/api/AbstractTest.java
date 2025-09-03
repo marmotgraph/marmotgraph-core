@@ -162,7 +162,7 @@ public abstract class AbstractTest {
 
     public NormalizedJsonLd assureValidPayloadIncludingId(ResultWithExecutionDetails<NormalizedJsonLd> response) {
         NormalizedJsonLd data = assureValidPayload(response);
-        JsonLdId id = data.id();
+        String id = data.id();
         notNull(id, "The id shouldn't be null when creating an instance");
         return data;
     }

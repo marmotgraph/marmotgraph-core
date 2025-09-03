@@ -24,17 +24,19 @@
 
 package org.marmotgraph.graphdb.arango.ingestion.controller;
 
-import org.marmotgraph.graphdb.arango.model.ArangoCollectionReference;
-import org.marmotgraph.graphdb.arango.model.ArangoDocumentReference;
-import org.marmotgraph.graphdb.arango.model.InternalSpace;
 import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.TypeUtils;
-import org.marmotgraph.commons.jsonld.*;
+import org.marmotgraph.commons.jsonld.DynamicJson;
+import org.marmotgraph.commons.jsonld.JsonLdDoc;
+import org.marmotgraph.commons.jsonld.JsonLdId;
+import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.graphdb.arango.commons.model.ArangoDocument;
 import org.marmotgraph.graphdb.arango.commons.model.ArangoEdge;
 import org.marmotgraph.graphdb.arango.commons.model.ArangoInstance;
+import org.marmotgraph.graphdb.arango.model.ArangoCollectionReference;
+import org.marmotgraph.graphdb.arango.model.ArangoDocumentReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -121,30 +123,28 @@ public class StructureSplitter {
         alternative.asIndexedDoc().setEmbedded(true);
         alternative.asIndexedDoc().setAlternative(true);
         UUID alternativeDocumentId = UUID.randomUUID();
-        JsonLdId alternativeId = idUtils.buildAbsoluteUrl(alternativeDocumentId);
-        alternative.getDoc().setId(alternativeId);
+        alternative.getDoc().setId(alternativeDocumentId.toString());
         alternative.setReference(parent.getReference().getArangoCollectionReference().doc(alternativeDocumentId));
         alternative.setOriginalDocument(originalDocumentReference);
         collector.add(alternative);
         ArangoEdge edge = new ArangoEdge();
-        edge.setOriginalTo(alternativeId);
+        edge.setOriginalTo(alternativeDocumentId.toString());
         edge.setToReference(parent.getReference().getArangoCollectionReference().doc(alternativeDocumentId));
         edge.setOriginalLabel(EBRAINSVocabulary.META_ALTERNATIVE);
         edge.setOriginalDocumentReference(originalDocumentReference);
         edge.setFromReference(parent.getReference());
         edge.redefineId(ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_ALTERNATIVE)).doc(UUID.randomUUID()));
         collector.add(edge);
-        subTree.put(EBRAINSVocabulary.META_ALTERNATIVE, alternativeId);
+        subTree.put(EBRAINSVocabulary.META_ALTERNATIVE, alternativeDocumentId);
     }
 
     private ArangoEdge extractEdge(ArangoDocument parent, NormalizedJsonLd subTree, ArangoDocumentReference originalDocumentRef, Stack<String> keyStack, int orderNumber, List<ArangoInstance> collector) {
         ArangoEdge edge = new ArangoEdge();
         edge.setOrderNumber(orderNumber);
         UUID embeddedDocumentId = UUID.randomUUID();
-        JsonLdId embeddedId = idUtils.buildAbsoluteUrl(embeddedDocumentId);
-        JsonLdId id = null;
+        UUID id = null;
         try {
-            id = subTree.id();
+            id = subTree.idAsUUID();
         } catch (IllegalArgumentException e) {
             logger.warn("Found an invalid reference in a document. Skipping it...", e);
             return null;
@@ -153,13 +153,13 @@ public class StructureSplitter {
             //It's not a link but an embedded instance. We need to follow and extract it.
             ArangoDocument embedded = ArangoDocument.create();
             embedded.asIndexedDoc().setEmbedded(true);
-            embedded.getDoc().setId(embeddedId);
+            embedded.getDoc().setId(embeddedDocumentId.toString());
             embedded.setReference(parent.getReference().getArangoCollectionReference().doc(embeddedDocumentId));
             extractNestedInstances(embedded, subTree, originalDocumentRef, keyStack, collector);
-            edge.setOriginalTo(embeddedId);
+            edge.setOriginalTo(embeddedDocumentId.toString());
             edge.setToReference(originalDocumentRef.getArangoCollectionReference().doc(embeddedDocumentId));
         } else {
-            edge.setOriginalTo(id);
+            edge.setOriginalTo(id.toString());
             // As part of the inference, we ignore all additional information provided next to the link.
             // If we want to support the inline-creation of new instances, we need to do the splitting the latest on the primary store level.
             // In this case, the information would arrive in inference as individual instances. But be careful, this has severe impact on the life-cycle of the document!

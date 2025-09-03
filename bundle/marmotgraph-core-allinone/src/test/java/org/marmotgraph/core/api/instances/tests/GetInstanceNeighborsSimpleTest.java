@@ -49,6 +49,6 @@ public class GetInstanceNeighborsSimpleTest extends AbstractInstanceTest {
 
     @Override
     protected void run() {
-        response = instances.getNeighbors(testContext.getIdUtils().getUUID(originalInstance.id()), ExposedStage.IN_PROGRESS);
+        response = instances.getNeighbors(originalInstance.idAsUUID(), ExposedStage.IN_PROGRESS);
     }
 }

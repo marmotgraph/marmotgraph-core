@@ -334,8 +334,7 @@ public class DocumentsRepository extends  AbstractRepository{
                     if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
                         incomingLinks.resolveIncomingLinks(stage, instanceIncomingLinks, invitationDocuments);
                         normalizedJsonLds.forEach(d -> {
-                            String id = idUtils.getUUID(d.id()).toString();
-                            d.put(EBRAINSVocabulary.META_INCOMING_LINKS, instanceIncomingLinks.get(id));
+                            d.put(EBRAINSVocabulary.META_INCOMING_LINKS, instanceIncomingLinks.get(d.id().toString()));
                         });
                     }
                 }
@@ -347,7 +346,7 @@ public class DocumentsRepository extends  AbstractRepository{
 
     public List<NormalizedJsonLd> getInvitationDocuments(){
         final List<UUID> invitations = authContext.getUserWithRoles().getInvitations();
-        final List<InstanceId> values = instances.resolveIds(invitations.stream().distinct().map(id -> new IdWithAlternatives().setId(id).setAlternatives(Collections.singleton(idUtils.buildAbsoluteUrl(id).getId()))).filter(Objects::nonNull).toList(), DataStage.IN_PROGRESS).values().stream().toList();
+        final List<InstanceId> values = instances.resolveIds(invitations.stream().distinct().map(id -> new IdWithAlternatives().setId(id).setAlternatives(Collections.singleton(id.toString()))).filter(Objects::nonNull).toList(), DataStage.IN_PROGRESS).values().stream().toList();
         final Map<UUID, ResultWithExecutionDetails<NormalizedJsonLd>> documentsByIdList = getDocumentsByIdList(DataStage.IN_PROGRESS, values, null, false, false, false, null, null);
         return documentsByIdList.values().stream().map(ResultWithExecutionDetails::getData).collect(Collectors.toList());
     }

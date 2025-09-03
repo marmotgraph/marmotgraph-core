@@ -66,5 +66,16 @@ public class Paginated<T> {
         return from;
     }
 
+    public void addItemToData(T data){
+        this.data.add(data);
+        this.size++;
+    }
+
+    public void increaseTotalResult(){
+        if(this.totalResults!=null){
+            this.totalResults++;
+        }
+    }
+
 }
 

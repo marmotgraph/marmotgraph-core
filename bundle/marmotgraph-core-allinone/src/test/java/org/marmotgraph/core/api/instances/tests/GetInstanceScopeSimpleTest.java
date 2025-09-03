@@ -49,6 +49,6 @@ public class GetInstanceScopeSimpleTest extends AbstractInstanceTest {
 
     @Override
     protected void run(){
-        response = instances.getInstanceScope(testContext.getIdUtils().getUUID(originalInstance.id()), ExposedStage.IN_PROGRESS, false, false);
+        response = instances.getInstanceScope(originalInstance.idAsUUID(), ExposedStage.IN_PROGRESS, false, false);
     }
 }

@@ -48,10 +48,10 @@ public class DeleteInstanceTest extends AbstractInstanceTest {
 
     @Override
     protected void run() {
-        response = instances.deleteInstance(testContext.getIdUtils().getUUID(originalInstance.id()));
+        response = instances.deleteInstance(originalInstance.idAsUUID());
     }
 
     public ResultWithExecutionDetails<NormalizedJsonLd> fetchInstance(){
-        return instances.getInstanceById(testContext.getIdUtils().getUUID(originalInstance.id()), ExposedStage.IN_PROGRESS, defaultResponseConfiguration);
+        return instances.getInstanceById(originalInstance.idAsUUID(), ExposedStage.IN_PROGRESS, defaultResponseConfiguration);
     }
 }

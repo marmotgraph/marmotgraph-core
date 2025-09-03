@@ -61,7 +61,7 @@ public class ContributeToInstancePartialReplacementTest extends AbstractInstance
 
     @Override
     protected void run(){
-       response = instances.contributeToInstancePartialReplacement(update, testContext.getIdUtils().getUUID(originalInstance.id()), responseConfiguration);
+       response = instances.contributeToInstancePartialReplacement(update, originalInstance.idAsUUID(), responseConfiguration);
     }
 
 }

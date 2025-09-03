@@ -27,6 +27,7 @@ package org.marmotgraph.graphdb.neo4j.service;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import org.marmotgraph.commons.jsonld.JsonLdConsts;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.springframework.stereotype.Service;
 
@@ -40,8 +41,17 @@ public class PayloadSplitter {
     static class Instance {
         private final Map<String, Object> payload;
         private final boolean embedded;
-        private final boolean unresolved;
-        private final String alias;
+        private final UUID lifecycleId;
+        private final String id;
+
+        public Collection<String> types(){
+            Object types = payload.get(NormalizedJsonLd.TYPE_ALIAS);
+            if(types instanceof Collection<?>){
+                return (Collection<String>) types;
+            }
+            return Collections.emptyList();
+        }
+
     }
 
     @AllArgsConstructor
@@ -52,7 +62,7 @@ public class PayloadSplitter {
         private final String to;
         private final String relationName;
         private final int orderNumber;
-        private UUID lifecycleId;
+        private final UUID lifecycleId;
     }
 
     @AllArgsConstructor
@@ -74,12 +84,10 @@ public class PayloadSplitter {
         }
 
         private void addInstance(Instance instance) {
-            instance.payload.put(Neo4jService.LIFECYCLE_ALIAS, lifecycleId.toString());
             this.instances.add(instance);
         }
 
         private void addRelation(Relation relation) {
-            relation.setLifecycleId(lifecycleId);
             this.relations.add(relation);
         }
 
@@ -96,47 +104,44 @@ public class PayloadSplitter {
 
     PayloadSplit createEntities(NormalizedJsonLd normalizedJsonLd, UUID lifecycleUUID) {
         Collector collector = new Collector(lifecycleUUID);
-        String alias = "a";
         Map<String, Object> rootInstance = new LinkedHashMap<>();
         for (String k : normalizedJsonLd.keySet()) {
-            Object r = createEntitiesRec(alias, 0, k, normalizedJsonLd.get(k), collector);
+            Object r = createEntitiesRec(lifecycleUUID.toString(), 0, k, normalizedJsonLd.get(k), collector);
             if (r != null) {
                 rootInstance.put(k, r);
             }
         }
-        rootInstance.put(Neo4jService.UUID_ALIAS, lifecycleUUID.toString());
-        collector.addInstance(new Instance(rootInstance, false, false, alias));
+        collector.addInstance(new Instance(rootInstance, false, lifecycleUUID, lifecycleUUID.toString()));
         return collector.toSplit();
     }
 
-    private Object createEntitiesRec(String parentAlias, int orderNumber, String k, Object obj, Collector collector) {
+    private Object createEntitiesRec(String parentId, int orderNumber, String k, Object obj, Collector collector) {
         if (obj instanceof Map<?, ?> objMap) {
-            if (objMap.containsKey("@id") && objMap.get("@id") instanceof String) {
-                System.out.printf("Found relation in property %s pointing to %s%n", k, objMap.get("@id"));
-                collector.incrementExternalLinkCounter();
-                String targetAlias = String.format("b%s", collector.getExternalLinkCounter());
-                collector.addRelation(new Relation(parentAlias, targetAlias, k, orderNumber, null));
-                collector.addInstance(new Instance(new HashMap<>(Map.of("@id", objMap.get("@id"))), false, true, targetAlias));
-                return null;
-            } else {
-                System.out.printf("Found embedded instance in property %s", k);
-                String alias = String.format("a%s", collector.getInstances().size() + 1);
-                Map<String, Object> resultMap = new LinkedHashMap<>();
-                collector.addInstance(new Instance(resultMap, true, false, alias));
-                for (Object key : objMap.keySet()) {
-                    Object result = createEntitiesRec(alias, 0, (String) key, objMap.get(key), collector);
-                    if (result != null) {
-                        resultMap.put((String) key, result);
+            if(!objMap.isEmpty() ) {
+                if (objMap.containsKey(JsonLdConsts.ID) && objMap.get(JsonLdConsts.ID) instanceof String id) {
+                    collector.incrementExternalLinkCounter();
+                    try {
+                        collector.addRelation(new Relation(parentId, id, k, orderNumber, collector.getLifecycleId()));
+                    } catch (IllegalArgumentException e) {
+                        // Ignore relations which are not properly resolved towards a UUID (they should have been filtered out beforehand)
                     }
+                } else if(objMap.get(NormalizedJsonLd.ID_ALIAS) instanceof String id) {
+                    //It's an embedded instance not having its own @id but its virtual alias instead
+                    Map<String, Object> resultMap = new LinkedHashMap<>();
+                    collector.addInstance(new Instance(resultMap, true, collector.getLifecycleId(), id));
+                    for (Object key : objMap.keySet()) {
+                        Object result = createEntitiesRec(id, 0, (String) key, objMap.get(key), collector);
+                        if (result != null) {
+                            resultMap.put((String) key, result);
+                        }
+                    }
+                    collector.addRelation(new Relation(parentId, id, k, orderNumber, collector.getLifecycleId()));
                 }
-                collector.addRelation(new Relation(parentAlias, alias, k, orderNumber, null));
-
-                return null;
             }
         } else if (obj instanceof List<?> objList) {
             List<Object> result = new ArrayList<>();
             for (int i = 0; i < objList.size(); i++) {
-                Object r = createEntitiesRec(parentAlias, i, k, objList.get(i), collector);
+                Object r = createEntitiesRec(parentId, i, k, objList.get(i), collector);
                 if (r != null) {
                     result.add(r);
                 }
@@ -147,6 +152,7 @@ public class PayloadSplitter {
         } else {
             return obj;
         }
+        return null;
     }
 
 
