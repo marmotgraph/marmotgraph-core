@@ -116,23 +116,23 @@ public class EventProcessor {
                 Tuple<NormalizedJsonLd, Set<IncomingRelation>> preparedToIndex = payloadService.prepareToIndex(inferredDocumentPayload, incomingAndOutgoingRelations);
                 indexing.upsert(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), preparedToIndex.getA(), DataStage.IN_PROGRESS, preparedToIndex.getB());
                 if(autorelease){
-                    Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> releasedIncomingAndOutgoingRelations = payloadService.releasePayload(persistedEvent.getInstanceId(), jsonAdapter.toJson(inferredDocumentPayload), inferredDocumentPayload.findOutgoingRelations(), persistedEvent.getReportedTimeStampInMs(), instanceInformation, inferredDocumentPayload.types());
+                    Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> releasedIncomingAndOutgoingRelations = payloadService.release(persistedEvent.getInstanceId(), jsonAdapter.toJson(inferredDocumentPayload), inferredDocumentPayload.findOutgoingRelations(), persistedEvent.getReportedTimeStampInMs(), instanceInformation, inferredDocumentPayload.types());
                     Tuple<NormalizedJsonLd, Set<IncomingRelation>> releasedPreparedToIndex = payloadService.prepareToIndex(inferredDocumentPayload, releasedIncomingAndOutgoingRelations);
                     indexing.upsert(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), releasedPreparedToIndex.getA(), DataStage.RELEASED, releasedPreparedToIndex.getB());
                 }
                 break;
             case DELETE:
-                payloadService.removeInferredPayload(persistedEvent.getInstanceId());
+                payloadService.delete(persistedEvent.getInstanceId());
                 indexing.delete(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), DataStage.IN_PROGRESS);
                 break;
             case RELEASE:
                 NormalizedJsonLd payloadToRelease = payloadService.getPayloadToRelease(persistedEvent.getInstanceId());
-                Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> releasedIncomingAndOutgoingRelations = payloadService.releasePayload(persistedEvent.getInstanceId(), jsonAdapter.toJson(payloadToRelease), payloadToRelease.findOutgoingRelations(), persistedEvent.getReportedTimeStampInMs(), payloadService.getOrCreateGlobalInstanceInformation(persistedEvent.getInstanceId()), payloadToRelease.types());
+                Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> releasedIncomingAndOutgoingRelations = payloadService.release(persistedEvent.getInstanceId(), jsonAdapter.toJson(payloadToRelease), payloadToRelease.findOutgoingRelations(), persistedEvent.getReportedTimeStampInMs(), payloadService.getOrCreateGlobalInstanceInformation(persistedEvent.getInstanceId()), payloadToRelease.types());
                 Tuple<NormalizedJsonLd, Set<IncomingRelation>> releasedPreparedToIndex = payloadService.prepareToIndex(payloadToRelease, releasedIncomingAndOutgoingRelations);
                 indexing.upsert(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), releasedPreparedToIndex.getA(), DataStage.RELEASED, releasedPreparedToIndex.getB());
                 break;
             case UNRELEASE:
-                payloadService.removeReleasedPayload(persistedEvent.getInstanceId());
+                payloadService.unrelease(persistedEvent.getInstanceId());
                 indexing.delete(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), DataStage.RELEASED);
                 break;
         }

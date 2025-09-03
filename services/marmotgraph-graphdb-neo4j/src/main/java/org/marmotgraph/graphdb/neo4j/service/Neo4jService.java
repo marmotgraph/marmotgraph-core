@@ -93,7 +93,7 @@ public class Neo4jService {
 
     public void delete(UUID uuid, DataStage stage) {
         String template = """
-        MATCH (n${stage} {%{lifecycleIdAlias}: $lifecycleId})
+        MATCH (n${stage} {${lifecycleIdAlias}: $lifecycleId})
         DETACH DELETE n
         """;
         String query = StringSubstitutor.replace(template,

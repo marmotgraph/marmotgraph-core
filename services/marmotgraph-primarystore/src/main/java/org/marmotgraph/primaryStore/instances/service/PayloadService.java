@@ -399,7 +399,7 @@ public class PayloadService {
     }
 
 
-    public Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> releasePayload(UUID instanceId, String jsonPayload, Set<String> outgoingRelations, Long reportedTimestamp, InstanceInformation instanceInformation, List<String> types) {
+    public Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> release(UUID instanceId, String jsonPayload, Set<String> outgoingRelations, Long reportedTimestamp, InstanceInformation instanceInformation, List<String> types) {
         if (instanceInformation.getFirstRelease() == null) {
             instanceInformation.setFirstRelease(reportedTimestamp);
         }
@@ -435,7 +435,7 @@ public class PayloadService {
     record ReleaseStatusById(UUID uuid, String spaceName, ReleaseStatus releaseStatus) {
     }
 
-    public void removeInferredPayload(UUID instanceId) {
+    public void delete(UUID instanceId) {
         Optional<InstanceInformation> byId = instanceInformationRepository.findById(instanceId);
         if (byId.isPresent()) {
             if (byId.get().getReleaseStatus() != ReleaseStatus.UNRELEASED) {
@@ -445,12 +445,17 @@ public class PayloadService {
         entityManager.createQuery("delete from InferredDocumentRelation r where r.compositeId.instanceId = :instanceId").setParameter("instanceId", instanceId).executeUpdate();
         entityManager.createQuery("update InferredDocumentRelation r set r.resolvedTarget = null where r.resolvedTarget = :instanceId").setParameter("instanceId", instanceId).executeUpdate();
         inferredPayloadRepository.deleteById(instanceId);
+        instanceInformationRepository.deleteById(instanceId);
     }
 
-    public void removeReleasedPayload(UUID instanceId) {
-        releasedPayloadRepository.deleteById(instanceId);
+    public void unrelease(UUID instanceId) {
+        InstanceInformation instanceInformation = getOrCreateGlobalInstanceInformation(instanceId);
+        instanceInformation.setReleaseStatus(ReleaseStatus.UNRELEASED);
+        instanceInformation.setLastRelease(null);
         entityManager.createQuery("delete from ReleasedDocumentRelation r where r.compositeId.instanceId = :instanceId").setParameter("instanceId", instanceId).executeUpdate();
         entityManager.createQuery("update ReleasedDocumentRelation r set r.resolvedTarget = null where r.resolvedTarget = :instanceId").setParameter("instanceId", instanceId).executeUpdate();
+        releasedPayloadRepository.deleteById(instanceId);
+        instanceInformationRepository.save(instanceInformation);
     }
 
 
