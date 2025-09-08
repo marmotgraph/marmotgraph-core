@@ -110,7 +110,7 @@ To reduce the payload sizes and to simplify the processing of the payloads, the 
 
 #### Special case: "@list"
 
-For simplicity, the MarmotGraph decided to introduce one deviation from the JSON-LD standard: In JSON-LD, arrays are - in constrast to standard JSON - by default unordered. If the order of a list should be kept in JSON-LD, it has to be wrapped with a "@list". Since the MarmotGraph treats JSON-LD as standard JSON (and therefore keeps the order of arrays), this adds unnecessary complexity and introduces overhead. Therefore, the MarmotGraph reduces the "@list" elements in the payload and always treats arrays as ordered.
+For simplicity, the MarmotGraph decided to introduce one deviation from the JSON-LD standard: In JSON-LD, arrays are - in contrast to standard JSON - by default unordered. If the order of a list should be kept in JSON-LD, it has to be wrapped with a "@list". Since the MarmotGraph treats JSON-LD as standard JSON (and therefore keeps the order of arrays), this adds unnecessary complexity and introduces overhead. Therefore, the MarmotGraph reduces the "@list" elements in the payload and always treats arrays as ordered.
 
 #### Null values
 
