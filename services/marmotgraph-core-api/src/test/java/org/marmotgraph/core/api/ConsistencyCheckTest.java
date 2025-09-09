@@ -81,8 +81,8 @@ class ConsistencyCheckTest {
             System.out.printf("Created instance %s%n", id.getId());
         }
         assertEquals(createInstances, getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
-        assertEquals(1, types.listTypes(ExposedStage.IN_PROGRESS, null, false, false, EMPTY_PAGINATION).getSize());
-        List<TypeInformation> typeWithPropertiesAndCounts = types.listTypes(ExposedStage.IN_PROGRESS, null, true, true, EMPTY_PAGINATION).getData();
+        assertEquals(1, types.listTypes(ExposedStage.IN_PROGRESS, null, false, false, true, EMPTY_PAGINATION).getSize());
+        List<TypeInformation> typeWithPropertiesAndCounts = types.listTypes(ExposedStage.IN_PROGRESS, null, true, true, true, EMPTY_PAGINATION).getData();
         assertEquals(1, typeWithPropertiesAndCounts.size());
         TypeInformation typeWithProperty = typeWithPropertiesAndCounts.get(0);
         assertEquals(type, typeWithProperty.get(SchemaOrgVocabulary.IDENTIFIER));

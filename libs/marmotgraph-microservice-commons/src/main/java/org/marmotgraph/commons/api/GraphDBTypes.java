@@ -40,9 +40,9 @@ public interface GraphDBTypes {
 
     interface Client extends GraphDBTypes {}
 
-    Paginated<TypeInformation> listTypes(DataStage stage, String space, boolean withProperties, boolean withIncomingLinks, PaginationParam paginationParam);
+    Paginated<TypeInformation> listTypes(DataStage stage, String space, boolean withProperties, boolean withIncomingLinks, PaginationParam paginationParam, boolean doReflect);
 
-    Map<String, Result<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space, boolean withProperties, boolean withIncomingLinks);
+    Map<String, Result<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space, boolean withProperties, boolean withIncomingLinks, boolean doReflect);
 
     DynamicJson getSpecifyType(String type, boolean global);
 

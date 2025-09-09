@@ -158,7 +158,7 @@ public class IncomingLinksRepository extends AbstractRepository{
             //Nothing to do -> we can just return the original document
             return instanceIncomingLinks;
         }
-        final Collection<Result<TypeInformation>> typeInformation = metaDataController.getTypesByName(types.stream().map(Type::getName).collect(Collectors.toList()), stage, null, true, false, authContext.getUserWithRoles(), authContext.getClientSpace() != null ? authContext.getClientSpace().getName() : null, invitationDocuments).values();
+        final Collection<Result<TypeInformation>> typeInformation = metaDataController.getTypesByName(types.stream().map(Type::getName).collect(Collectors.toList()), stage, null, true, false, authContext.getUserWithRoles(), authContext.getClientSpace() != null ? authContext.getClientSpace().getName() : null, invitationDocuments, false).values();
         final Map<String, TypeInformation> extendedTypeInformationByIdentifier = typeInformation.stream().map(Result::getData).filter(Objects::nonNull).collect(Collectors.toMap(TypeInformation::getIdentifier, v -> v));
         Map<UUID, String> labelsForInstances = getLabelsForInstances(stage, instanceIds, databases);
         enrichDocument(instanceIncomingLinks, extendedTypeInformationByIdentifier, labelsForInstances);
