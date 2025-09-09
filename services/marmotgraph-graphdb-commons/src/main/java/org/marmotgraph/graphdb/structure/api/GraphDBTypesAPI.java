@@ -62,14 +62,14 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
 
     @Override
     public Paginated<TypeInformation> listTypes(DataStage stage, String space, boolean withProperties,
-                                                boolean withIncomingLinks, PaginationParam paginationParam) {
-        return PaginationParam.paginate(metaDataController.readMetaDataStructure(stage, space, null, withProperties, withIncomingLinks, authContext.getUserWithRoles(), authContext.getClientSpace() != null ? authContext.getClientSpace().getName() : null, authContext.getUserWithRolesWithoutTermsCheck().getPrivateSpace(), documents.getInvitationDocuments()), paginationParam);
+                                                boolean withIncomingLinks, PaginationParam paginationParam, boolean doReflect) {
+        return PaginationParam.paginate(metaDataController.readMetaDataStructure(stage, space, null, withProperties, withIncomingLinks, authContext.getUserWithRoles(), authContext.getClientSpace() != null ? authContext.getClientSpace().getName() : null, authContext.getUserWithRolesWithoutTermsCheck().getPrivateSpace(), documents.getInvitationDocuments(), doReflect), paginationParam);
     }
 
     @Override
     public Map<String, Result<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space,
-                                                               boolean withProperties, boolean withIncomingLinks) {
-        return metaDataController.getTypesByName(types, stage, space, withProperties, withIncomingLinks, authContext.getUserWithRoles(), authContext.getClientSpace()!=null ? authContext.getClientSpace().getName() : null, documents.getInvitationDocuments());
+                                                               boolean withProperties, boolean withIncomingLinks, boolean doReflect) {
+        return metaDataController.getTypesByName(types, stage, space, withProperties, withIncomingLinks, authContext.getUserWithRoles(), authContext.getClientSpace()!=null ? authContext.getClientSpace().getName() : null, documents.getInvitationDocuments(), doReflect);
     }
 
     @Override

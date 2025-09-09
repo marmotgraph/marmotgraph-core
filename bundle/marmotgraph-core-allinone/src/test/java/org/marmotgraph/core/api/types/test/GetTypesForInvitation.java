@@ -64,6 +64,6 @@ public class GetTypesForInvitation extends AbstractTest {
 
     @Override
     protected void run() {
-        response = this.types.listTypes(ExposedStage.IN_PROGRESS, space, withProperties, withIncomingLinks, new PaginationParam());
+        response = this.types.listTypes(ExposedStage.IN_PROGRESS, space, withProperties, withIncomingLinks, true, new PaginationParam());
     }
 }

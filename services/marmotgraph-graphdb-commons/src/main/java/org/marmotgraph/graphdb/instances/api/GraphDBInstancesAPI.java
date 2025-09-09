@@ -106,7 +106,11 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
         List<String> searchableProperties = null;
         if ((searchByLabel != null && !searchByLabel.isBlank())) {
             //Since we're either sorting or searching by label, we need to reflect on the type -> we therefore have to resolve the type in the database first...
-            final Result<TypeInformation> typeInformation = types.getTypesByName(Collections.singletonList(typeName), stage, space, false, false).get(typeName);
+            Result<TypeInformation> typeInformation = types.getTypesByName(Collections.singletonList(typeName), stage, space, false, false, false).get(typeName);
+            if(typeInformation == null || typeInformation.getData() == null) {
+                //We didn't find the type information just by specification (doReflect = false) - this means the type we're looking for is not specified. So let's take the extra length and reflect.
+                typeInformation = types.getTypesByName(Collections.singletonList(typeName), stage, space, false, false, true).get(typeName);
+            }
             if(typeInformation!=null && typeInformation.getData()!=null){
                 type = Type.fromPayload(typeInformation.getData());
                 if(space!=null) {
@@ -120,7 +124,11 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
                         }).map(Property::getIdentifier).filter(Objects::nonNull).collect(Collectors.toList());
             }
         } else {
-            final Result<TypeInformation> typeInformation = types.getTypesByName(Collections.singletonList(typeName), stage, space, false, false).get(typeName);
+            Result<TypeInformation> typeInformation = types.getTypesByName(Collections.singletonList(typeName), stage, space, false, false, false).get(typeName);
+            if(typeInformation == null || typeInformation.getData() == null) {
+                //We didn't find the type information just by specification (doReflect = false) - this means the type we're looking for is not specified. So let's take the extra length and reflect.
+                typeInformation = types.getTypesByName(Collections.singletonList(typeName), stage, space, false, false, true).get(typeName);
+            }
             if(typeInformation!=null && typeInformation.getData()!=null) {
                 type = Type.fromPayload(typeInformation.getData());
                 if(space!=null) {
@@ -190,7 +198,7 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
 
     @Override
     @ExposesMinimalData
-    public SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, String space, UUID id, String propertyName, String sourceType, String targetType, String search, PaginationParam paginationParam) {
+    public SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, String space, UUID id, String propertyName, String sourceType, String targetType, String search, PaginationParam paginationParam, boolean reflect) {
         List<Type> sourceTypes = null;
         List<UUID> existingLinks = Collections.emptyList();
 
@@ -211,10 +219,10 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
             return null;
         }
 
-        final Map<String, Result<TypeInformation>> sourceTypeInformation = types.getTypesByName(sourceTypes.stream().map(Type::getName).collect(Collectors.toList()), stage, space, true, false);
+        final Map<String, Result<TypeInformation>> sourceTypeInformation = types.getTypesByName(sourceTypes.stream().map(Type::getName).collect(Collectors.toList()), stage, space, true, false, reflect);
         final List<String> targetTypesOfProperty = sourceTypeInformation.values().stream().map(s -> s.getData().getProperties()).flatMap(Collection::stream).filter(p -> propertyName.equals(p.getIdentifier()))
                 .map(Property::getTargetTypes).flatMap(Collection::stream).map(TargetType::getType).filter(t -> targetType == null || t.equals(targetType)).distinct().collect(Collectors.toList());
-        final Map<String, Result<TypeInformation>> targetTypeInformation = types.getTypesByName(targetTypesOfProperty, stage, null, true, false);
+        final Map<String, Result<TypeInformation>> targetTypeInformation = types.getTypesByName(targetTypesOfProperty, stage, null, true, false, reflect);
         suggestionResult.setTypes(targetTypeInformation.values().stream().collect(Collectors.toMap(k -> k.getData().getIdentifier(), Result::getData)));
         final Map<String, List<String>> searchablePropertiesByType = new HashMap<>();
         targetTypeInformation.keySet().forEach(t -> {

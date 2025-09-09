@@ -336,7 +336,8 @@ public class DocumentsRepository extends  AbstractRepository{
             exposeRevision(normalizedJsonLds);
             if (showIncomingLinks) {
                 List<String> involvedTypes = normalizedJsonLds.stream().map(JsonLdDoc::types).flatMap(Collection::stream).distinct().collect(Collectors.toList());
-                final Set<String> excludedTypes = metaDataController.getTypesByName(involvedTypes, stage, null, false, false, authContext.getUserWithRoles(), authContext.getClientSpace() != null ? authContext.getClientSpace().getName() : null, invitationDocuments).values().stream()
+                //We only want to know if a type excludes incoming links -> accordingly, we don't need to reflect the database
+                final Set<String> excludedTypes = metaDataController.getTypesByName(involvedTypes, stage, null, false, false, authContext.getUserWithRoles(), authContext.getClientSpace() != null ? authContext.getClientSpace().getName() : null, invitationDocuments, false).values().stream()
                         .map(t -> Type.fromPayload(t.getData())).filter(t -> t.getIgnoreIncomingLinks() != null && t.getIgnoreIncomingLinks()).map(Type::getName).collect(Collectors.toSet());
                 List<ArangoDocumentReference> toInspectForIncomingLinks = normalizedJsonLds.stream().filter(n -> n.types().stream().noneMatch(excludedTypes::contains)).map(n -> ArangoDocument.from(n).getId()).collect(Collectors.toList());
                 if (!CollectionUtils.isEmpty(toInspectForIncomingLinks)) {
@@ -363,7 +364,7 @@ public class DocumentsRepository extends  AbstractRepository{
     }
 
     Set<String> getMinimalFields(DataStage stage, List<String> types, List<NormalizedJsonLd> invitationDocuments) {
-        Set<String> keepProperties = new HashSet<>(metaDataController.getTypesByName(types, stage, null, false, false, authContext.getUserWithRoles(), authContext.getClientSpace()!=null ? authContext.getClientSpace().getName() : null, invitationDocuments).values().stream().filter(r -> r.getData() != null).map(r -> r.getData().getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class)).filter(Objects::nonNull).collect(Collectors.toSet()));
+        Set<String> keepProperties = new HashSet<>(metaDataController.getTypesByName(types, stage, null, false, false, authContext.getUserWithRoles(), authContext.getClientSpace()!=null ? authContext.getClientSpace().getName() : null, invitationDocuments, false).values().stream().filter(r -> r.getData() != null).map(r -> r.getData().getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class)).filter(Objects::nonNull).collect(Collectors.toSet()));
         keepProperties.add(JsonLdConsts.ID);
         keepProperties.add(IndexedJsonLdDoc.LABEL);
         keepProperties.add(JsonLdConsts.TYPE);

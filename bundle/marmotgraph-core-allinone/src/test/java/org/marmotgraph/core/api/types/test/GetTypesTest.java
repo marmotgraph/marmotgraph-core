@@ -63,6 +63,6 @@ public class GetTypesTest extends AbstractTest {
 
     @Override
     protected void run() {
-        response = this.types.listTypes(ExposedStage.IN_PROGRESS, spaceName == null ? null : spaceName.getName(), withProperties, withIncomingLinks, new PaginationParam());
+        response = this.types.listTypes(ExposedStage.IN_PROGRESS, spaceName == null ? null : spaceName.getName(), withProperties, withIncomingLinks, true, new PaginationParam());
     }
 }

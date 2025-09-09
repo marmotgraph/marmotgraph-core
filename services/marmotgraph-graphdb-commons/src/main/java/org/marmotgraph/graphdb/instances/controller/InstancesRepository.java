@@ -88,7 +88,7 @@ public class InstancesRepository extends AbstractRepository {
         final List<NormalizedJsonLd> invitationDocuments = documents.getInvitationDocuments();
         if (showIncomingLinks) {
             ArangoDocumentReference arangoDocumentReference = ArangoDocumentReference.fromInstanceId(new InstanceId(id, space));
-            final boolean ignoreIncomingLinks = metaDataController.getTypesByName(document.getDoc().types(), stage, space.getName(), false, false, authContext.getUserWithRoles(), authContext.getClientSpace() != null ? authContext.getClientSpace().getName() : null, invitationDocuments).values().stream().filter(t -> t.getData() != null).map(t -> Type.fromPayload(t.getData())).anyMatch(t -> t.getIgnoreIncomingLinks() != null && t.getIgnoreIncomingLinks());
+            final boolean ignoreIncomingLinks = metaDataController.getTypesByName(document.getDoc().types(), stage, space.getName(), false, false, authContext.getUserWithRoles(), authContext.getClientSpace() != null ? authContext.getClientSpace().getName() : null, invitationDocuments, false).values().stream().filter(t -> t.getData() != null).map(t -> Type.fromPayload(t.getData())).anyMatch(t -> t.getIgnoreIncomingLinks() != null && t.getIgnoreIncomingLinks());
             if (!ignoreIncomingLinks) {
                 NormalizedJsonLd instanceIncomingLinks = incomingLinks.fetchIncomingLinks(Collections.singletonList(arangoDocumentReference), stage, 0L, incomingLinksPageSize, null, null);
                 if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {

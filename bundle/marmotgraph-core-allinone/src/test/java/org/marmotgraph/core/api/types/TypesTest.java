@@ -76,7 +76,7 @@ class TypesTest extends AbstractFunctionalityTest {
 
         //When
         test.execute(() -> {
-            Result<Map<String, Result<TypeInformation>>> typesByName = types.getTypesByName(Collections.singletonList(test.typeName), ExposedStage.IN_PROGRESS, false, false,null);
+            Result<Map<String, Result<TypeInformation>>> typesByName = types.getTypesByName(Collections.singletonList(test.typeName), ExposedStage.IN_PROGRESS, false, false,null, true);
             TypeInformation data = typesByName.getData().get(test.typeName).getData();
             assertNotNull(data);
             assertEquals(test.typeName, data.getIdentifier());
