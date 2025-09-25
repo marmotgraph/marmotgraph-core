@@ -358,7 +358,10 @@ public class Reconcile {
                                     inferredDocument.asIndexed().getDoc().addProperty(key, propertyValue);
                                 }
                                 Object nullGroup = new Object();
-                                Map<Object, List<IndexedJsonLdDoc>> documentsByValue = documentsForKey.stream().collect(Collectors.groupingBy(d -> d.getDoc().getOrDefault(key, nullGroup)));
+                                Map<Object, List<IndexedJsonLdDoc>> documentsByValue = documentsForKey.stream().collect(Collectors.groupingBy(d -> {
+                                    Object value = d.getDoc().getOrDefault(key, nullGroup);
+                                    return value == null ? nullGroup : value;
+                                }));
                                 final List<JsonLdDoc> alternativePayloads = documentsByValue.keySet().stream().map(value -> {
                                     List<IndexedJsonLdDoc> docs = documentsByValue.get(value);
                                     return createAlternative(key, value == nullGroup ? null : value, docs.contains(firstDoc), docs.stream().filter(d -> d.getDoc() != null && d.getDoc().getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class) != null).map(doc -> doc.getDoc().getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class).id()).distinct().collect(Collectors.toList()));
