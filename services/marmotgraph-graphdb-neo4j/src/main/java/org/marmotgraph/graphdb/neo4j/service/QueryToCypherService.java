@@ -169,6 +169,7 @@ public class QueryToCypherService {
                                 handleLeaf(m, parentAlias, structureItem.getPath().getLast(), propertyName, parentAlias);
                                 String resultAlias = withStatements(m, innerAliases, true);
                                 newReturnMap.put(parentAlias, resultAlias);
+                                newWithAliases.add(resultAlias);
                             }
                         } else {
                             //It's a substructure, so we need to traverse the graph

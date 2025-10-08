@@ -33,13 +33,36 @@
           "path": "https://marmotgraph.org/properties/name"
         },
         {
-          "propertyName": "query:dialects",
+          "propertyName": "query:examples",
           "path": [
             {
-              "@id": "https://marmotgraph.org/properties/dialectOf",
+              "@id": "https://marmotgraph.org/properties/language",
               "reverse": true
             },
-            "https://marmotgraph.org/properties/name"
+            "https://marmotgraph.org/properties/value"
+          ]
+        },
+        {
+          "propertyName": "query:dialects",
+          "path": {
+            "@id": "https://marmotgraph.org/properties/dialectOf",
+            "reverse": true
+          },
+          "structure": [
+            {
+              "propertyName": "query:name",
+              "path": "https://marmotgraph.org/properties/name"
+            },
+            {
+              "propertyName": "query:examples",
+              "path": [
+                {
+                  "@id": "https://marmotgraph.org/properties/language",
+                  "reverse": true
+                },
+                "https://marmotgraph.org/properties/value"
+              ]
+            }
           ]
         }
       ]

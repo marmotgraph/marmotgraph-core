@@ -31,8 +31,6 @@ import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class MarmotGraphQuery {
