@@ -1,6 +1,7 @@
 realm: marmotgraph
 enabled: true
 
+accessTokenLifespan: 82800
 clientScopes:
   - name: openid
     description: "OpenID scope to ensure access to userinfo"

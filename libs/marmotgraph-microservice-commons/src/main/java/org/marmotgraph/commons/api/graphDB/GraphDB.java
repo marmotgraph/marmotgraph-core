@@ -26,8 +26,8 @@ package org.marmotgraph.commons.api.graphDB;
 
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.*;
+import org.marmotgraph.commons.model.query.QuerySpecification;
 import org.marmotgraph.commons.model.relations.IncomingRelation;
-import org.marmotgraph.commons.query.KgQuery;
 
 import java.util.Map;
 import java.util.Set;
@@ -38,6 +38,6 @@ public interface GraphDB {
 
     void delete(UUID instanceId, SpaceName spaceName, DataStage dataStage);
     void upsert(UUID instanceId, SpaceName spaceName, NormalizedJsonLd payload, DataStage stage, Set<IncomingRelation> incomingRelations);
-    StreamedQueryResult executeQuery(KgQuery query, Map<String, String> params, PaginationParam paginationParam);
+    StreamedQueryResult executeQuery(QuerySpecification query, DataStage stage, Map<String, String> params, PaginationParam paginationParam);
     ScopeElement getScopeForInstance(String space, UUID id, DataStage stage, boolean applyRestrictions);
 }

@@ -26,6 +26,7 @@ package org.marmotgraph.graphdb.arango.instances.controller;
 
 import com.arangodb.ArangoDBException;
 import org.marmotgraph.graphdb.arango.ArangoQueries;
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.aqlbuilder.AQL;
 import org.marmotgraph.graphdb.arango.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.graphdb.arango.model.*;
@@ -42,12 +43,12 @@ import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.graphdb.arango.commons.controller.ArangoDatabases;
 import org.marmotgraph.graphdb.arango.commons.controller.PermissionsController;
 import org.marmotgraph.graphdb.arango.structure.controller.MetaDataController;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
-@Component
+@Service
+@Arango
 public class SuggestionsRepository extends AbstractRepository {
 
     private final InstancesRepository instances;

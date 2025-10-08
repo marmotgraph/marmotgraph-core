@@ -35,6 +35,7 @@
     <modules>
         <module>config/marmotgraph-library</module>
         <module>libs/marmotgraph-commons</module>
+        <module>libs/marmotgraph-graphdb-commons</module>
         <module>libs-4-test/marmotgraph-spring-test-utils</module>
         <module>libs/marmotgraph-microservice-commons</module>
         <module>libs-4-test/marmotgraph-test-factory</module>

@@ -26,27 +26,33 @@ package org.marmotgraph.graphdb.neo4j.api;
 
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.NotImplementedException;
+import org.marmotgraph.commons.Tuple;
 import org.marmotgraph.commons.api.graphDB.GraphDB;
+import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.markers.ExposesMinimalData;
 import org.marmotgraph.commons.model.*;
+import org.marmotgraph.commons.model.query.QuerySpecification;
 import org.marmotgraph.commons.model.relations.IncomingRelation;
-import org.marmotgraph.commons.query.KgQuery;
+import org.marmotgraph.commons.query.MarmotGraphQuery;
+import org.marmotgraph.graphdb.neo4j.Neo4J;
 import org.marmotgraph.graphdb.neo4j.service.Neo4jService;
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Component;
+import org.marmotgraph.graphdb.neo4j.service.QueryToCypherService;
+import org.springframework.stereotype.Service;
 
-import java.util.List;
+import javax.management.Query;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-@Profile("neo4j")
-@Component
+@Neo4J
+@Service
 @AllArgsConstructor
 public class GraphDBAPI implements GraphDB.Client {
 
     private final Neo4jService service;
+    private final QueryToCypherService queryToCypherService;
 
     @Override
     public void delete(UUID instanceId, SpaceName spaceName, DataStage dataStage) {
@@ -59,8 +65,10 @@ public class GraphDBAPI implements GraphDB.Client {
     }
 
     @Override
-    public StreamedQueryResult executeQuery(KgQuery query, Map<String, String> params, PaginationParam paginationParam){
-        throw new NotImplementedException();
+    public StreamedQueryResult executeQuery(QuerySpecification query, DataStage stage, Map<String, String> params, PaginationParam paginationParam){
+        Tuple<String, Map<String, String>> cypherQuery = queryToCypherService.createCypherQuery(stage, query, paginationParam);
+        Collection<NormalizedJsonLd> results = service.query(cypherQuery.getA(), params, cypherQuery.getB(), paginationParam);
+        return new StreamedQueryResult(new PaginatedStream<>(results.stream(), null, results.size(), paginationParam.getFrom()), query.getMeta().getResponseVocab());
     }
 
     @Override

@@ -31,19 +31,21 @@ import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-public class KgQuery {
+public class MarmotGraphQuery {
 
     private NormalizedJsonLd payload;
     private DataStage stage;
     private InstanceId idRestriction;
     private List<SpaceName> restrictToSpaces;
 
-    public KgQuery() {
+    public MarmotGraphQuery() {
     }
 
-    public KgQuery(NormalizedJsonLd payload, DataStage stage) {
+    public MarmotGraphQuery(NormalizedJsonLd payload, DataStage stage) {
         this.payload = payload;
         this.stage = stage;
         this.validateQuery();
@@ -53,7 +55,7 @@ public class KgQuery {
         return payload;
     }
 
-    public KgQuery setPayload(NormalizedJsonLd payload) {
+    public MarmotGraphQuery setPayload(NormalizedJsonLd payload) {
         this.payload = payload;
         return this;
     }
@@ -62,7 +64,7 @@ public class KgQuery {
         return stage;
     }
 
-    public KgQuery setStage(DataStage stage) {
+    public MarmotGraphQuery setStage(DataStage stage) {
         this.stage = stage;
         return this;
     }
@@ -71,7 +73,7 @@ public class KgQuery {
         return idRestriction;
     }
 
-    public KgQuery setIdRestriction(InstanceId idRestriction) {
+    public MarmotGraphQuery setIdRestriction(InstanceId idRestriction) {
         this.idRestriction = idRestriction;
         return this;
     }
@@ -80,7 +82,7 @@ public class KgQuery {
         return restrictToSpaces;
     }
 
-    public KgQuery setRestrictToSpaces(List<SpaceName> restrictToSpaces) {
+    public MarmotGraphQuery setRestrictToSpaces(List<SpaceName> restrictToSpaces) {
         this.restrictToSpaces = restrictToSpaces;
         return this;
     }

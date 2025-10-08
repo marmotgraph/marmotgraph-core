@@ -25,6 +25,7 @@
 package org.marmotgraph.graphdb.arango.commons.controller;
 
 import com.arangodb.ArangoDB;
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.model.ArangoDatabaseProxy;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +33,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@Arango
 public class GraphDBArangoConfiguration {
 
     @Bean

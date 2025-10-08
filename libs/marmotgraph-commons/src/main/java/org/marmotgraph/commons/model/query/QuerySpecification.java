@@ -35,15 +35,87 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Getter;
 import lombok.Setter;
+import org.marmotgraph.commons.jsonld.JsonLdId;
+import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Getter
 @Setter
 public class QuerySpecification {
+
+    public Set<String> extractPropertyAndTypeNamespaces() {
+        Set<String> collector = new HashSet<>();
+        String typeNamespace = NormalizedJsonLd.getNamespace(meta.type);
+        collector.add(typeNamespace);
+        recursiveVisit(structure, s-> {
+            if(s.path!=null){
+                return (s.path.stream().map(p -> {
+                    Set<String> ids = new HashSet<>();
+                    ids.add(NormalizedJsonLd.getNamespace(p.getId()));
+                    if(p.getTypeFilter()!=null){
+                        ids.addAll(p.getTypeFilter().stream().map(t -> NormalizedJsonLd.getNamespace(t.getId())).collect(Collectors.toSet()));
+                    }
+                    return ids;
+                }).flatMap(Collection::stream).filter(Objects::nonNull).collect(Collectors.toSet()));
+            }
+            return null;
+        }, collector);
+        return collector;
+    }
+
+
+    public void applyPrefixMap(Map<String, String> prefixMap) {
+        String typeNamespace = NormalizedJsonLd.getNamespace(meta.type);
+        if(typeNamespace!=null && prefixMap.containsKey(typeNamespace)){
+            meta.type = meta.type.replace(typeNamespace+"/", prefixMap.get(typeNamespace));
+        }
+        recursiveVisit(structure, s-> {
+            if(s.path!=null){
+                s.path.forEach(p -> {
+                    String idNamespace = NormalizedJsonLd.getNamespace(p.getId());
+                    if(idNamespace!=null && prefixMap.containsKey(idNamespace)){
+                        p.setId(p.getId().replace(idNamespace+"/", prefixMap.get(idNamespace)));
+                    }
+                    if(p.getTypeFilter()!=null){
+                        p.getTypeFilter().forEach(
+                                t -> {
+                                    String typeFilterNamespace = NormalizedJsonLd.getNamespace(t.getId());
+                                    if(typeFilterNamespace!=null && prefixMap.containsKey(typeFilterNamespace)){
+                                        t.setId(t.getId().replace(typeFilterNamespace+"/", prefixMap.get(typeFilterNamespace)));
+                                    }
+                                }
+                        );
+                    }
+                });
+            }
+            return null;
+        }, null);
+
+    }
+
+    public <T, R extends Collection<T>> R recursiveVisit(List<StructureItem> structureItem, Function<StructureItem, Collection<T>> visitor, R collector) {
+        if(structureItem!=null){
+            structureItem.forEach(s -> {
+                if(s.structure!=null){
+                    recursiveVisit(s.structure, visitor, collector);
+                }
+                Collection<T> result = visitor.apply(s);
+                if(result!=null && collector!=null){
+                    collector.addAll(result);
+                }
+            });
+        }
+        return collector;
+    }
+
+
+
 
     @Getter
     @Setter
@@ -66,6 +138,7 @@ public class QuerySpecification {
         private String id;
         private boolean reverse;
         private List<TypeFilter> typeFilter;
+        private transient String queryAlias;
     }
 
     @Getter
@@ -74,6 +147,8 @@ public class QuerySpecification {
         @JsonProperty("@id")
         private String id;
     }
+
+
 
 
 
@@ -122,7 +197,7 @@ public class QuerySpecification {
     @Getter
     @Setter
     public static class StructureItem {
-        private String propertyName;
+        private JsonLdId propertyName;
         @JsonDeserialize(using = PathDeserializer.class)
         private List<Path> path;
         private List<StructureItem> structure;

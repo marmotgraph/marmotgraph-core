@@ -28,6 +28,7 @@ import org.marmotgraph.commons.exception.InvalidRequestException;
 import org.marmotgraph.commons.jsonld.JsonLdConsts;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.Type;
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.queries.model.fieldFilter.Op;
 import org.marmotgraph.graphdb.arango.queries.model.fieldFilter.Parameter;
 import org.marmotgraph.graphdb.arango.queries.model.fieldFilter.PropertyFilter;
@@ -38,12 +39,12 @@ import org.marmotgraph.graphdb.arango.queries.model.spec.SpecTraverse;
 import org.marmotgraph.graphdb.arango.queries.model.spec.Specification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
-@Component
+@Service
+@Arango
 public class SpecificationInterpreter {
 
     protected Logger logger = LoggerFactory.getLogger(SpecificationInterpreter.class);

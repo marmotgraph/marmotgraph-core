@@ -33,7 +33,6 @@ import org.marmotgraph.commons.api.jsonld.JsonLd;
 import org.marmotgraph.commons.config.openApiGroups.Simple;
 import org.marmotgraph.commons.exception.ResultBasedException;
 import org.marmotgraph.commons.exception.InstanceNotFoundException;
-import org.marmotgraph.commons.exception.InvalidRequestException;
 import org.marmotgraph.commons.jsonld.InstanceId;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
@@ -42,7 +41,7 @@ import org.marmotgraph.commons.markers.ExposesInputWithoutEnrichedSensitiveData;
 import org.marmotgraph.commons.markers.ExposesQuery;
 import org.marmotgraph.commons.markers.WritesData;
 import org.marmotgraph.commons.model.*;
-import org.marmotgraph.commons.query.KgQuery;
+import org.marmotgraph.commons.query.MarmotGraphQuery;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.core.controller.CoreInstanceController;
 import org.marmotgraph.core.controller.CoreQueryController;
@@ -107,7 +106,7 @@ public class QueriesV3 {
         allRequestParams.remove("from");
         allRequestParams.remove("size");
         NormalizedJsonLd normalizedJsonLd = jsonLd.normalize(query, true);
-        KgQuery q = new KgQuery(normalizedJsonLd, stage.getStage());
+        MarmotGraphQuery q = new MarmotGraphQuery(normalizedJsonLd, stage.getStage());
         q.setIdRestriction(instances.resolveId(instanceId, stage.getStage()));
         if (restrictToSpaces != null) {
             q.setRestrictToSpaces(restrictToSpaces.stream().filter(Objects::nonNull).map(r -> SpaceName.getInternalSpaceName(r, authContext.getUserWithRoles().getPrivateSpace())).collect(Collectors.toList()));
@@ -192,7 +191,7 @@ public class QueriesV3 {
         if (queryPayload == null) {
             throw new InstanceNotFoundException(String.format("Query with id %s not found", queryId));
         }
-        KgQuery query = new KgQuery(queryPayload, stage.getStage());
+        MarmotGraphQuery query = new MarmotGraphQuery(queryPayload, stage.getStage());
 
         query.setIdRestriction(instances.resolveId(instanceId, stage.getStage()));
         if (restrictToSpaces != null) {

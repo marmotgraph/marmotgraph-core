@@ -32,6 +32,7 @@ import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.commons.model.ArangoDocument;
 import org.marmotgraph.graphdb.arango.commons.model.ArangoEdge;
 import org.marmotgraph.graphdb.arango.commons.model.ArangoInstance;
@@ -39,11 +40,11 @@ import org.marmotgraph.graphdb.arango.model.ArangoCollectionReference;
 import org.marmotgraph.graphdb.arango.model.ArangoDocumentReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
-
-@Component
+@Arango
+@Service
 public class StructureSplitter {
 
     private final IdUtils idUtils;

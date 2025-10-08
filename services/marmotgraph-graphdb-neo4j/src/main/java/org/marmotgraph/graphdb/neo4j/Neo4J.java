@@ -22,11 +22,16 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.graphdb.arango;
-
+package org.marmotgraph.graphdb.neo4j;
 
 import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Service;
 
-@Profile("arango")
-public @interface ArangoProfile {
+import java.lang.annotation.*;
+
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Profile("neo4j")
+public @interface Neo4J {
 }

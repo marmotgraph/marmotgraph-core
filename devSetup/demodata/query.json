@@ -1,0 +1,58 @@
+{
+  "@context": {
+    "@vocab": "https://core.kg.ebrains.eu/vocab/query/",
+    "query": "https://schema.hbp.eu/myQuery/",
+    "propertyName": {
+      "@id": "propertyName",
+      "@type": "@id"
+    },
+    "path": {
+      "@id": "path",
+      "@type": "@id"
+    }
+  },
+  "meta": {
+    "type": "https://marmotgraph.org/types/Country",
+    "responseVocab": "https://schema.hbp.eu/myQuery/"
+  },
+  "structure": [
+    {
+      "propertyName": "query:id",
+      "path": "@id"
+    },
+    {
+      "propertyName": "query:name",
+      "path": "https://marmotgraph.org/properties/name"
+    },
+    {
+      "propertyName": "query:officialLanguages",
+      "path": "https://marmotgraph.org/properties/officialLanguages",
+      "structure": [
+        {
+          "propertyName": "query:name",
+          "path": "https://marmotgraph.org/properties/name"
+        },
+        {
+          "propertyName": "query:dialects",
+          "path": [
+            {
+              "@id": "https://marmotgraph.org/properties/dialectOf",
+              "reverse": true
+            },
+            "https://marmotgraph.org/properties/name"
+          ]
+        }
+      ]
+    },
+    {
+      "propertyName": "query:hosts",
+      "path": [
+        {
+          "@id": "https://marmotgraph.org/properties/countries",
+          "reverse": true
+        },
+        "https://marmotgraph.org/properties/name"
+      ]
+    }
+  ]
+}

@@ -31,6 +31,7 @@ import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.markers.ExposesData;
 import org.marmotgraph.commons.model.*;
 import org.marmotgraph.commons.params.ReleaseTreeScope;
+import org.marmotgraph.commons.query.MarmotGraphQuery;
 
 import java.util.List;
 import java.util.Map;
@@ -72,5 +73,11 @@ public interface Instances {
     GraphEntity getNeighbors(String space, UUID id, DataStage stage);
 
     Paginated<NormalizedJsonLd> getIncomingLinks(String space, UUID id, DataStage stage, String property, String type, PaginationParam paginationParam);
+
+    ScopeElement getScopeForInstance(String space, UUID id, DataStage stage, boolean applyRestrictions);
+
+    //TODO check if we should separate this to its own "query API"
+    StreamedQueryResult executeQuery(MarmotGraphQuery query, Map<String, String> params, PaginationParam paginationParam);
+
 
 }

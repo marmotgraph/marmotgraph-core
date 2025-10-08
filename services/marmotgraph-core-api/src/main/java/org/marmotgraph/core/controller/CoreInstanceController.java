@@ -26,9 +26,7 @@ package org.marmotgraph.core.controller;
 
 import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.AuthContext;
-import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.api.authentication.Invitation;
-import org.marmotgraph.commons.api.graphDB.GraphDB;
 import org.marmotgraph.commons.api.primaryStore.Events;
 import org.marmotgraph.commons.api.primaryStore.Instances;
 import org.marmotgraph.commons.api.primaryStore.Scopes;
@@ -61,9 +59,7 @@ import java.util.stream.Collectors;
 @Component
 public class CoreInstanceController {
 
-    private final GraphDB.Client graphDB;
     private final AuthContext authContext;
-    private final IdUtils idUtils;
     private final Events.Client events;
     private final Instances.Client instances;
     private final Scopes.Client scopes;
@@ -396,7 +392,7 @@ public class CoreInstanceController {
     public ScopeElement getScopeForInstance(UUID id, DataStage stage, boolean returnPermissions, boolean applyRestrictions) {
         InstanceId instanceId = resolveId(id, stage);
         if (instanceId != null) {
-            ScopeElement scope = graphDB.getScopeForInstance(instanceId.getSpace().getName(), instanceId.getUuid(), stage, applyRestrictions);
+            ScopeElement scope = instances.getScopeForInstance(instanceId.getSpace().getName(), instanceId.getUuid(), stage, applyRestrictions);
             if (returnPermissions) {
                 enrichWithPermissionInformation(stage, scope, authContext.getUserWithRoles().getPermissions());
             }

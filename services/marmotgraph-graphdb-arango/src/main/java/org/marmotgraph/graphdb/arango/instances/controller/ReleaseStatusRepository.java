@@ -28,6 +28,7 @@ import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.CollectionType;
 import com.arangodb.model.AqlQueryOptions;
 import com.arangodb.model.CollectionCreateOptions;
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.aqlbuilder.AQL;
 import org.marmotgraph.graphdb.arango.model.ArangoCollectionReference;
 import org.marmotgraph.graphdb.arango.model.ArangoDocumentReference;
@@ -48,12 +49,12 @@ import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permissions.controller.Permissions;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import org.marmotgraph.graphdb.arango.commons.controller.ArangoDatabases;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
-@Component
+@Service
+@Arango
 public class ReleaseStatusRepository extends AbstractRepository {
 
     private final AuthContext authContext;

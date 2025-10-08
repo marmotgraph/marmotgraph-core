@@ -30,7 +30,7 @@ import org.marmotgraph.commons.JsonAdapter;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.model.*;
-import org.marmotgraph.commons.query.KgQuery;
+import org.marmotgraph.commons.query.MarmotGraphQuery;
 import org.marmotgraph.graphdb.arango.AbstractGraphTest;
 import org.marmotgraph.graphdb.arango.ingestion.controller.TodoListProcessor;
 import org.marmotgraph.test.Simpsons;
@@ -69,7 +69,7 @@ public class QueryControllerTest extends AbstractGraphTest {
        upsert(Simpsons.SPACE_NAME, jsonAdapter.fromJson(Simpsons.Characters.HOMER, NormalizedJsonLd.class), stage);
 
         //When
-        KgQuery kgQuery = new KgQuery(jsonAdapter.fromJson(Simpsons.Queries.FAMILY_NAMES_NORMALIZED, NormalizedJsonLd.class), stage);
+        MarmotGraphQuery kgQuery = new MarmotGraphQuery(jsonAdapter.fromJson(Simpsons.Queries.FAMILY_NAMES_NORMALIZED, NormalizedJsonLd.class), stage);
         Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null, false).getResult();
 
         //Then
@@ -85,7 +85,7 @@ public class QueryControllerTest extends AbstractGraphTest {
         //Given
         upsert(Simpsons.SPACE_NAME, jsonAdapter.fromJson(Simpsons.Characters.HOMER, NormalizedJsonLd.class), stage);
         upsert(Simpsons.SPACE_NAME, jsonAdapter.fromJson(Simpsons.Characters.MAGGIE, NormalizedJsonLd.class), stage);
-        KgQuery kgQuery = new KgQuery(jsonAdapter.fromJson(Simpsons.Queries.FAMILY_NAMES_NORMALIZED, NormalizedJsonLd.class), stage);
+        MarmotGraphQuery kgQuery = new MarmotGraphQuery(jsonAdapter.fromJson(Simpsons.Queries.FAMILY_NAMES_NORMALIZED, NormalizedJsonLd.class), stage);
 
         //When
         Paginated<NormalizedJsonLd> queryResultA = queryController.query(userWithRoles, kgQuery, new PaginationParam().setSize(1L), null, false).getResult();
@@ -114,7 +114,7 @@ public class QueryControllerTest extends AbstractGraphTest {
     public void queryEmbedded() {
         //Given
         upsert(Simpsons.SPACE_NAME, jsonAdapter.fromJson(Simpsons.Characters.HOMER, NormalizedJsonLd.class), stage);
-        KgQuery kgQuery = new KgQuery(jsonAdapter.fromJson(Simpsons.Queries.HOMER_WITH_EMBEDDED_TRAVERSAL, NormalizedJsonLd.class), stage);
+        MarmotGraphQuery kgQuery = new MarmotGraphQuery(jsonAdapter.fromJson(Simpsons.Queries.HOMER_WITH_EMBEDDED_TRAVERSAL, NormalizedJsonLd.class), stage);
 
         //When
         Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null, false).getResult();

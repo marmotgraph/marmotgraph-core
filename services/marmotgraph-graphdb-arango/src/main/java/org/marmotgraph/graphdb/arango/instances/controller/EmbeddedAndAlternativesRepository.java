@@ -26,6 +26,7 @@ package org.marmotgraph.graphdb.arango.instances.controller;
 
 import com.arangodb.ArangoDatabase;
 import com.arangodb.model.AqlQueryOptions;
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.aqlbuilder.AQL;
 import org.marmotgraph.graphdb.arango.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.graphdb.arango.model.InternalSpace;
@@ -40,12 +41,12 @@ import org.marmotgraph.graphdb.arango.commons.controller.GraphDBArangoUtils;
 import org.marmotgraph.graphdb.arango.commons.model.ArangoDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
-@Component
+@Service
+@Arango
 public class EmbeddedAndAlternativesRepository {
     private static final Logger logger = LoggerFactory.getLogger(EmbeddedAndAlternativesRepository.class);
 

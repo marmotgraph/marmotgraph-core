@@ -27,9 +27,11 @@ package org.marmotgraph.graphdb.neo4j.service;
 import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.marmotgraph.graphdb.neo4j.Neo4J;
 import org.marmotgraph.graphdb.neo4j.model.EventTracker;
 import org.springframework.stereotype.Service;
 
+@Neo4J
 @Service
 @AllArgsConstructor
 public class EventTrackerService {

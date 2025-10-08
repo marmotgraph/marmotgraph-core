@@ -28,6 +28,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.*;
 import lombok.AllArgsConstructor;
+import org.hibernate.validator.internal.constraintvalidators.hv.NormalizedValidator;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.JsonAdapter;
@@ -36,13 +37,16 @@ import org.marmotgraph.commons.exception.ForbiddenException;
 import org.marmotgraph.commons.exception.InstanceNotFoundException;
 import org.marmotgraph.commons.jsonld.*;
 import org.marmotgraph.commons.model.*;
+import org.marmotgraph.commons.model.query.QuerySpecification;
 import org.marmotgraph.commons.model.relations.IncomingRelation;
 import org.marmotgraph.commons.model.relations.OutgoingRelation;
 import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permissions.controller.Permissions;
+import org.marmotgraph.commons.query.MarmotGraphQuery;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.primaryStore.instances.model.*;
+import org.marmotgraph.primaryStore.queries.model.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 
@@ -68,7 +72,6 @@ public class PayloadService {
     private final ReleasedDocumentRelationRepository releasedDocumentRelationRepository;
     private final CURIEPrefixRepository curiePrefixRepository;
     private final SpaceRepository spaceRepository;
-    private final IdUtils idUtils;
     private final Permissions permissions;
 
     public Optional<SpaceName> getSpace(UUID instanceID) {
@@ -259,6 +262,12 @@ public class PayloadService {
         }).collect(Collectors.toSet());
     }
 
+
+
+    public void applyCURIEPrefixes(QuerySpecification querySpecification){
+        Set<String> namespaces = querySpecification.extractPropertyAndTypeNamespaces();
+        querySpecification.applyPrefixMap(getPrefixMap(namespaces));
+    }
 
     public void applyCURIEPrefixes(NormalizedJsonLd normalizedJsonLd){
         Set<String> namespaces = normalizedJsonLd.extractPropertyAndTypeNamespaces();

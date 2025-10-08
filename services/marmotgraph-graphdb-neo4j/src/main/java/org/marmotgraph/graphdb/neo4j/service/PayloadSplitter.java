@@ -29,10 +29,12 @@ import lombok.Getter;
 import lombok.Setter;
 import org.marmotgraph.commons.jsonld.JsonLdConsts;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
+import org.marmotgraph.graphdb.neo4j.Neo4J;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
+@Neo4J
 @Service
 public class PayloadSplitter {
 

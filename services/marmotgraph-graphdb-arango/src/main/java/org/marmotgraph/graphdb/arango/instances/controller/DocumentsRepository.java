@@ -40,6 +40,7 @@ import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.permissions.controller.Permissions;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.graphdb.arango.ArangoQueries;
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.aqlbuilder.AQL;
 import org.marmotgraph.graphdb.arango.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.graphdb.arango.commons.controller.ArangoDatabases;
@@ -50,14 +51,15 @@ import org.marmotgraph.graphdb.arango.instances.model.ArangoRelation;
 import org.marmotgraph.graphdb.arango.model.*;
 import org.marmotgraph.graphdb.arango.structure.controller.MetaDataController;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
-@Component
+@Service
+@Arango
 public class DocumentsRepository extends  AbstractRepository{
 
     private final ArangoDatabases databases;

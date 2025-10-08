@@ -36,6 +36,7 @@ import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.IdWithAlternatives;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.commons.controller.ArangoRepositoryCommons;
 import org.marmotgraph.graphdb.arango.commons.controller.EntryHookDocuments;
 import org.marmotgraph.graphdb.arango.commons.model.ArangoDocument;
@@ -50,14 +51,16 @@ import org.marmotgraph.graphdb.arango.model.ArangoDocumentReference;
 import org.marmotgraph.graphdb.arango.model.InternalSpace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
+
+@Service
 @AllArgsConstructor
-@Component
+@Arango
 public class DataController {
 
     private final IdUtils idUtils;

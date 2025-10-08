@@ -28,10 +28,14 @@ import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.apache.commons.text.StringSubstitutor;
 import org.marmotgraph.commons.exception.InvalidRequestException;
+import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
+import org.marmotgraph.commons.model.PaginationParam;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.relations.IncomingRelation;
+import org.marmotgraph.graphdb.neo4j.Neo4J;
+import org.neo4j.driver.summary.ResultSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.neo4j.core.Neo4jClient;
@@ -43,6 +47,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@Neo4J
 @AllArgsConstructor
 @Service
 public class Neo4jService {
@@ -91,6 +96,41 @@ public class Neo4jService {
         queries.forEach(Neo4jClient.RunnableSpec::run);
     }
 
+    /**
+     * We not only map the results towards modifiable maps but also apply the aliases to the result.
+     */
+    private Object recursivelyMapResult(Object object, Map<String, String> aliasMap){
+        if(object instanceof Map<?,?>){
+            Map<String, Object> resultMap = new HashMap<>();
+            ((Map<?, ?>) object).forEach((key, value) -> {
+                Object result = recursivelyMapResult(value, aliasMap);
+                if(aliasMap.containsKey((String)key)) {
+                    if(aliasMap.get((String)key) == null){
+                        System.out.println("Flatten");
+                    }
+                    resultMap.put(aliasMap.get((String) key), result);
+                }
+                else{
+                    resultMap.put((String)key, result);
+                }
+            });
+            return resultMap;
+        }
+        else if (object instanceof Collection<?>){
+            List<Object> result = new ArrayList<>();
+            ((Collection<?>)object).forEach(o -> result.add(recursivelyMapResult(o, aliasMap)));
+            return result;
+        }
+        return object;
+
+    }
+
+    public Collection<NormalizedJsonLd> query(String queryString, Map<String, String> params, Map<String, String> aliasMap, PaginationParam paginationParam){
+        return neo4jClient.query(queryString).bindAll(params.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))).fetchAs(NormalizedJsonLd.class)
+                .mappedBy((t, r) -> new NormalizedJsonLd((Map<String, Object>)recursivelyMapResult(r.asMap().values().iterator().next(), aliasMap))).all();
+
+    }
+
     public void delete(UUID uuid, DataStage stage) {
         String template = """
         MATCH (n${stage} {${lifecycleIdAlias}: $lifecycleId})
@@ -98,7 +138,7 @@ public class Neo4jService {
         """;
         String query = StringSubstitutor.replace(template,
                 Map.of(
-                        "stage", getStageLabel(stage),
+                        "stage", Neo4JCommons.getStageLabel(stage),
                         "lifecycleIdAlias", NormalizedJsonLd.LIFECYCLE_ALIAS
                 ));
         logger.info("Preparing Neo4j query to delete all instances in {} with lifecycle id {}", stage.name(), uuid);
@@ -107,7 +147,7 @@ public class Neo4jService {
 
     Stream<Neo4jClient.RunnableSpec> buildUpsertCypherQuery(UUID lifeCycleId, SpaceName spaceName, PayloadSplitter.PayloadSplit splitEntity, DataStage stage, Set<IncomingRelation> incomingRelations) {
         StringSubstitutor stringSubstitutor = new StringSubstitutor(Map.of(
-                "stage", getStageLabel(stage),
+                "stage", Neo4JCommons.getStageLabel(stage),
                 "lifecycleIdAlias", NormalizedJsonLd.LIFECYCLE_ALIAS
         ));
         Neo4jClient.RunnableSpec clearInstances = neo4jClient.query(stringSubstitutor.replace( """
@@ -132,7 +172,7 @@ public class Neo4jService {
         final String template = new StringSubstitutor(Map.of(
                 "idAlias", NormalizedJsonLd.ID_ALIAS,
                 "lifecycleIdAlias", NormalizedJsonLd.LIFECYCLE_ALIAS,
-                "stage", getStageLabel(stage)
+                "stage", Neo4JCommons.getStageLabel(stage)
         )).replace("""
                     MATCH (a${stage} {${idAlias}: $sourceId})
                     MATCH (b${stage} {${idAlias}: $targetId})
@@ -163,7 +203,7 @@ public class Neo4jService {
             String q = new StringSubstitutor(Map.of(
                     "idAlias", NormalizedJsonLd.ID_ALIAS,
                     "lifecycleIdAlias", NormalizedJsonLd.LIFECYCLE_ALIAS,
-                    "stage", getStageLabel(stage)
+                    "stage", Neo4JCommons.getStageLabel(stage)
             )).replace(relationTemplate);
             Neo4jClient.RunnableSpec query = neo4jClient.query(q);
             logger.info("Preparing Neo4j query (relation {} from {} to {}): {}", relation.getRelationName(), relation.getFrom(), relation.getTo(), q);
@@ -177,19 +217,7 @@ public class Neo4jService {
         });
     }
 
-    private String sanitizeLabel(String label){
-        if(label!=null) {
-            while (label.startsWith("_")) {
-                label = label.substring(1);
-            }
-            return label.replace("-", "_").replaceAll("[^a-zA-Z0-9_]", "");
-        }
-        return null;
-    }
 
-    private String getStageLabel(DataStage stage) {
-        return String.format(":_STG_%s", stage.getAbbreviation());
-    }
 
     private Stream<Neo4jClient.RunnableSpec> instancesStream(PayloadSplitter.PayloadSplit splitEntity, SpaceName spaceName, DataStage stage) {
         final String template = """
@@ -198,10 +226,10 @@ public class Neo4jService {
         return splitEntity.getInstances().stream().map(instance -> {
             Collection<String> types = instance.types();
             String q = new StringSubstitutor(Map.of(
-                    "stage", getStageLabel(stage),
-                    "spaceName", spaceName != null && !spaceName.getName().isBlank() ? String.format(":_SPC_%s", sanitizeLabel(spaceName.getName())) : "",
+                    "stage", Neo4JCommons.getStageLabel(stage),
+                    "spaceName", spaceName != null && !spaceName.getName().isBlank() ? String.format(":_SPC_%s", Neo4JCommons.sanitizeLabel(spaceName.getName())) : "",
                     "extra", instance.isEmbedded() ? ":embedded" : "",
-                    "types", types.isEmpty() ? "" : String.format(":%s", types.stream().map(this::sanitizeLabel).collect(Collectors.joining(":")))
+                    "types", types.isEmpty() ? "" : String.format(":%s", types.stream().map(Neo4JCommons::sanitizeLabel).collect(Collectors.joining(":")))
             )).replace(template);
             logger.info("Preparing Neo4j query (instance {}): {}", instance.getId(), q);
             Neo4jClient.RunnableSpec query = neo4jClient.query(q);

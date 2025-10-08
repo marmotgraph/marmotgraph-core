@@ -26,6 +26,7 @@ package org.marmotgraph.graphdb.arango.instances.controller;
 
 import com.arangodb.ArangoDatabase;
 import org.marmotgraph.graphdb.arango.ArangoQueries;
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.aqlbuilder.AQL;
 import org.marmotgraph.graphdb.arango.model.*;
 import org.marmotgraph.commons.*;
@@ -40,11 +41,11 @@ import org.marmotgraph.graphdb.arango.commons.controller.PermissionsController;
 import org.marmotgraph.graphdb.arango.commons.model.ArangoDocument;
 import org.marmotgraph.graphdb.arango.queries.model.spec.GraphQueryKeys;
 import org.marmotgraph.graphdb.arango.structure.controller.MetaDataController;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
-
-@Component
+@Service
+@Arango
 public class QueriesRepository extends AbstractRepository{
     private final DocumentsRepository documents;
     private final ArangoDatabases databases;

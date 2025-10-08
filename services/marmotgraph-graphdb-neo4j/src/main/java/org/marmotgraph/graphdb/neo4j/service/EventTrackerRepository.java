@@ -24,6 +24,7 @@
 
 package org.marmotgraph.graphdb.neo4j.service;
 
+import org.marmotgraph.graphdb.neo4j.Neo4J;
 import org.marmotgraph.graphdb.neo4j.model.EventTracker;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -31,6 +32,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+@Neo4J
 @Repository
 public interface EventTrackerRepository extends JpaRepository<EventTracker, String> {
 

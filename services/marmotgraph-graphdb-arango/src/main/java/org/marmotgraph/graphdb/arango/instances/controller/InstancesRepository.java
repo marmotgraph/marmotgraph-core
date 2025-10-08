@@ -24,6 +24,7 @@
 
 package org.marmotgraph.graphdb.arango.instances.controller;
 
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.model.ArangoCollectionReference;
 import org.marmotgraph.graphdb.arango.model.ArangoDocumentReference;
 import org.marmotgraph.commons.AuthContext;
@@ -42,12 +43,12 @@ import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.graphdb.arango.commons.controller.ArangoDatabases;
 import org.marmotgraph.graphdb.arango.commons.model.ArangoDocument;
 import org.marmotgraph.graphdb.arango.structure.controller.MetaDataController;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
-
-@Component
+@Service
+@Arango
 public class InstancesRepository extends AbstractRepository {
 
     private final Permissions permissions;

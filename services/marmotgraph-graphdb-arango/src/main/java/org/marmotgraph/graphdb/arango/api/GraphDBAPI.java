@@ -25,29 +25,31 @@
 package org.marmotgraph.graphdb.arango.api;
 
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.NotImplementedException;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.api.graphDB.GraphDB;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.markers.ExposesMinimalData;
 import org.marmotgraph.commons.model.*;
+import org.marmotgraph.commons.model.query.QuerySpecification;
 import org.marmotgraph.commons.model.relations.IncomingRelation;
 import org.marmotgraph.commons.models.UserWithRoles;
-import org.marmotgraph.commons.query.KgQuery;
+import org.marmotgraph.commons.query.MarmotGraphQuery;
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.ingestion.controller.TodoListProcessor;
 import org.marmotgraph.graphdb.arango.instances.controller.DocumentsRepository;
 import org.marmotgraph.graphdb.arango.instances.controller.IncomingLinksRepository;
 import org.marmotgraph.graphdb.arango.instances.controller.NeighborsRepository;
 import org.marmotgraph.graphdb.arango.instances.controller.ScopeRepository;
 import org.marmotgraph.graphdb.arango.queries.controller.QueryController;
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-@Profile("arango")
-@Component
+@Arango
+@Service
 @AllArgsConstructor
 public class GraphDBAPI implements GraphDB.Client {
 
@@ -70,10 +72,11 @@ public class GraphDBAPI implements GraphDB.Client {
     }
 
     @Override
-    public StreamedQueryResult executeQuery(KgQuery query, Map<String, String> params, PaginationParam paginationParam){
-        UserWithRoles userWithRoles = authContext.getUserWithRoles();
-        checkPermissionForQueryExecution(userWithRoles);
-        return queryController.queryToStream(userWithRoles, query, paginationParam, params, false);
+    public StreamedQueryResult executeQuery(QuerySpecification query, DataStage stage, Map<String, String> params, PaginationParam paginationParam){
+//        UserWithRoles userWithRoles = authContext.getUserWithRoles();
+//        checkPermissionForQueryExecution(userWithRoles);
+//        return queryController.queryToStream(userWithRoles, query, paginationParam, params, false);
+        throw new NotImplementedException();
     }
 
     private void checkPermissionForQueryExecution(UserWithRoles userWithRoles){

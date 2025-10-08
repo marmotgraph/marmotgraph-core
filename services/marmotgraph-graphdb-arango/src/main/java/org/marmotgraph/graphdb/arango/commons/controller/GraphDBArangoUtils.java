@@ -30,6 +30,7 @@ import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.model.AqlQueryOptions;
 import jakarta.annotation.PostConstruct;
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.graphdb.arango.model.ArangoCollectionReference;
 import org.marmotgraph.graphdb.arango.model.ArangoDatabaseProxy;
@@ -41,12 +42,13 @@ import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.graphdb.arango.instances.model.ArangoRelation;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.*;
 
-@Component
+@Service
+@Arango
 public class GraphDBArangoUtils {
 
     private final ArangoDatabases arangoDatabases;

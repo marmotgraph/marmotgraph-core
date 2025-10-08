@@ -25,6 +25,7 @@
 package org.marmotgraph.graphdb.arango.ingestion.controller;
 
 
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.model.ArangoDocumentReference;
 import org.marmotgraph.graphdb.arango.model.InternalSpace;
 import org.marmotgraph.commons.TypeUtils;
@@ -32,12 +33,13 @@ import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.graphdb.arango.commons.controller.EntryHookDocuments;
 import org.marmotgraph.graphdb.arango.commons.model.ArangoEdge;
 import org.marmotgraph.graphdb.arango.ingestion.model.UpsertOperation;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
-@Component
+@Service
+@Arango
 public class ReleasingController {
 
     private final EntryHookDocuments entryHookDocuments;

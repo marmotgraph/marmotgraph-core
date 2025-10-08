@@ -38,6 +38,7 @@ import org.marmotgraph.commons.jsonld.JsonLdConsts;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.aqlbuilder.AQL;
 import org.marmotgraph.graphdb.arango.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.graphdb.arango.commons.model.ArangoDocument;
@@ -50,13 +51,14 @@ import org.marmotgraph.graphdb.arango.model.InternalSpace;
 import org.marmotgraph.graphdb.arango.structure.controller.CacheController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Component
+@Service
+@Arango
 public class ArangoRepositoryCommons {
 
     private final ArangoDatabases databases;

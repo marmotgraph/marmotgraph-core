@@ -26,6 +26,7 @@ package org.marmotgraph.graphdb.arango.commons.controller;
 
 import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDatabase;
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.model.ArangoCollectionReference;
 import org.marmotgraph.graphdb.arango.model.ArangoDocumentReference;
 import org.marmotgraph.graphdb.arango.model.InternalSpace;
@@ -35,11 +36,12 @@ import org.marmotgraph.commons.model.ReleaseStatus;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import org.marmotgraph.graphdb.arango.commons.model.ArangoDocument;
 import org.marmotgraph.graphdb.arango.commons.model.ArangoEdge;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
-@Component
+@Service
+@Arango
 public class EntryHookDocuments {
 
     private final ArangoDatabases databases;

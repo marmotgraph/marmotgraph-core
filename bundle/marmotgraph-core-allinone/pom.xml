@@ -112,9 +112,15 @@
         <!-- we need to explicitly specify the dependency to ensure the JaCoCo report covers this key library too -->
         <dependency>
             <groupId>org.marmotgraph</groupId>
+            <artifactId>marmotgraph-graphdb-commons</artifactId>
+            <version>4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-commons</artifactId>
             <version>4.0</version>
         </dependency>
+
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-microservice-commons</artifactId>

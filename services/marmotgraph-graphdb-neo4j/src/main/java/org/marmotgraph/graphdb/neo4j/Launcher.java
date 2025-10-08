@@ -30,8 +30,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
+@Neo4J
 @Configuration
-@Profile("neo4j")
 public class Launcher {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());

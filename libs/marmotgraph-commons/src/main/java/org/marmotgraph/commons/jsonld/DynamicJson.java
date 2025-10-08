@@ -104,7 +104,7 @@ public class DynamicJson extends LinkedHashMap<String, Object> {
         }
     }
 
-    protected void visitKeys(BiConsumer<Map<String, Object>, String> consumer){
+    public void visitKeys(BiConsumer<Map<String, Object>, String> consumer){
         doVisitKey(consumer, this);
     }
 

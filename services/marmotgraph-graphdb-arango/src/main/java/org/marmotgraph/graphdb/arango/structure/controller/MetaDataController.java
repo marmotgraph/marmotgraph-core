@@ -24,6 +24,7 @@
 
 package org.marmotgraph.graphdb.arango.structure.controller;
 
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.model.ArangoCollectionReference;
 import org.marmotgraph.commons.Tuple;
 import org.marmotgraph.commons.exception.InstanceNotFoundException;
@@ -46,14 +47,14 @@ import org.marmotgraph.graphdb.arango.structure.model.TypeWithInstanceCountRefle
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-@Component
+@Service
+@Arango
 public class MetaDataController {
 
     private final StructureRepository structureRepository;

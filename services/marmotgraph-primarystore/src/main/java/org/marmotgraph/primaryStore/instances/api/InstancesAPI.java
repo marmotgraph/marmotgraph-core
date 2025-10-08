@@ -28,6 +28,8 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.NotImplementedException;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.IdUtils;
+import org.marmotgraph.commons.JsonAdapter;
+import org.marmotgraph.commons.api.graphDB.GraphDB;
 import org.marmotgraph.commons.api.primaryStore.Instances;
 import org.marmotgraph.commons.exception.AmbiguousException;
 import org.marmotgraph.commons.exception.AmbiguousIdException;
@@ -39,15 +41,19 @@ import org.marmotgraph.commons.markers.ExposesData;
 import org.marmotgraph.commons.markers.ExposesMinimalData;
 import org.marmotgraph.commons.markers.ExposesQuery;
 import org.marmotgraph.commons.model.*;
+import org.marmotgraph.commons.model.query.QuerySpecification;
 import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.params.ReleaseTreeScope;
 import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permissions.controller.Permissions;
+import org.marmotgraph.commons.query.MarmotGraphQuery;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.primaryStore.instances.model.InstanceInformation;
 import org.marmotgraph.primaryStore.instances.service.InstanceInformationRepository;
 import org.marmotgraph.primaryStore.instances.service.InstanceScopeService;
 import org.marmotgraph.primaryStore.instances.service.PayloadService;
+import org.marmotgraph.primaryStore.queries.model.Specification;
+import org.marmotgraph.primaryStore.queries.service.SpecificationInterpreter;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -62,7 +68,10 @@ public class InstancesAPI implements Instances.Client {
     private final Permissions permissions;
     private final AuthContext authContext;
     private final InstanceScopeService scopes;
+    private final GraphDB.Client graphDB;
     private final IdUtils idUtils;
+    private final SpecificationInterpreter specificationInterpreter;
+    private final JsonAdapter jsonAdapter;
 
     @Override
     public Map<UUID, InstanceId> resolveIds(List<IdWithAlternatives> idWithAlternatives, DataStage stage) throws AmbiguousIdException {
@@ -231,4 +240,25 @@ public class InstancesAPI implements Instances.Client {
         throw new NotImplementedException();
     }
 
+    @Override
+    public ScopeElement getScopeForInstance(String space, UUID id, DataStage stage, boolean applyRestrictions) {
+        return graphDB.getScopeForInstance(space, id, stage, applyRestrictions);
+    }
+
+    @Override
+    public StreamedQueryResult executeQuery(MarmotGraphQuery query, Map<String, String> params, PaginationParam paginationParam) {
+        //TODO evict the intermediate step once it works properly
+        query.getPayload().recursiveVisitOfProperties(query.getPayload(), Collections.emptyList(), query.getPayload(),
+                (name, value, path, parentMap, orderNumber) -> {
+                    String queryPrefix = "https://core.kg.ebrains.eu/vocab/query/";
+                    if(name.startsWith(queryPrefix)){
+                        parentMap.put(name.replace(queryPrefix, ""), value);
+                        parentMap.remove(name);
+                    }
+                    return null;
+                }, null, null);
+        QuerySpecification querySpecification = jsonAdapter.fromJson(jsonAdapter.toJson(query.getPayload()), QuerySpecification.class);
+        payloadService.applyCURIEPrefixes(querySpecification);
+        return graphDB.executeQuery(querySpecification, query.getStage(), params, paginationParam);
+    }
 }

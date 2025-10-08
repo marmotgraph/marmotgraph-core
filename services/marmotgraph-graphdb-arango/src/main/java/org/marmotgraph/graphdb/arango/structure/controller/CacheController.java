@@ -24,7 +24,7 @@
 
 package org.marmotgraph.graphdb.arango.structure.controller;
 
-import jakarta.annotation.PostConstruct;
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.model.ArangoCollectionReference;
 import org.marmotgraph.graphdb.arango.model.InternalSpace;
 import org.marmotgraph.commons.AuthContext;
@@ -37,8 +37,7 @@ import org.marmotgraph.graphdb.arango.ingestion.model.CacheEvictionPlan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.time.Duration;
@@ -46,8 +45,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-@Component
+@Service
+@Arango
 public class CacheController {
 
     private final StructureRepository structureRepository;

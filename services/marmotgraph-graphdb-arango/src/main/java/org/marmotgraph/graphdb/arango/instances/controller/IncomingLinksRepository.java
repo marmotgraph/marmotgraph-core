@@ -26,6 +26,7 @@ package org.marmotgraph.graphdb.arango.instances.controller;
 
 import com.arangodb.ArangoDatabase;
 import com.arangodb.model.AqlQueryOptions;
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.aqlbuilder.AQL;
 import org.marmotgraph.graphdb.arango.model.ArangoCollectionReference;
 import org.marmotgraph.graphdb.arango.model.ArangoDocumentReference;
@@ -42,13 +43,13 @@ import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import org.marmotgraph.graphdb.arango.commons.controller.ArangoDatabases;
 import org.marmotgraph.graphdb.arango.structure.controller.MetaDataController;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
-@Component
+@Service
+@Arango
 public class IncomingLinksRepository extends AbstractRepository{
 
     public final static int DEFAULT_INCOMING_PAGESIZE = 10;

@@ -230,7 +230,7 @@ public class NormalizedJsonLd extends JsonLdDoc {
     }
 
 
-    private <T> List<T> recursiveVisitOfProperties(Object object, List<String> path, Map<String, Object> parentMap, PropertyVisitor<T> visitor, Integer orderNumber, List<T> collector) {
+    public <T> List<T> recursiveVisitOfProperties(Object object, List<String> path, Map<String, Object> parentMap, PropertyVisitor<T> visitor, Integer orderNumber, List<T> collector) {
         if (object instanceof Map<?, ?> map) {
             for (Object o : new HashSet<>(map.keySet())) {
                 String key = (String) o;

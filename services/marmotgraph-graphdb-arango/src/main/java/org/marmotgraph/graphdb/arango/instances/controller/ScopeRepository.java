@@ -24,6 +24,7 @@
 
 package org.marmotgraph.graphdb.arango.instances.controller;
 
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.commons.*;
 import org.marmotgraph.commons.jsonld.*;
@@ -33,17 +34,17 @@ import org.marmotgraph.commons.model.QueryResult;
 import org.marmotgraph.commons.model.ScopeElement;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.internal.spaces.Space;
-import org.marmotgraph.commons.query.KgQuery;
+import org.marmotgraph.commons.query.MarmotGraphQuery;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.graphdb.arango.queries.controller.QueryController;
 import org.marmotgraph.graphdb.arango.structure.controller.StructureRepository;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-@Component
+@Service
+@Arango
 public class ScopeRepository {
 
     private final InstancesRepository instances;
@@ -78,7 +79,7 @@ public class ScopeRepository {
         Set<String> relevantSpaces = structureRepository.getSpaces().stream().filter(Space::isScopeRelevant).map(s -> s.getName().getName()).collect(Collectors.toSet());
         List<NormalizedJsonLd> results = typeQueries.filter(q -> relevantSpaces.contains(q.getAs(EBRAINSVocabulary.META_SPACE, String.class))).map(q -> {
             QueryResult queryResult = queryController.query(authContext.getUserWithRoles(),
-                    new KgQuery(q, stage).setIdRestriction(new InstanceId(id, space)), null, null, true);
+                    new MarmotGraphQuery(q, stage).setIdRestriction(new InstanceId(id, space)), null, null, true);
             return queryResult != null && queryResult.getResult() != null ? queryResult.getResult().getData() : null;
         }).filter(Objects::nonNull).flatMap(Collection::stream).collect(Collectors.toList());
         return translateResultToScope(results, instance, applyRestrictions);

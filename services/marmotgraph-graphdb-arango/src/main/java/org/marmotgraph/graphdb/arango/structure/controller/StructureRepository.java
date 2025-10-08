@@ -34,6 +34,7 @@ import com.arangodb.model.CollectionsReadOptions;
 import com.arangodb.model.DocumentCreateOptions;
 import com.arangodb.model.OverwriteMode;
 import com.arangodb.util.RawJson;
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.aqlbuilder.AQL;
 import org.marmotgraph.graphdb.arango.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.graphdb.arango.model.ArangoCollectionReference;
@@ -64,14 +65,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
-
-@Component
+@Service
+@Arango
 public class StructureRepository {
 
     private final ArangoDatabases arangoDatabases;

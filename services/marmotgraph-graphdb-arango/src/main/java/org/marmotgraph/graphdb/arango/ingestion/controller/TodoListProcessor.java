@@ -29,6 +29,7 @@ import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.commons.controller.ArangoRepositoryCommons;
 import org.marmotgraph.graphdb.arango.commons.model.ArangoInstance;
 import org.marmotgraph.graphdb.arango.ingestion.model.DBOperation;
@@ -38,15 +39,14 @@ import org.marmotgraph.graphdb.arango.model.ArangoCollectionReference;
 import org.marmotgraph.graphdb.arango.model.ArangoDocumentReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-@Profile("arango")
-@Component
+@Service
+@Arango
 public class TodoListProcessor {
 
     private final ArangoRepositoryCommons repository;

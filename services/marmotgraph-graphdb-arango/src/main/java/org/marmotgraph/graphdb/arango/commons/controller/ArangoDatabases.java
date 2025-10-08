@@ -27,6 +27,7 @@ package org.marmotgraph.graphdb.arango.commons.controller;
 import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.model.CollectionsReadOptions;
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.model.ArangoDatabaseProxy;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.graphdb.arango.structure.controller.StructureRepository;
@@ -35,10 +36,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-@Component
 @Scope("prototype")
+@Arango
+@Service
 public class ArangoDatabases {
 
     private static final Logger logger = LoggerFactory.getLogger(ArangoDatabases.class);

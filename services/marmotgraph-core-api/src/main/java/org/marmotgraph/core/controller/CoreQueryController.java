@@ -31,8 +31,7 @@ import org.marmotgraph.commons.jsonld.InstanceId;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.*;
-import org.marmotgraph.commons.query.KgQuery;
-import org.springframework.http.ResponseEntity;
+import org.marmotgraph.commons.query.MarmotGraphQuery;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -47,7 +46,6 @@ import java.util.stream.Stream;
 public class CoreQueryController {
 
     private final Instances.Client instances;
-    private final GraphDB.Client graphDB;
     private final CoreInstanceController instanceController;
 
     public ResultWithExecutionDetails<NormalizedJsonLd> createNewQuery(NormalizedJsonLd query, UUID queryId, SpaceName space) {
@@ -73,8 +71,8 @@ public class CoreQueryController {
         return null;
     }
 
-    public PaginatedStream<? extends JsonLdDoc> executeQuery(KgQuery query, Map<String, String> params, PaginationParam paginationParam) {
-        StreamedQueryResult paginatedQueryResult = graphDB.executeQuery(query, params, paginationParam);
+    public PaginatedStream<? extends JsonLdDoc> executeQuery(MarmotGraphQuery query, Map<String, String> params, PaginationParam paginationParam) {
+        StreamedQueryResult paginatedQueryResult = instances.executeQuery(query, params, paginationParam);
         if (paginatedQueryResult != null) {
             if (paginatedQueryResult.getResponseVocab() != null) {
                 final String responseVocab = paginatedQueryResult.getResponseVocab();

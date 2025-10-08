@@ -30,11 +30,13 @@ import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.models.EventTracker;
 import org.marmotgraph.graphdb.arango.commons.controller.ArangoDatabases;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Profile("arango")
 @Component(value = "main-event-tracker")
 public class MainEventTracker implements EventTracker {
 

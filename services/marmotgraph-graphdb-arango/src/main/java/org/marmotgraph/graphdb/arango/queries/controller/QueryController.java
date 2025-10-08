@@ -28,6 +28,7 @@ import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.CollectionType;
 import org.marmotgraph.graphdb.arango.ArangoQueries;
+import org.marmotgraph.graphdb.arango.Arango;
 import org.marmotgraph.graphdb.arango.model.AQLQuery;
 import org.marmotgraph.graphdb.arango.model.ArangoCollectionReference;
 import org.marmotgraph.graphdb.arango.model.InternalSpace;
@@ -37,7 +38,7 @@ import org.marmotgraph.commons.model.PaginationParam;
 import org.marmotgraph.commons.model.QueryResult;
 import org.marmotgraph.commons.model.StreamedQueryResult;
 import org.marmotgraph.commons.models.UserWithRoles;
-import org.marmotgraph.commons.query.KgQuery;
+import org.marmotgraph.commons.query.MarmotGraphQuery;
 import org.marmotgraph.graphdb.arango.commons.controller.ArangoDatabases;
 import org.marmotgraph.graphdb.arango.commons.controller.GraphDBArangoUtils;
 import org.marmotgraph.graphdb.arango.commons.controller.PermissionsController;
@@ -49,12 +50,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
-@Component
+@Service
+@Arango
 public class QueryController {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -81,7 +82,7 @@ public class QueryController {
     }
 
 
-    public QueryResult query(UserWithRoles userWithRoles, KgQuery query, PaginationParam paginationParam, Map<String, String> filterValues, boolean scopeMode) {
+    public QueryResult query(UserWithRoles userWithRoles, MarmotGraphQuery query, PaginationParam paginationParam, Map<String, String> filterValues, boolean scopeMode) {
         ArangoDatabase database = arangoDatabases.getByStage(query.getStage());
         final Tuple<AQLQuery, Specification> q = query(database, userWithRoles, query, paginationParam, filterValues, scopeMode);
         try {
@@ -97,7 +98,7 @@ public class QueryController {
         }
     }
 
-    public StreamedQueryResult queryToStream(UserWithRoles userWithRoles, KgQuery query, PaginationParam paginationParam, Map<String, String> filterValues, boolean scopeMode) {
+    public StreamedQueryResult queryToStream(UserWithRoles userWithRoles, MarmotGraphQuery query, PaginationParam paginationParam, Map<String, String> filterValues, boolean scopeMode) {
         ArangoDatabase database = arangoDatabases.getByStage(query.getStage());
         final Tuple<AQLQuery, Specification> q = query(database, userWithRoles, query, paginationParam, filterValues, scopeMode);
         try {
@@ -109,7 +110,7 @@ public class QueryController {
     }
 
 
-    private Tuple<AQLQuery, Specification> query(ArangoDatabase database, UserWithRoles userWithRoles, KgQuery query, PaginationParam paginationParam, Map<String, String> filterValues, boolean scopeMode) {
+    private Tuple<AQLQuery, Specification> query(ArangoDatabase database, UserWithRoles userWithRoles, MarmotGraphQuery query, PaginationParam paginationParam, Map<String, String> filterValues, boolean scopeMode) {
         Specification specification = specificationInterpreter.readSpecification(query.getPayload());
         Map<String, Object> whitelistFilter;
         if(scopeMode){

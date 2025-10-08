@@ -24,6 +24,7 @@
 
 package org.marmotgraph;
 
+import org.marmotgraph.graphdb.neo4j.Neo4J;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
@@ -31,9 +32,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+@Neo4J
 @EnableScheduling
 @EnableAsync
-@SpringBootApplication
+@SpringBootApplication()
 @Configuration
 @EnableCaching
 public class MarmotGraphNeo4JApplication {
