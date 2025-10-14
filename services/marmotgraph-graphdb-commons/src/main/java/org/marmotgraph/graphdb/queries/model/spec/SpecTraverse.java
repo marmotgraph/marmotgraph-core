@@ -31,7 +31,7 @@ import java.util.List;
 public class SpecTraverse {
     public final String pathName;
     public final boolean reverse;
-    public final List<Type> typeRestrictions;
+    public List<Type> typeRestrictions;
 
     public SpecTraverse(String pathName, boolean reverse, List<Type> typeRestrictions) {
         //Remove trailing slash

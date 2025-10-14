@@ -27,12 +27,15 @@ package org.marmotgraph.graphdb.queries.utils;
 import org.marmotgraph.arango.commons.aqlbuilder.ArangoVocabulary;
 import org.marmotgraph.commons.jsonld.IndexedJsonLdDoc;
 import org.marmotgraph.commons.jsonld.JsonLdConsts;
+import org.marmotgraph.commons.model.Type;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.graphdb.queries.model.spec.SpecProperty;
 import org.marmotgraph.graphdb.queries.model.spec.SpecTraverse;
 import org.marmotgraph.graphdb.queries.model.spec.Specification;
+import org.springframework.util.CollectionUtils;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 public class SpecificationToScopeQueryAdapter {
     private final Specification originalSpec;
@@ -95,6 +98,18 @@ public class SpecificationToScopeQueryAdapter {
             final String concatenatedPath = appendToConcatenatedPath(prefix, property);
             if(specPropertiesByConcatenatedPath.containsKey(concatenatedPath)){
                 SpecProperty propertyToAttach = specPropertiesByConcatenatedPath.get(concatenatedPath);
+                List<Type> typeRestrictions = propertyToAttach.path.getFirst().typeRestrictions;
+                if(!CollectionUtils.isEmpty(property.path.getFirst().typeRestrictions)){
+                    if(!CollectionUtils.isEmpty(typeRestrictions)){
+                        //Both properties have type restrictions - let's ensure all of them are reflected by concatenating them
+                        propertyToAttach.path.getFirst().typeRestrictions = Stream.concat(typeRestrictions.stream(), property.path.getFirst().typeRestrictions.stream()).distinct().toList();
+                    }
+                    // If the property to attach doesn't have a type restriction, we don't have to add it
+                }
+                else if(!CollectionUtils.isEmpty(typeRestrictions)){
+                    //The new property evicts the previous type restriction -> let's empty the existing one
+                    propertyToAttach.path.getFirst().typeRestrictions = null;
+                }
                 if(property.hasSubProperties()){
                     propertyToAttach.property.addAll(property.property);
                     final List<SpecProperty> normalized = normalize(propertyToAttach.property, concatenatedPath);
