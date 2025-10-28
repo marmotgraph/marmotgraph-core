@@ -33,12 +33,22 @@ sa_client_id = os.getenv("UPLOADER_SERVICE_ACCOUNT_CLIENT_ID")
 sa_client_secret = os.getenv("UPLOADER_SERVICE_ACCOUNT_CLIENT_SECRET")
 oidc_client = os.getenv("OIDC_CLIENT")
 
+
+
+
 def upload():
-    client = kg(host=endpoint).with_credentials(sa_client_id, sa_client_secret).build()
-    for testdata in glob.glob("**/*.jsonld"):
+    client_builder = kg(host=endpoint).with_credentials(sa_client_id, sa_client_secret)
+    client = client_builder.build()
+    admin_client = client_builder.build_admin()
+    result = admin_client.update_claim_for_role({
+        "preferred_username": "demo_consumer"
+    }, False, "CONSUMER", "demo")
+    for testdata in glob.glob("**/**/*.jsonld"):
         with open(testdata, "r") as testdata_file:
             data = json.load(testdata_file)
-            result = client.instances.create_new(data, "demo")
+            data_dir = os.path.dirname(testdata)
+            space = os.path.dirname(data_dir)
+            result = client.instances.create_new(data, space)
             if result.error and result.error.code == 409:
                 result = client.instances.contribute_to_full_replacement(data, result.error.uuid)
             if result.error:

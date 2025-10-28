@@ -25,25 +25,15 @@
 package org.marmotgraph.primaryStore.api.performance;
 
 import org.junit.jupiter.api.Test;
-import org.marmotgraph.commons.JsonAdapter;
-import org.marmotgraph.commons.api.authorization.Authorization;
-import org.marmotgraph.commons.api.graphDB.GraphDB;
-import org.marmotgraph.commons.jsonld.JsonLdId;
-import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.Event;
-import org.marmotgraph.commons.model.SpaceName;
-import org.marmotgraph.primaryStore.events.api.EventsAPI;
 import org.marmotgraph.primaryStore.events.model.PrimaryStoreEvent;
 import org.marmotgraph.primaryStore.events.service.EventRepository;
-import org.marmotgraph.test.Simpsons;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,7 +41,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Date;

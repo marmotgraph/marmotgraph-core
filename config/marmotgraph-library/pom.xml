@@ -59,7 +59,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <docker.image.prefix>registry.humanbrainproject.org/humanbrainproject/marmotgraph-core</docker.image.prefix>
-        <spring.version>3.5.4</spring.version>
+        <spring.version>3.5.6</spring.version>
         <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../../bundle/marmotgraph-core-allinone/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 

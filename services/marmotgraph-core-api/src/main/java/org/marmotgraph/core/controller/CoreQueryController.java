@@ -25,7 +25,6 @@
 package org.marmotgraph.core.controller;
 
 import lombok.AllArgsConstructor;
-import org.marmotgraph.commons.api.graphDB.GraphDB;
 import org.marmotgraph.commons.api.primaryStore.Instances;
 import org.marmotgraph.commons.jsonld.InstanceId;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;

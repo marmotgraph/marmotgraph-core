@@ -40,14 +40,12 @@ import java.util.Map;
 public class InitializeAuthentication {
 
     private final String adminGroup;
-    private final String testDataUploader;
     private final PermissionsService permissionsService;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public InitializeAuthentication(@Value("${org.marmotgraph.authentication.adminGroup}") String adminGroup, @Value("${org.marmotgraph.authentication.testDataUploader:null}") String testDataUploader, PermissionsService permissionsService) {
+    public InitializeAuthentication(@Value("${org.marmotgraph.authentication.adminGroup}") String adminGroup,PermissionsService permissionsService) {
         this.adminGroup = adminGroup;
-        this.testDataUploader = testDataUploader;
         this.permissionsService = permissionsService;
     }
 
@@ -56,10 +54,6 @@ public class InitializeAuthentication {
         if(adminGroup != null){
             logger.info("Initializing authentication admin group {}", adminGroup);
             permissionsService.addClaimToRole(RoleMapping.ADMIN.toRole(null), Map.of("groups", List.of(adminGroup)));
-        }
-        if(testDataUploader != null){
-            logger.info("Initializing demo data uploader");
-            permissionsService.addClaimToRole(RoleMapping.ADMIN.toRole(SpaceName.fromString("demo")), Map.of("preferred_username", List.of(String.format("service-account-%s", testDataUploader))));
         }
     }
 

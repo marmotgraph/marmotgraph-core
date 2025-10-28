@@ -138,7 +138,11 @@ public class AuthorizationAPI implements Authorization.Client {
         this.getRoles();
         if(canShowPermissions()) {
             List<Permission> allRoleDefinitions = permissionsService.getAllRoleDefinitions();
-            return allRoleDefinitions.stream().map(rd -> jsonAdapter.fromJson(rd.getClaims(), JsonLdDoc.class)).collect(Collectors.toList());
+            return allRoleDefinitions.stream().map(rd -> {
+                JsonLdDoc jsonLdDoc = jsonAdapter.fromJson(rd.getClaims(), JsonLdDoc.class);
+                jsonLdDoc.addProperty("_key", rd.getId());
+                return jsonLdDoc;
+            }).collect(Collectors.toList());
         }
         else{
             throw new UnauthorizedException("You don't have the rights to show permissions");

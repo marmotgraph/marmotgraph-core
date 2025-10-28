@@ -36,6 +36,8 @@
         <module>config/marmotgraph-library</module>
         <module>libs/marmotgraph-commons</module>
         <module>libs/marmotgraph-graphdb-commons</module>
+        <module>libs/marmotgraph-graphdb-arango</module>
+        <module>libs/marmotgraph-graphdb-neo4j</module>
         <module>libs-4-test/marmotgraph-spring-test-utils</module>
         <module>libs/marmotgraph-microservice-commons</module>
         <module>libs-4-test/marmotgraph-test-factory</module>
@@ -45,8 +47,6 @@
         <module>services/marmotgraph-authorization</module>
         <module>services/marmotgraph-core-api</module>
         <module>services/marmotgraph-tenants</module>
-        <module>services/marmotgraph-graphdb-arango</module>
-        <module>services/marmotgraph-graphdb-neo4j</module>
         <module>services/marmotgraph-jsonld</module>
         <module>services/marmotgraph-primarystore</module>
         <module>services/marmotgraph-queries</module>

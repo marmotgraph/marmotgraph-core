@@ -23,23 +23,49 @@
   ~  (Human Brain Project SGA1, SGA2 and SGA3).
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.marmotgraph</groupId>
-        <artifactId>marmotgraph-microservice</artifactId>
+        <artifactId>marmotgraph-library</artifactId>
         <version>4.0</version>
-        <relativePath>../../config/marmotgraph-microservice</relativePath>
+        <relativePath>../../config/marmotgraph-library</relativePath>
     </parent>
-    <artifactId>marmotgraph-primarystore</artifactId>
+    <artifactId>marmotgraph-graphdb-arango</artifactId>
     <version>4.0</version>
+    <name>marmotgraph-graphdb-arango</name>
+
     <dependencies>
+         <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.14</version>
+        </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-commons</artifactId>
+            <artifactId>marmotgraph-microservice-commons</artifactId>
             <version>4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.marmotgraph</groupId>
+            <artifactId>marmotgraph-graphdb-commons</artifactId>
+            <version>4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.arangodb</groupId>
+            <artifactId>arangodb-java-driver</artifactId>
+            <version>7.20.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.arangodb</groupId>
+            <artifactId>jackson-dataformat-velocypack</artifactId>
+            <version>4.5.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>1.10.0</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -48,21 +74,10 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.parsson</groupId>
-            <artifactId>parsson</artifactId>
-            <version>1.0.5</version>
+            <groupId>org.marmotgraph</groupId>
+            <artifactId>marmotgraph-spring-test-utils</artifactId>
+            <version>4.0</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-graphdb-neo4j</artifactId>
-            <version>4.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-graphdb-arango</artifactId>
-            <version>4.0</version>
-        </dependency>
     </dependencies>
-
 </project>

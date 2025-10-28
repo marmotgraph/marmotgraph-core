@@ -40,6 +40,11 @@ defaultDefaultClientScopes:
   - saml_organization
   - web-origins
   - openid
+
+
+groups:
+  - name: marmotgraph-admins
+
 clients:
   - clientId: kg
     enabled: true
@@ -68,18 +73,29 @@ clients:
     implicitFlowEnabled: false
     serviceAccountsEnabled: true
 
-groups:
-  - name: marmotgraph-admins
 users:
   - username: admin
     enabled: true
     emailVerified: true
     firstName: MarmotGraph
     lastName: Administrator
-    email: support@marmotgraph.org
+    email: admin@marmotgraph.org
     credentials:
       - type: password
         value: helloMarmotGraph
         temporary: false
+    groups:
+      - marmotgraph-admins
+  - username: demo_consumer
+    enabled: true
+    emailVerified: true
+    firstName: MarmotGraph
+    lastName: Restricted
+    email: demo_consumer@marmotgraph.org
+    credentials:
+      - type: password
+        value: helloMarmotGraph
+        temporary: false
+  - username: service-account-demo-data-uploader
     groups:
       - marmotgraph-admins

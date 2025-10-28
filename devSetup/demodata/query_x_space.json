@@ -1,0 +1,38 @@
+{
+  "@context": {
+    "@vocab": "https://core.kg.ebrains.eu/vocab/query/",
+    "query": "https://schema.hbp.eu/myQuery/",
+    "propertyName": {
+      "@id": "propertyName",
+      "@type": "@id"
+    },
+    "path": {
+      "@id": "path",
+      "@type": "@id"
+    }
+  },
+  "meta": {
+    "type": "https://marmotgraph.org/types/Species",
+    "responseVocab": "https://schema.hbp.eu/myQuery/"
+  },
+  "structure": [
+    {
+      "propertyName": "query:id",
+      "path": "@id"
+    },
+    {
+      "propertyName": "query:name",
+      "path": "https://marmotgraph.org/properties/name"
+    },
+    {
+      "propertyName": "query:marmots",
+      "path": [
+        {
+          "@id": "https://marmotgraph.org/properties/species",
+          "reverse": true
+        },
+        "https://marmotgraph.org/properties/name"
+      ]
+    }
+  ]
+}

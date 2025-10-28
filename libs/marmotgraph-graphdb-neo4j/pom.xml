@@ -23,22 +23,27 @@
   ~  (Human Brain Project SGA1, SGA2 and SGA3).
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.marmotgraph</groupId>
-        <artifactId>marmotgraph-microservice</artifactId>
+        <artifactId>marmotgraph-library</artifactId>
         <version>4.0</version>
-        <relativePath>../../config/marmotgraph-microservice</relativePath>
+        <relativePath>../../config/marmotgraph-library</relativePath>
     </parent>
-    <artifactId>marmotgraph-primarystore</artifactId>
+    <artifactId>marmotgraph-graphdb-neo4j</artifactId>
     <version>4.0</version>
+    <name>marmotgraph-graphdb-neo4j</name>
     <dependencies>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-neo4j</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-commons</artifactId>
+            <artifactId>marmotgraph-graphdb-commons</artifactId>
             <version>4.0</version>
         </dependency>
         <dependency>
@@ -54,15 +59,16 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-graphdb-neo4j</artifactId>
-            <version>4.0</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>1.14.0</version>
         </dependency>
+
         <dependency>
             <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-graphdb-arango</artifactId>
+            <artifactId>marmotgraph-spring-test-utils</artifactId>
             <version>4.0</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
-
 </project>

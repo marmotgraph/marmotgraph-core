@@ -22,33 +22,20 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.primaryStore.indexing.service;
+package org.marmotgraph.graphdb;
 
-import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.model.DataStage;
-import org.marmotgraph.commons.model.SpaceName;
+import org.marmotgraph.commons.model.*;
+import org.marmotgraph.commons.model.query.QuerySpecification;
 import org.marmotgraph.commons.model.relations.IncomingRelation;
-import org.springframework.stereotype.Component;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * This class seems to be overhead since it currently uses the graph db - however, it could be extended to support other indexing mechanisms to other storage systems.
- */
-@AllArgsConstructor
-@Component
-public class IndexingService {
-
-    private final org.marmotgraph.graphdb.GraphDB graphDB;
-
-
-    public void delete(UUID instanceId, SpaceName spaceName, DataStage stage) {
-        graphDB.delete(instanceId, spaceName, stage);
-    }
-
-    public void upsert(UUID instanceId, SpaceName spaceName, NormalizedJsonLd payload, DataStage stage, Set<IncomingRelation> incomingRelations) {
-        graphDB.upsert(instanceId, spaceName, payload, stage, incomingRelations);
-    }
+public interface GraphDB {
+    void delete(UUID instanceId, SpaceName spaceName, DataStage dataStage);
+    void upsert(UUID instanceId, SpaceName spaceName, NormalizedJsonLd payload, DataStage stage, Set<IncomingRelation> incomingRelations);
+    StreamedQueryResult executeQuery(QuerySpecification query, DataStage stage, Map<String, String> params, PaginationParam paginationParam);
+    ScopeElement getScopeForInstance(String space, UUID id, DataStage stage, boolean applyRestrictions);
 }

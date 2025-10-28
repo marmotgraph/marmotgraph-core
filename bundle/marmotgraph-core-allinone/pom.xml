@@ -64,18 +64,6 @@
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-graphdb-arango</artifactId>
-            <version>4.0</version>
-            <classifier>library</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-graphdb-neo4j</artifactId>
-            <version>4.0</version>
-            <classifier>library</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-tenants</artifactId>
             <version>4.0</version>
             <classifier>library</classifier>
@@ -117,10 +105,19 @@
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
+            <artifactId>marmotgraph-graphdb-arango</artifactId>
+            <version>4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.marmotgraph</groupId>
+            <artifactId>marmotgraph-graphdb-neo4j</artifactId>
+            <version>4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-commons</artifactId>
             <version>4.0</version>
         </dependency>
-
         <dependency>
             <groupId>org.marmotgraph</groupId>
             <artifactId>marmotgraph-microservice-commons</artifactId>

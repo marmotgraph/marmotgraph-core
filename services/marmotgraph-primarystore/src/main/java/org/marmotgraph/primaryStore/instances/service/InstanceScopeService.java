@@ -26,9 +26,9 @@ package org.marmotgraph.primaryStore.instances.service;
 
 import jakarta.persistence.EntityManager;
 import lombok.AllArgsConstructor;
-import org.marmotgraph.commons.api.graphDB.GraphDB;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.ScopeElement;
+import org.marmotgraph.graphdb.GraphDB;
 import org.marmotgraph.primaryStore.instances.model.InstanceInformation;
 import org.marmotgraph.primaryStore.instances.model.InstanceScope;
 import org.springframework.stereotype.Component;
@@ -40,7 +40,7 @@ import java.util.*;
 public class InstanceScopeService {
 
     private final InstanceScopeRepository repository;
-    private final GraphDB.Client graphDB;
+    private final GraphDB graphDB;
     private final EntityManager em;
     private final InstanceInformationRepository instanceInformationRepository;
 
