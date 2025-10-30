@@ -141,7 +141,7 @@ public class Neo4jService {
         """;
         String query = StringSubstitutor.replace(template,
                 Map.of(
-                        "stage", Neo4JCommons.getStageLabel(stage),
+                        "stage", Neo4JCommons.getStageLabel(stage, ":"),
                         "lifecycleIdAlias", NormalizedJsonLd.LIFECYCLE_ALIAS
                 ));
         logger.info("Preparing Neo4j query to delete all instances in {} with lifecycle id {}", stage.name(), uuid);
@@ -150,7 +150,7 @@ public class Neo4jService {
 
     Stream<Neo4jClient.RunnableSpec> buildUpsertCypherQuery(UUID lifeCycleId, SpaceName spaceName, PayloadSplitter.PayloadSplit splitEntity, DataStage stage, Set<IncomingRelation> incomingRelations) {
         StringSubstitutor stringSubstitutor = new StringSubstitutor(Map.of(
-                "stage", Neo4JCommons.getStageLabel(stage),
+                "stage", Neo4JCommons.getStageLabel(stage, ":"),
                 "lifecycleIdAlias", NormalizedJsonLd.LIFECYCLE_ALIAS
         ));
         Neo4jClient.RunnableSpec clearInstances = neo4jClient.query(stringSubstitutor.replace( """
@@ -175,7 +175,7 @@ public class Neo4jService {
         final String template = new StringSubstitutor(Map.of(
                 "idAlias", NormalizedJsonLd.ID_ALIAS,
                 "lifecycleIdAlias", NormalizedJsonLd.LIFECYCLE_ALIAS,
-                "stage", Neo4JCommons.getStageLabel(stage)
+                "stage", Neo4JCommons.getStageLabel(stage, ":")
         )).replace("""
                     MATCH (a${stage} {${idAlias}: $sourceId})
                     MATCH (b${stage} {${idAlias}: $targetId})
@@ -206,7 +206,7 @@ public class Neo4jService {
             String q = new StringSubstitutor(Map.of(
                     "idAlias", NormalizedJsonLd.ID_ALIAS,
                     "lifecycleIdAlias", NormalizedJsonLd.LIFECYCLE_ALIAS,
-                    "stage", Neo4JCommons.getStageLabel(stage)
+                    "stage", Neo4JCommons.getStageLabel(stage, ":")
             )).replace(relationTemplate);
             Neo4jClient.RunnableSpec query = neo4jClient.query(q);
             logger.info("Preparing Neo4j query (relation {} from {} to {}): {}", relation.getRelationName(), relation.getFrom(), relation.getTo(), q);
@@ -229,8 +229,8 @@ public class Neo4jService {
         return splitEntity.getInstances().stream().map(instance -> {
             Collection<String> types = instance.types();
             String q = new StringSubstitutor(Map.of(
-                    "stage", Neo4JCommons.getStageLabel(stage),
-                    "spaceName", spaceName != null && !spaceName.getName().isBlank() ? String.format(":_SPC_%s", Neo4JCommons.sanitizeLabel(spaceName.getName())) : "",
+                    "stage", Neo4JCommons.getStageLabel(stage, ":"),
+                    "spaceName", Neo4JCommons.getSpaceLabel(spaceName, ":", ""),
                     "extra", instance.isEmbedded() ? ":embedded" : "",
                     "types", types.isEmpty() ? "" : String.format(":%s", types.stream().map(Neo4JCommons::sanitizeLabel).collect(Collectors.joining(":")))
             )).replace(template);

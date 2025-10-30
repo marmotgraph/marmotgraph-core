@@ -26,6 +26,7 @@ package org.marmotgraph.graphdb.neo4j.api;
 
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.StringUtils;
 import org.marmotgraph.commons.Tuple;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.markers.ExposesMinimalData;
@@ -34,14 +35,12 @@ import org.marmotgraph.commons.model.query.QuerySpecification;
 import org.marmotgraph.commons.model.relations.IncomingRelation;
 import org.marmotgraph.graphdb.GraphDB;
 import org.marmotgraph.graphdb.neo4j.Neo4J;
+import org.marmotgraph.graphdb.neo4j.model.PreparedCypherQuery;
 import org.marmotgraph.graphdb.neo4j.service.Neo4jService;
 import org.marmotgraph.graphdb.neo4j.service.QueryToCypherService;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Neo4J
 @Service
@@ -62,10 +61,25 @@ public class GraphDBAPI implements GraphDB {
     }
 
     @Override
-    public StreamedQueryResult executeQuery(QuerySpecification query, DataStage stage, Map<String, String> params, PaginationParam paginationParam){
-        Tuple<String, Map<String, String>> cypherQuery = queryToCypherService.createCypherQuery(stage, query, paginationParam);
-        Collection<NormalizedJsonLd> results = service.query(cypherQuery.getA(), params, cypherQuery.getB(), paginationParam);
-        return new StreamedQueryResult(new PaginatedStream<>(results.stream(), null, results.size(), paginationParam.getFrom()), query.getMeta().getResponseVocab());
+    public Tuple<Collection<NormalizedJsonLd>, Long> executeQuery(QuerySpecification query, DataStage stage, Map<String, String> params, PaginationParam paginationParam, Tuple<Set<SpaceName>, Set<UUID>> accessFilter){
+        PreparedCypherQuery cypherQuery = queryToCypherService.createCypherQuery(stage, query, paginationParam, accessFilter);
+        Map<String, String> evaluatedParameters = new HashMap<>();
+        cypherQuery.filterMap().forEach((k, v) -> {
+            String value = null;
+            if(StringUtils.isNotBlank(v.getParameter())){
+                String parametrized = params.get(v.getParameter().trim());
+                if(StringUtils.isNotBlank(parametrized)){
+                    value = parametrized;
+                }
+            }
+            if(value == null && StringUtils.isNotBlank(v.getValue())){
+                value = v.getValue().trim();
+            }
+            evaluatedParameters.put(k, value);
+        });
+
+        //TODO fetch total results
+        return new Tuple<>(service.query(cypherQuery.query(), evaluatedParameters, cypherQuery.aliasMap(), paginationParam), null);
     }
 
     @Override

@@ -83,7 +83,7 @@ public class Permissions {
     }
 
     @NotNull
-    public Set<SpaceName> getSpacesForPermission(Set<SpaceName> spaces, UserWithRoles userWithRoles, Functionality functionality) {
+    public Set<SpaceName> getSpacesForPermission(Collection<SpaceName> spaces, UserWithRoles userWithRoles, Functionality functionality) {
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
         if (functionality == null || hasGlobalPermission(userWithRoles, functionality)) {
             return Collections.emptySet();

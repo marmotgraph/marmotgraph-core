@@ -29,6 +29,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.JsonAdapter;
+import org.marmotgraph.commons.Tuple;
 import org.marmotgraph.commons.api.primaryStore.Instances;
 import org.marmotgraph.commons.exception.AmbiguousException;
 import org.marmotgraph.commons.exception.AmbiguousIdException;
@@ -52,6 +53,8 @@ import org.marmotgraph.primaryStore.instances.model.InstanceInformation;
 import org.marmotgraph.primaryStore.instances.service.InstanceInformationRepository;
 import org.marmotgraph.primaryStore.instances.service.InstanceScopeService;
 import org.marmotgraph.primaryStore.instances.service.PayloadService;
+import org.marmotgraph.primaryStore.instances.service.SpaceService;
+import org.marmotgraph.primaryStore.queries.service.QueryPermissions;
 import org.marmotgraph.primaryStore.queries.service.SpecificationInterpreter;
 import org.springframework.stereotype.Component;
 
@@ -71,6 +74,9 @@ public class InstancesAPI implements Instances.Client {
     private final IdUtils idUtils;
     private final SpecificationInterpreter specificationInterpreter;
     private final JsonAdapter jsonAdapter;
+    private final QueryPermissions queryPermissions;
+    private final SpaceService spaceService;
+
 
     @Override
     public Map<UUID, InstanceId> resolveIds(List<IdWithAlternatives> idWithAlternatives, DataStage stage) throws AmbiguousIdException {
@@ -246,7 +252,7 @@ public class InstancesAPI implements Instances.Client {
 
     @Override
     public StreamedQueryResult executeQuery(MarmotGraphQuery query, Map<String, String> params, PaginationParam paginationParam) {
-        //TODO evict the intermediate step once it works properly
+        //FIXME evict the intermediate step once it works properly
         query.getPayload().recursiveVisitOfProperties(query.getPayload(), Collections.emptyList(), query.getPayload(),
                 (name, value, path, parentMap, orderNumber) -> {
                     String queryPrefix = "https://core.kg.ebrains.eu/vocab/query/";
@@ -258,6 +264,21 @@ public class InstancesAPI implements Instances.Client {
                 }, null, null);
         QuerySpecification querySpecification = jsonAdapter.fromJson(jsonAdapter.toJson(query.getPayload()), QuerySpecification.class);
         payloadService.applyCURIEPrefixes(querySpecification);
-        return graphDB.executeQuery(querySpecification, query.getStage(), params, paginationParam);
+        Tuple<Set<SpaceName>, Set<UUID>> accessFilter = queryPermissions.queryFilter(query.getRestrictToSpaces(), authContext.getUserWithRoles(), query.getStage());
+
+        Collection<NormalizedJsonLd> normalizedJsonLds;
+        Long totalResults;
+        if(accessFilter != null && accessFilter.getA().isEmpty() && accessFilter.getB().isEmpty()){
+            //The user doesn't have access to anything - let's fast-track this.
+            totalResults = 0L;
+            normalizedJsonLds = Collections.emptyList();
+        }
+        else {
+            Tuple<Collection<NormalizedJsonLd>, Long> result = graphDB.executeQuery(querySpecification, query.getStage(), params, paginationParam, accessFilter);
+            normalizedJsonLds = result.getA();
+            totalResults = result.getB();
+        }
+        return new StreamedQueryResult(new PaginatedStream<>(normalizedJsonLds.stream(), totalResults, normalizedJsonLds.size(), paginationParam.getFrom()), querySpecification.getMeta().getResponseVocab());
     }
+
 }

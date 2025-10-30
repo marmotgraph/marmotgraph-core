@@ -25,6 +25,7 @@
 package org.marmotgraph.graphdb.neo4j.service;
 
 import org.marmotgraph.commons.model.DataStage;
+import org.marmotgraph.commons.model.SpaceName;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -57,8 +58,13 @@ public class Neo4JCommons {
         return null;
     }
 
-    static String getStageLabel(DataStage stage) {
-        return String.format(":_STG_%s", stage.getAbbreviation());
+    static String getStageLabel(DataStage stage, String prefix) {
+        return String.format("%s_STG_%s", prefix, stage.getAbbreviation());
+    }
+
+
+    static String getSpaceLabel(SpaceName spaceName, String prefix, String defaultValue){
+        return spaceName != null && !spaceName.getName().isBlank() ? String.format("%s_SPC_%s", prefix, Neo4JCommons.sanitizeLabel(spaceName.getName())) : defaultValue;
     }
 
 

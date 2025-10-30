@@ -24,11 +24,13 @@
 
 package org.marmotgraph.graphdb;
 
+import org.marmotgraph.commons.Tuple;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.*;
 import org.marmotgraph.commons.model.query.QuerySpecification;
 import org.marmotgraph.commons.model.relations.IncomingRelation;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -36,6 +38,6 @@ import java.util.UUID;
 public interface GraphDB {
     void delete(UUID instanceId, SpaceName spaceName, DataStage dataStage);
     void upsert(UUID instanceId, SpaceName spaceName, NormalizedJsonLd payload, DataStage stage, Set<IncomingRelation> incomingRelations);
-    StreamedQueryResult executeQuery(QuerySpecification query, DataStage stage, Map<String, String> params, PaginationParam paginationParam);
+    Tuple<Collection<NormalizedJsonLd>, Long> executeQuery(QuerySpecification query, DataStage stage, Map<String, String> params, PaginationParam paginationParam, Tuple<Set<SpaceName>, Set<UUID>> accessFilter);
     ScopeElement getScopeForInstance(String space, UUID id, DataStage stage, boolean applyRestrictions);
 }

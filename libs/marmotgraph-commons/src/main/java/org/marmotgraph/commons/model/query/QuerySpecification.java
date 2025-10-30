@@ -25,6 +25,7 @@
 package org.marmotgraph.commons.model.query;
 
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -135,6 +136,7 @@ public class QuerySpecification {
         @JsonProperty("@id")
         private String id;
         private boolean reverse;
+        @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
         private List<TypeFilter> typeFilter;
         private transient String queryAlias;
     }
@@ -198,6 +200,7 @@ public class QuerySpecification {
         private JsonLdId propertyName;
         @JsonDeserialize(using = PathDeserializer.class)
         private List<Path> path;
+        @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
         private List<StructureItem> structure;
         private boolean required;
         private boolean sort;
@@ -210,9 +213,9 @@ public class QuerySpecification {
         FIRST, CONCAT //Does only make sense on leafs -> do we even need it?
     }
 
-
     private Meta meta;
 
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
     private List<StructureItem> structure;
 
 

@@ -81,12 +81,6 @@
             <classifier>library</classifier>
         </dependency>
         <dependency>
-            <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-queries</artifactId>
-            <version>4.0</version>
-            <classifier>library</classifier>
-        </dependency>
-        <dependency>
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjweaver</artifactId>
             <version>1.9.6</version>

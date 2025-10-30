@@ -49,7 +49,6 @@
         <module>services/marmotgraph-tenants</module>
         <module>services/marmotgraph-jsonld</module>
         <module>services/marmotgraph-primarystore</module>
-        <module>services/marmotgraph-queries</module>
         <module>bundle/marmotgraph-core-allinone</module>
     </modules>
     <profiles>

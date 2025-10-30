@@ -22,20 +22,12 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph;
+package org.marmotgraph.graphdb.neo4j.model;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableAsync;
+import org.marmotgraph.commons.model.query.QuerySpecification;
 
-@EnableAsync
-@SpringBootApplication
-@Configuration
-public class MarmotGraphQueriesApplication {
+import java.util.Map;
 
-	public static void main(String[] args) {
-		SpringApplication.run(MarmotGraphQueriesApplication.class, args);
-	}
+public record PreparedCypherQuery(String query, Map<String, String> aliasMap, Map<String, QuerySpecification.ValueFilter> filterMap) {
 
 }

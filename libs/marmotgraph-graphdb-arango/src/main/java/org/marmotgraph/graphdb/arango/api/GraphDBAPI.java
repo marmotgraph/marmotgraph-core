@@ -27,6 +27,7 @@ package org.marmotgraph.graphdb.arango.api;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.NotImplementedException;
 import org.marmotgraph.commons.AuthContext;
+import org.marmotgraph.commons.Tuple;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.markers.ExposesMinimalData;
 import org.marmotgraph.commons.model.*;
@@ -42,6 +43,7 @@ import org.marmotgraph.graphdb.arango.instances.controller.ScopeRepository;
 import org.marmotgraph.graphdb.arango.queries.controller.QueryController;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -70,7 +72,7 @@ public class GraphDBAPI implements org.marmotgraph.graphdb.GraphDB {
     }
 
     @Override
-    public StreamedQueryResult executeQuery(QuerySpecification query, DataStage stage, Map<String, String> params, PaginationParam paginationParam){
+    public Tuple<Collection<NormalizedJsonLd>, Long> executeQuery(QuerySpecification query, DataStage stage, Map<String, String> params, PaginationParam paginationParam, Tuple<Set<SpaceName>, Set<UUID>> accessFilter){
 //        UserWithRoles userWithRoles = authContext.getUserWithRoles();
 //        checkPermissionForQueryExecution(userWithRoles);
 //        return queryController.queryToStream(userWithRoles, query, paginationParam, params, false);

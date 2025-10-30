@@ -97,4 +97,9 @@ public class SpaceService {
         return new Paginated<>(result, null, result.size(), paginationParam.getFrom());
 
     }
+
+
+    public Set<SpaceName> allSpaces(){
+        return entityManager.createQuery("select s.name from Space s order by s.name", String.class).getResultList().stream().map(SpaceName::fromString).collect(Collectors.toSet());
+    }
 }

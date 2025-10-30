@@ -29,15 +29,20 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringSubstitutor;
 import org.marmotgraph.commons.JsonAdapter;
 import org.marmotgraph.commons.Tuple;
+import org.marmotgraph.commons.exception.InvalidRequestException;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.PaginationParam;
+import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.query.QuerySpecification;
 import org.marmotgraph.graphdb.neo4j.Neo4J;
+import org.marmotgraph.graphdb.neo4j.model.PreparedCypherQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 @Neo4J
 @Service
@@ -46,94 +51,283 @@ public class QueryToCypherService {
 
     private final JsonAdapter jsonAdapter;
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
 
-
-    public Tuple<String, Map<String, String>> createCypherQuery(DataStage stage, QuerySpecification query, PaginationParam paginationParam) {
-        Tuple<String, Map<String, String>> cypherQuery = new QueryTranslator(stage, query, paginationParam).createCypherQuery();
-        return cypherQuery;
+    public PreparedCypherQuery createCypherQuery(DataStage stage, QuerySpecification query, PaginationParam paginationParam, Tuple<Set<SpaceName>, Set<UUID>> accessFilter) {
+        return new QueryTranslator(stage, query, paginationParam, accessFilter).createCypherQuery();
     }
 
     private static class QueryTranslator {
-
+        private final Logger logger = LoggerFactory.getLogger(getClass());
         private final StringBuilder cypher = new StringBuilder();
         private final Map<String, String> aliasMap = new HashMap<>();
         private final Map<String, String> substitutionMap;
         private final PaginationParam paginationParam;
         private final QuerySpecification query;
         private final String responseVocab;
+        private final Tuple<Set<SpaceName>, Set<UUID>> accessFilter;
+        private final Map<String, QuerySpecification.ValueFilter> filterParameters = new HashMap<>();
 
 
-
-        public QueryTranslator(DataStage stage, QuerySpecification query, PaginationParam paginationParam) {
-             this.substitutionMap = Map.of(
-                    "stage", Neo4JCommons.getStageLabel(stage),
+        public QueryTranslator(DataStage stage, QuerySpecification query, PaginationParam paginationParam, Tuple<Set<SpaceName>, Set<UUID>> accessFilter) {
+            this.substitutionMap = Map.of(
+                    "stage", Neo4JCommons.getStageLabel(stage, ":"),
                     "rootType", ":" + Neo4JCommons.sanitizeLabel(query.getMeta().getType())
             );
             this.paginationParam = paginationParam;
             this.query = query;
-            this.responseVocab =  query.getMeta().getResponseVocab();
+            this.accessFilter = accessFilter;
+            this.responseVocab = query.getMeta().getResponseVocab();
         }
 
-        private Tuple<String, Map<String, String>> createCypherQuery() {
+
+        private String relationFilter(String alias, Optional<QuerySpecification.Path> path) {
+            List<String> filters;
+            if (path.isPresent()) {
+                filters = Stream.of(accessFilter(alias), typeFilter(alias, path.get())).filter(Optional::isPresent).map(Optional::get).toList();
+            } else {
+                filters = accessFilter(alias).map(Collections::singletonList).orElse(Collections.emptyList()); //Without the path, we can only apply the accessFilter (e.g. for root)
+            }
+            return filters.isEmpty() ? "" : buildFilters(filters);
+        }
+
+        private static String buildFilters(List<String> filters) {
+            StringBuilder filter = new StringBuilder();
+            filter.append("WHERE ");
+            Iterator<String> iterator = filters.iterator();
+            while (iterator.hasNext()) {
+                String partialFilter = iterator.next();
+                filter.append('(');
+                filter.append(partialFilter);
+                filter.append(')');
+                if (iterator.hasNext()) {
+                    filter.append(" AND ");
+                }
+            }
+            filter.append('\n');
+            return filter.toString();
+        }
+
+        private Optional<String> typeFilter(String alias, QuerySpecification.Path path) {
+            if (path.getTypeFilter() != null) {
+                StringBuilder filter = new StringBuilder();
+                Iterator<String> iterator = path.getTypeFilter().stream().map(f -> Neo4JCommons.sanitizeLabel(f.getId())).iterator();
+                filter.append(String.format("any(label IN labels(%s) WHERE label IN [", alias));
+                while (iterator.hasNext()) {
+                    filter.append('\'').append(iterator.next()).append('\'');
+                    if (iterator.hasNext()) {
+                        filter.append(',');
+                    }
+                }
+                filter.append("])");
+                return Optional.of(filter.toString());
+            }
+            return Optional.empty();
+        }
+
+        private Optional<String> accessFilter(String alias) {
+            if (accessFilter != null) {
+                StringBuilder filter = new StringBuilder();
+                if (!accessFilter.getA().isEmpty()) {
+                    filter.append(String.format("any(label IN labels(%s) WHERE label IN allowedSpaces)", alias));
+                }
+                if (!accessFilter.getB().isEmpty()) {
+                    if (!filter.isEmpty()) {
+                        filter.append(" OR ");
+                    }
+                    filter.append(String.format("%s._id IN allowedInstances", alias));
+                }
+                return Optional.of(filter.toString());
+            }
+            return Optional.empty();
+        }
+
+
+        private PreparedCypherQuery createCypherQuery() {
+            ArrayList<String> withAliases = new ArrayList<>(List.of("root"));
+            if (accessFilter != null) {
+                if (!accessFilter.getA().isEmpty()) {
+                    cypher.append("WITH [");
+                    Iterator<String> iterator = accessFilter.getA().stream().map(s -> Neo4JCommons.getSpaceLabel(s, "", null)).filter(Objects::nonNull).iterator();
+                    while (iterator.hasNext()) {
+                        cypher.append('\'');
+                        cypher.append(iterator.next());
+                        cypher.append('\'');
+                        if (iterator.hasNext()) {
+                            cypher.append(',');
+                        }
+                    }
+                    cypher.append("] AS allowedSpaces \n");
+                    withAliases.add("allowedSpaces");
+                }
+                if (!accessFilter.getB().isEmpty()) {
+                    cypher.append("WITH [");
+                    Iterator<String> iterator = accessFilter.getB().stream().map(UUID::toString).iterator();
+                    while (iterator.hasNext()) {
+                        cypher.append('\'');
+                        cypher.append(iterator.next());
+                        cypher.append('\'');
+                        if (iterator.hasNext()) {
+                            cypher.append(',');
+                        }
+                    }
+                    cypher.append("] AS allowedInstances \n");
+                    withAliases.add("allowedInstances");
+                }
+            }
             cypher.append("MATCH (root${stage}${rootType})\n");
-            handleStructure(query.getStructure(), new LinkedHashMap<>(), "root", new ArrayList<>(List.of("root")));
-            return new Tuple<>(new StringSubstitutor(this.substitutionMap).replace(cypher), aliasMap);
+            cypher.append(relationFilter("root", Optional.empty()));
+            handleStructure(query.getStructure(), "root", withAliases);
+            return new PreparedCypherQuery(new StringSubstitutor(this.substitutionMap).replace(cypher), aliasMap, filterParameters);
         }
 
-        private void returnStatement(Map<String, Object> returnMap) {
+        private String filterValue(QuerySpecification.ValueFilter valueFilter, String source){
+            if (Objects.requireNonNull(valueFilter.getOp()) == QuerySpecification.FilterOperation.IS_EMPTY) {
+                return new StringSubstitutor(Map.of("source", source)).replace("${source} IS NULL OR ${source} = [] OR ${source} = {} or ${source} = \"\"");
+            } else {
+                Optional<String> cypherOp = translateStandardFilterOp(valueFilter.getOp());
+                if (cypherOp.isPresent()) {
+                    String filterParam = String.format("param%d", filterParameters.size());
+                    filterParameters.put(filterParam, valueFilter);
+                    return new StringSubstitutor(Map.of(
+                            "source", source,
+                            "operation", cypherOp.get(),
+                            "filterParam", String.format("$%s", filterParam)
+                    )).replace("(${source} ${operation} ${filterParam} OR any(v IN ${source} WHERE v ${operation} ${filterParam}))");
+                }
+            }
+            throw new InvalidRequestException(String.format("Was not able to find corresponding operation for %s", valueFilter.getOp()));
+        }
+
+        private void returnStatement(Map<String, String> returnMap, Map<String, QuerySpecification.ValueFilter> filterMap, Set<String> requiredSet) {
+            if (!filterMap.isEmpty() || !requiredSet.isEmpty()) {
+                cypher.append("WHERE ");
+            }
+            if (!filterMap.isEmpty()) {
+                Iterator<String> iterator = filterMap.keySet().iterator();
+                while (iterator.hasNext()) {
+                    String target = iterator.next();
+                    String source = returnMap.get(target);
+                    QuerySpecification.ValueFilter valueFilter = filterMap.get(target);
+                    cypher.append(filterValue(valueFilter, source));
+                    if(iterator.hasNext()) {
+                        cypher.append(" AND ");
+                    }
+                }
+            }
+            if (!requiredSet.isEmpty()) {
+                if (!filterMap.isEmpty()) {
+                    cypher.append(" AND ");
+                }
+                Iterator<String> iterator = requiredSet.iterator();
+                while (iterator.hasNext()) {
+                    cypher.append(new StringSubstitutor(Map.of("alias", iterator.next())).replace("(${alias} IS NOT NULL AND NOT ${alias} = [] AND NOT ${alias} = {} AND NOT ${alias} = \"\")"));
+                    if (iterator.hasNext()) {
+                        cypher.append(" AND ");
+                    }
+                }
+            }
+            if (!filterMap.isEmpty() || !requiredSet.isEmpty()) {
+                cypher.append("\n");
+            }
+
             cypher.append("RETURN {");
             List<String> innerItems = new ArrayList<>();
             returnMap.forEach((k, v) -> {
-                if (v instanceof Map<?, ?>) {
-                    innerItems.add(String.format("%s: [i in %ss]", k, k));
-                } else if (v instanceof String) {
-                    innerItems.add(String.format(String.format("%s: %s", k, v)));
-                }
+                innerItems.add(String.format(String.format("%s: %s", k, v)));
             });
             cypher.append(String.join(", ", innerItems));
             cypher.append('}');
         }
 
-
-        private String withStatements(Map<String, Object> returnMap, List<String> path, boolean flat) {
-            cypher.append("WITH ");
-            cypher.append(String.join(", ", path.subList(0, path.size() - 1)));
-            cypher.append(String.format(", collect(CASE WHEN %s IS NOT NULL THEN ", path.getLast()));
-            if (!flat) {
-                cypher.append('{');
+        private Optional<String> translateStandardFilterOp(QuerySpecification.FilterOperation operation) {
+            switch (operation) {
+                case REGEX -> {
+                    return Optional.of("=~");
+                }
+                case CONTAINS -> {
+                    return Optional.of("CONTAINS");
+                }
+                case EQUALS -> {
+                    return Optional.of("=");
+                }
+                case STARTS_WITH -> {
+                    return Optional.of("STARTS WITH");
+                }
+                case ENDS_WITH -> {
+                    return Optional.of("ENDS WITH");
+                }
             }
-            List<String> innerItems = new ArrayList<>();
-            returnMap.forEach((k, v) -> {
-                if (v instanceof Map<?, ?>) {
-                    List<String> newPath = new ArrayList<>(path);
-                    newPath.add(k);
-                    String alias = withStatements((Map<String, Object>) v, newPath, flat);
-                    innerItems.add(String.format("%s: [i in %s]", k, alias));
-                } else if (v instanceof String) {
-                    if(flat){
-                        innerItems.add((String)v);
+            return Optional.empty();
+        }
+
+
+        private String withStatements(Map<String, String> returnMap, Map<String, QuerySpecification.ValueFilter> filterMap, List<String> path, String currentAlias, Set<String> requiredSet, boolean flat) {
+            List<String> relevantSubPath = path.subList(0, Math.min(path.size(), path.indexOf(currentAlias)+1));
+            cypher.append("WITH ");
+            cypher.append(String.join(", ", relevantSubPath.subList(0, relevantSubPath.size() - 1)));
+            cypher.append(", ");
+            if (!flat) {
+                cypher.append("[o IN ");
+            }
+            cypher.append("collect(");
+            cypher.append(String.format("CASE WHEN %s IS NOT NULL ", relevantSubPath.getLast()));
+            if(!CollectionUtils.isEmpty(requiredSet)){
+                cypher.append("AND ");
+                Iterator<String> iterator = requiredSet.iterator();
+                while (iterator.hasNext()) {
+                    String required = iterator.next();
+                    cypher.append(String.format("%s IS NOT NULL AND NOT %s = [] AND NOT %s = {} ", required, required, required));
+                    if(iterator.hasNext()){
+                        cypher.append("AND ");
                     }
-                    else {
+                }
+            }
+            cypher.append("THEN ");
+            List<String> innerItems = new ArrayList<>();
+            List<String> filterItems = new ArrayList<>();
+            returnMap.forEach((k, v) -> {
+                if (flat) {
+                    innerItems.add(v);
+                } else {
+                    QuerySpecification.ValueFilter valueFilter = filterMap.get(k);
+                    if (valueFilter != null) {
+                        filterItems.add(k);
+                        innerItems.add(String.format("%s: CASE WHEN %s THEN %s END", k, filterValue(valueFilter, v), v));
+                    } else {
                         innerItems.add(String.format("%s: %s", k, v));
                     }
                 }
             });
-            cypher.append(String.join(", ", innerItems));
-            String resultAlias = path.getLast()+"s";
-            if(!flat){
-                cypher.append('}');
+            if (!flat) {
+                if (!filterItems.isEmpty()) {
+                    cypher.append("apoc.map.clean(");
+                }
+                cypher.append('{');
             }
-            cypher.append(" END ) AS ").append(resultAlias);
+            cypher.append(String.join(", ", innerItems));
+            String resultAlias = relevantSubPath.getLast() + "s";
+            if (!flat) {
+                cypher.append('}');
+                if (!filterItems.isEmpty()) {
+                    cypher.append(", [], [NULL])");
+                }
+            }
+            cypher.append(" END ) ");
+            if (!flat) {
+                cypher.append("WHERE size(keys(o))>0 ] ");
+            }
+            cypher.append("AS ").append(resultAlias);
             cypher.append('\n');
             return resultAlias;
         }
 
-        private String handleStructure(List<QuerySpecification.StructureItem> structure, Map<String, Object> returnMap, String
-                                                    currentAlias, List<String> withAliases) {
+        private String handleStructure(List<QuerySpecification.StructureItem> structure, String
+                currentAlias, List<String> withAliases) {
             if (structure != null) {
                 List<String> newWithAliases = new ArrayList<>(withAliases);
-                Map<String, Object> newReturnMap = new HashMap<>();
+                Map<String, String> returnMap = new HashMap<>();
+                Map<String, QuerySpecification.ValueFilter> filterMap = new HashMap<>();
+                Set<String> requiredSet = new HashSet<>();
                 structure.forEach(structureItem -> {
                     //We only treat structure items containing a path
                     if (!structureItem.getPath().isEmpty()) {
@@ -144,28 +338,15 @@ public class QueryToCypherService {
                         if (structureItem.getStructure() == null) {
                             if (structureItem.getPath().size() == 1) {
                                 //It's a direct element and there is no further structure defined -> we expect this to be a property, not a relation
-                                handleLeaf(newReturnMap, currentAlias, structureItem.getPath().getFirst(), propertyName, null);
+                                String alias = handleLeaf(returnMap, currentAlias, structureItem.getPath().getFirst(), propertyName, null);
+                                if (structureItem.getFilter() != null) {
+                                    filterMap.put(alias, structureItem.getFilter());
+                                }
+                                if (structureItem.isRequired()) {
+                                    requiredSet.add(alias);
+                                }
                             } else {
                                 // it's a leaf but we first need to walk the path...
-
-//MATCH (root:_STG_PRGRS:ma_o_t_Country)
-//WHERE ANY(space IN labels(root) WHERE space IN $allowedLabels)
-//OPTIONAL MATCH (root)-[r2 {property: 'ma_o_p_officialLanguages'}]->(i3)
-//WHERE ANY(space IN labels(i3) WHERE space IN $allowedLabels)
-//OPTIONAL MATCH (i3)<-[r5 {property: 'ma_o_p_language'}]-(i6)
-//WHERE ANY(space IN labels(i6) WHERE space IN $allowedLabels)
-//WITH root, i3, collect(CASE WHEN i6 IS NOT NULL THEN i6.ma_o_p_value END ) AS i6s
-//OPTIONAL MATCH (i3)<-[r7 {property: 'ma_o_p_dialectOf'}]-(i8)
-//WHERE ANY(space IN labels(i8) WHERE space IN $allowedLabels)
-//OPTIONAL MATCH (i8)<-[r10 {property: 'ma_o_p_language'}]-(i11)
-//WHERE ANY(space IN labels(i11) WHERE space IN $allowedLabels)
-//WITH root, i3, i6s, i8, collect(CASE WHEN i11 IS NOT NULL THEN i11.ma_o_p_value END ) AS i11s
-//WITH root, i3, i6s, i8, collect(CASE WHEN i11s IS NOT NULL THEN {i9: i8.ma_o_p_name, i11: i11s} END ) AS i11ss
-//WITH root, i3, i6s, collect(CASE WHEN i11ss IS NOT NULL THEN {i4: i3.ma_o_p_name, i6: i6s, i8: i11ss} END ) AS i11sss
-//OPTIONAL MATCH (root)<-[r12 {property: 'ma_o_p_countries'}]-(i13)
-//WHERE ANY(space IN labels(i13) WHERE space IN $allowedLabels)
-//WITH root, i11sss, collect(CASE WHEN i13 IS NOT NULL THEN i13.ma_o_p_name END ) AS i13s
-//RETURN {i0: root._id, i1: root.ma_o_p_name, i3: i11sss, i13: i13s}
                                 String parentAlias = currentAlias;
                                 List<String> innerAliases = new ArrayList<>(newWithAliases);
                                 List<QuerySpecification.Path> subpath = structureItem.getPath().subList(0, structureItem.getPath().size() - 1);
@@ -173,10 +354,17 @@ public class QueryToCypherService {
                                     parentAlias = handleRelation(structureItemPath, parentAlias, structureItem.isRequired());
                                     innerAliases.add(parentAlias);
                                 }
-                                Map<String, Object> m = new HashMap<>();
-                                handleLeaf(m, parentAlias, structureItem.getPath().getLast(), propertyName, parentAlias);
-                                String resultAlias = withStatements(m, innerAliases, true);
-                                newReturnMap.put(parentAlias, resultAlias);
+                                Map<String, String> m = new HashMap<>();
+                                Map<String, QuerySpecification.ValueFilter> f = new HashMap<>();
+                                String alias = handleLeaf(m, parentAlias, structureItem.getPath().getLast(), propertyName, parentAlias);
+                                if (structureItem.getFilter() != null) {
+                                    f.put(alias, structureItem.getFilter());
+                                }
+                                String resultAlias = withStatements(m, f, innerAliases, alias, Collections.emptySet(), true);
+                                if (structureItem.isRequired()) {
+                                    requiredSet.add(resultAlias);
+                                }
+                                returnMap.put(parentAlias, resultAlias);
                                 newWithAliases.add(resultAlias);
                             }
                         } else {
@@ -188,28 +376,31 @@ public class QueryToCypherService {
                                 innerAliases.add(parentAlias);
                             }
                             aliasMap.put(parentAlias, propertyName);
-                            String substructureAlias = handleStructure(structureItem.getStructure(), newReturnMap, parentAlias, innerAliases);
-                            newReturnMap.put(parentAlias, substructureAlias);
+                            String substructureAlias = handleStructure(structureItem.getStructure(), parentAlias, innerAliases);
+                            returnMap.put(parentAlias, substructureAlias);
                             newWithAliases.add(substructureAlias);
+                            if (structureItem.isRequired()) {
+                                requiredSet.add(substructureAlias);
+                            }
                         }
                     }
                 });
-                if(currentAlias.equals("root")){
-                    returnStatement(newReturnMap);
-                }
-                else{
-                    String resultAlias = withStatements(newReturnMap, newWithAliases, false);
-                    newReturnMap.put(currentAlias, resultAlias);
+                if (currentAlias.equals("root")) {
+                    returnStatement(returnMap, filterMap, requiredSet);
+                } else {
+                    String resultAlias = withStatements(returnMap, filterMap, newWithAliases, currentAlias, requiredSet, false);
+                    returnMap.put(currentAlias, resultAlias);
                     return resultAlias;
                 }
             }
             return null;
         }
 
-        private void handleLeaf(Map<String, Object> returnMap, String currentAlias, QuerySpecification.Path path, String propertyName, String alias) {
+        private String handleLeaf(Map<String, String> returnMap, String currentAlias, QuerySpecification.Path path, String propertyName, String alias) {
             String a = alias == null ? String.format("i%d", aliasMap.size()) : alias;
             aliasMap.put(a, propertyName);
             returnMap.put(a, String.format("%s.%s", currentAlias, Neo4JCommons.sanitizeLabel(path.getId())));
+            return a;
         }
 
         private String handleRelation(QuerySpecification.Path structureItemPath, String parentAlias, boolean required) {
@@ -218,14 +409,12 @@ public class QueryToCypherService {
             String targetAlias = String.format("i%d", aliasMap.size());
             aliasMap.put(targetAlias, null);
             StringBuilder snippet = new StringBuilder();
-            if(!required){
-                snippet.append("OPTIONAL ");
-            }
-            snippet.append("MATCH (${currentAlias})");
+            snippet.append("OPTIONAL MATCH (${currentAlias})"); //We go with optional matches since our filter mechanisms are more detailed
             snippet.append(structureItemPath.isReverse() ? "<-" : "-");
             snippet.append("[${relationAlias} {property: '${relationName}'}]");
             snippet.append(structureItemPath.isReverse() ? "-" : "->");
             snippet.append("(${targetAlias})\n");
+            snippet.append(relationFilter("${targetAlias}", Optional.of(structureItemPath)));
             cypher.append(new StringSubstitutor(Map.of(
                     "currentAlias", parentAlias,
                     "relationAlias", relationAlias,
@@ -235,7 +424,6 @@ public class QueryToCypherService {
             return targetAlias;
         }
     }
-
 
 
 }
