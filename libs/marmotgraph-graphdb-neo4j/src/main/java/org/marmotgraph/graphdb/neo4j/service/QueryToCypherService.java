@@ -52,8 +52,14 @@ public class QueryToCypherService {
     private final JsonAdapter jsonAdapter;
 
 
-    public PreparedCypherQuery createCypherQuery(DataStage stage, QuerySpecification query, PaginationParam paginationParam, Tuple<Set<SpaceName>, Set<UUID>> accessFilter) {
-        return new QueryTranslator(stage, query, paginationParam, accessFilter).createCypherQuery();
+    public Tuple<PreparedCypherQuery, Optional<PreparedCypherQuery>> createCypherQuery(DataStage stage, QuerySpecification query, PaginationParam paginationParam, Tuple<Set<SpaceName>, Set<UUID>> accessFilter) {
+        PreparedCypherQuery dataQuery = new QueryTranslator(stage, query, paginationParam, accessFilter, false).createQuery();
+        if(paginationParam.isReturnTotalResults()){
+            return new Tuple<>(dataQuery, Optional.of(new QueryTranslator(stage, query, paginationParam, accessFilter, true).createQuery()));
+        }
+        else{
+            return new Tuple<>(dataQuery, Optional.empty());
+        }
     }
 
     private static class QueryTranslator {
@@ -66,9 +72,10 @@ public class QueryToCypherService {
         private final String responseVocab;
         private final Tuple<Set<SpaceName>, Set<UUID>> accessFilter;
         private final Map<String, QuerySpecification.ValueFilter> filterParameters = new HashMap<>();
+        private final boolean countQuery;
+        private Boolean directAccessFilterForRoot = null;
 
-
-        public QueryTranslator(DataStage stage, QuerySpecification query, PaginationParam paginationParam, Tuple<Set<SpaceName>, Set<UUID>> accessFilter) {
+        public QueryTranslator(DataStage stage, QuerySpecification query, PaginationParam paginationParam, Tuple<Set<SpaceName>, Set<UUID>> accessFilter, boolean countQuery) {
             this.substitutionMap = Map.of(
                     "stage", Neo4JCommons.getStageLabel(stage, ":"),
                     "rootType", ":" + Neo4JCommons.sanitizeLabel(query.getMeta().getType())
@@ -77,6 +84,7 @@ public class QueryToCypherService {
             this.query = query;
             this.accessFilter = accessFilter;
             this.responseVocab = query.getMeta().getResponseVocab();
+            this.countQuery = countQuery;
         }
 
 
@@ -141,8 +149,7 @@ public class QueryToCypherService {
             return Optional.empty();
         }
 
-
-        private PreparedCypherQuery createCypherQuery() {
+        private PreparedCypherQuery createQuery() {
             ArrayList<String> withAliases = new ArrayList<>(List.of("root"));
             if (accessFilter != null) {
                 if (!accessFilter.getA().isEmpty()) {
@@ -175,12 +182,16 @@ public class QueryToCypherService {
                 }
             }
             cypher.append("MATCH (root${stage}${rootType})\n");
-            cypher.append(relationFilter("root", Optional.empty()));
+            String rootFilter = relationFilter("root", Optional.empty());
+            if(StringUtils.isNotBlank(rootFilter)){
+                directAccessFilterForRoot = true;
+            }
+            cypher.append(rootFilter);
             handleStructure(query.getStructure(), "root", withAliases);
             return new PreparedCypherQuery(new StringSubstitutor(this.substitutionMap).replace(cypher), aliasMap, filterParameters);
         }
 
-        private String filterValue(QuerySpecification.ValueFilter valueFilter, String source){
+        private String filterValue(QuerySpecification.ValueFilter valueFilter, String source) {
             if (Objects.requireNonNull(valueFilter.getOp()) == QuerySpecification.FilterOperation.IS_EMPTY) {
                 return new StringSubstitutor(Map.of("source", source)).replace("${source} IS NULL OR ${source} = [] OR ${source} = {} or ${source} = \"\"");
             } else {
@@ -200,7 +211,12 @@ public class QueryToCypherService {
 
         private void returnStatement(Map<String, String> returnMap, Map<String, QuerySpecification.ValueFilter> filterMap, Set<String> requiredSet) {
             if (!filterMap.isEmpty() || !requiredSet.isEmpty()) {
-                cypher.append("WHERE ");
+                if(directAccessFilterForRoot != null && directAccessFilterForRoot) {
+                    cypher.append("AND ");
+                }
+                else {
+                    cypher.append("WHERE ");
+                }
             }
             if (!filterMap.isEmpty()) {
                 Iterator<String> iterator = filterMap.keySet().iterator();
@@ -209,7 +225,7 @@ public class QueryToCypherService {
                     String source = returnMap.get(target);
                     QuerySpecification.ValueFilter valueFilter = filterMap.get(target);
                     cypher.append(filterValue(valueFilter, source));
-                    if(iterator.hasNext()) {
+                    if (iterator.hasNext()) {
                         cypher.append(" AND ");
                     }
                 }
@@ -229,14 +245,26 @@ public class QueryToCypherService {
             if (!filterMap.isEmpty() || !requiredSet.isEmpty()) {
                 cypher.append("\n");
             }
+            if(countQuery){
+                cypher.append("RETURN count(root)");
+            }
+            else {
+                if (paginationParam != null) {
+                    cypher.append("ORDER BY root._id\n"); //If we paginate, we need to ensure the order to have a consistent list
+                    cypher.append(String.format("SKIP %d\n", paginationParam.getFrom()));
+                    if (paginationParam.getSize() != null) {
+                        cypher.append(String.format("LIMIT %d\n", paginationParam.getSize()));
+                    }
+                }
 
-            cypher.append("RETURN {");
-            List<String> innerItems = new ArrayList<>();
-            returnMap.forEach((k, v) -> {
-                innerItems.add(String.format(String.format("%s: %s", k, v)));
-            });
-            cypher.append(String.join(", ", innerItems));
-            cypher.append('}');
+                cypher.append("RETURN {");
+                List<String> innerItems = new ArrayList<>();
+                returnMap.forEach((k, v) -> {
+                    innerItems.add(String.format(String.format("%s: %s", k, v)));
+                });
+                cypher.append(String.join(", ", innerItems));
+                cypher.append('}');
+            }
         }
 
         private Optional<String> translateStandardFilterOp(QuerySpecification.FilterOperation operation) {
@@ -262,7 +290,8 @@ public class QueryToCypherService {
 
 
         private String withStatements(Map<String, String> returnMap, Map<String, QuerySpecification.ValueFilter> filterMap, List<String> path, String currentAlias, Set<String> requiredSet, boolean flat) {
-            List<String> relevantSubPath = path.subList(0, Math.min(path.size(), path.indexOf(currentAlias)+1));
+            directAccessFilterForRoot = false; //There
+            List<String> relevantSubPath = path.subList(0, Math.min(path.size(), path.indexOf(currentAlias) + 1));
             cypher.append("WITH ");
             cypher.append(String.join(", ", relevantSubPath.subList(0, relevantSubPath.size() - 1)));
             cypher.append(", ");
@@ -271,13 +300,13 @@ public class QueryToCypherService {
             }
             cypher.append("collect(");
             cypher.append(String.format("CASE WHEN %s IS NOT NULL ", relevantSubPath.getLast()));
-            if(!CollectionUtils.isEmpty(requiredSet)){
+            if (!CollectionUtils.isEmpty(requiredSet)) {
                 cypher.append("AND ");
                 Iterator<String> iterator = requiredSet.iterator();
                 while (iterator.hasNext()) {
                     String required = iterator.next();
                     cypher.append(String.format("%s IS NOT NULL AND NOT %s = [] AND NOT %s = {} ", required, required, required));
-                    if(iterator.hasNext()){
+                    if (iterator.hasNext()) {
                         cypher.append("AND ");
                     }
                 }
@@ -321,6 +350,10 @@ public class QueryToCypherService {
             return resultAlias;
         }
 
+        private boolean isRelevantForQuery(String currentAlias, QuerySpecification.StructureItem structureItem){
+            return !countQuery || (currentAlias.equals("root") && structureItem.getFilter() != null) || structureItem.isRequired();
+        }
+
         private String handleStructure(List<QuerySpecification.StructureItem> structure, String
                 currentAlias, List<String> withAliases) {
             if (structure != null) {
@@ -329,60 +362,63 @@ public class QueryToCypherService {
                 Map<String, QuerySpecification.ValueFilter> filterMap = new HashMap<>();
                 Set<String> requiredSet = new HashSet<>();
                 structure.forEach(structureItem -> {
-                    //We only treat structure items containing a path
-                    if (!structureItem.getPath().isEmpty()) {
-                        String propertyName = structureItem.getPropertyName().getId();
-                        if (StringUtils.isNotBlank(responseVocab) && propertyName.startsWith(responseVocab)) {
-                            propertyName = propertyName.substring(responseVocab.length());
-                        }
-                        if (structureItem.getStructure() == null) {
-                            if (structureItem.getPath().size() == 1) {
-                                //It's a direct element and there is no further structure defined -> we expect this to be a property, not a relation
-                                String alias = handleLeaf(returnMap, currentAlias, structureItem.getPath().getFirst(), propertyName, null);
-                                if (structureItem.getFilter() != null) {
-                                    filterMap.put(alias, structureItem.getFilter());
-                                }
-                                if (structureItem.isRequired()) {
-                                    requiredSet.add(alias);
+                        //We only treat structure items containing a path
+                        if (!structureItem.getPath().isEmpty() && isRelevantForQuery(currentAlias, structureItem)) {
+                            String propertyName = structureItem.getPropertyName().getId();
+                            if (StringUtils.isNotBlank(responseVocab) && propertyName.startsWith(responseVocab)) {
+                                propertyName = propertyName.substring(responseVocab.length());
+                            }
+                            if (structureItem.getStructure() == null) {
+                                if (structureItem.getPath().size() == 1) {
+                                    if(!countQuery || (currentAlias.equals("root") && structureItem.getFilter() != null) || structureItem.isRequired()) {
+                                        //It's a direct element and there is no further structure defined -> we expect this to be a property, not a relation
+                                        String alias = handleLeaf(returnMap, currentAlias, structureItem.getPath().getFirst(), propertyName, null);
+                                        if (structureItem.getFilter() != null) {
+                                            filterMap.put(alias, structureItem.getFilter());
+                                        }
+                                        if (structureItem.isRequired()) {
+                                            requiredSet.add(alias);
+                                        }
+                                    }
+                                } else {
+                                    // it's a leaf but we first need to walk the path...
+                                    String parentAlias = currentAlias;
+                                    List<String> innerAliases = new ArrayList<>(newWithAliases);
+                                    List<QuerySpecification.Path> subpath = structureItem.getPath().subList(0, structureItem.getPath().size() - 1);
+                                    for (QuerySpecification.Path structureItemPath : subpath) {
+                                        parentAlias = handleRelation(structureItemPath, parentAlias, structureItem.isRequired());
+                                        innerAliases.add(parentAlias);
+                                    }
+                                    Map<String, String> m = new HashMap<>();
+                                    Map<String, QuerySpecification.ValueFilter> f = new HashMap<>();
+                                    String alias = handleLeaf(m, parentAlias, structureItem.getPath().getLast(), propertyName, parentAlias);
+                                    if (structureItem.getFilter() != null) {
+                                        f.put(alias, structureItem.getFilter());
+                                    }
+                                    String resultAlias = withStatements(m, f, innerAliases, alias, Collections.emptySet(), true);
+                                    if (structureItem.isRequired()) {
+                                        requiredSet.add(resultAlias);
+                                    }
+                                    returnMap.put(parentAlias, resultAlias);
+                                    newWithAliases.add(resultAlias);
                                 }
                             } else {
-                                // it's a leaf but we first need to walk the path...
+                                //It's a substructure, so we need to traverse the graph
                                 String parentAlias = currentAlias;
                                 List<String> innerAliases = new ArrayList<>(newWithAliases);
-                                List<QuerySpecification.Path> subpath = structureItem.getPath().subList(0, structureItem.getPath().size() - 1);
-                                for (QuerySpecification.Path structureItemPath : subpath) {
+                                for (QuerySpecification.Path structureItemPath : structureItem.getPath()) {
                                     parentAlias = handleRelation(structureItemPath, parentAlias, structureItem.isRequired());
                                     innerAliases.add(parentAlias);
                                 }
-                                Map<String, String> m = new HashMap<>();
-                                Map<String, QuerySpecification.ValueFilter> f = new HashMap<>();
-                                String alias = handleLeaf(m, parentAlias, structureItem.getPath().getLast(), propertyName, parentAlias);
-                                if (structureItem.getFilter() != null) {
-                                    f.put(alias, structureItem.getFilter());
-                                }
-                                String resultAlias = withStatements(m, f, innerAliases, alias, Collections.emptySet(), true);
+                                aliasMap.put(parentAlias, propertyName);
+                                String substructureAlias = handleStructure(structureItem.getStructure(), parentAlias, innerAliases);
+                                returnMap.put(parentAlias, substructureAlias);
+                                newWithAliases.add(substructureAlias);
                                 if (structureItem.isRequired()) {
-                                    requiredSet.add(resultAlias);
+                                    requiredSet.add(substructureAlias);
                                 }
-                                returnMap.put(parentAlias, resultAlias);
-                                newWithAliases.add(resultAlias);
                             }
-                        } else {
-                            //It's a substructure, so we need to traverse the graph
-                            String parentAlias = currentAlias;
-                            List<String> innerAliases = new ArrayList<>(newWithAliases);
-                            for (QuerySpecification.Path structureItemPath : structureItem.getPath()) {
-                                parentAlias = handleRelation(structureItemPath, parentAlias, structureItem.isRequired());
-                                innerAliases.add(parentAlias);
-                            }
-                            aliasMap.put(parentAlias, propertyName);
-                            String substructureAlias = handleStructure(structureItem.getStructure(), parentAlias, innerAliases);
-                            returnMap.put(parentAlias, substructureAlias);
-                            newWithAliases.add(substructureAlias);
-                            if (structureItem.isRequired()) {
-                                requiredSet.add(substructureAlias);
-                            }
-                        }
+
                     }
                 });
                 if (currentAlias.equals("root")) {

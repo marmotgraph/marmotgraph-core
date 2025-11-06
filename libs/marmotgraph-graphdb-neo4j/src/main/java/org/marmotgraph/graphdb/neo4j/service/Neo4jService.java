@@ -128,6 +128,12 @@ public class Neo4jService {
 
     }
 
+
+    public Long queryCount(String queryString, Map<String, String> params){
+        return neo4jClient.query(queryString).bindAll(params.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))).fetchAs(Long.class)
+                .one().orElse(null);
+    }
+
     public Collection<NormalizedJsonLd> query(String queryString, Map<String, String> params, Map<String, String> aliasMap, PaginationParam paginationParam){
         return neo4jClient.query(queryString).bindAll(params.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))).fetchAs(NormalizedJsonLd.class)
                 .mappedBy((t, r) -> new NormalizedJsonLd((Map<String, Object>)recursivelyMapResult(r.asMap().values().iterator().next(), aliasMap))).all();

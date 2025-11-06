@@ -60,11 +60,9 @@ public class GraphDBAPI implements GraphDB {
         service.upsert(instanceId, stage, spaceName, payload, incomingRelations);
     }
 
-    @Override
-    public Tuple<Collection<NormalizedJsonLd>, Long> executeQuery(QuerySpecification query, DataStage stage, Map<String, String> params, PaginationParam paginationParam, Tuple<Set<SpaceName>, Set<UUID>> accessFilter){
-        PreparedCypherQuery cypherQuery = queryToCypherService.createCypherQuery(stage, query, paginationParam, accessFilter);
+    private Map<String, String> evaluateParameters(PreparedCypherQuery query, Map<String, String> params){
         Map<String, String> evaluatedParameters = new HashMap<>();
-        cypherQuery.filterMap().forEach((k, v) -> {
+        query.filterMap().forEach((k, v) -> {
             String value = null;
             if(StringUtils.isNotBlank(v.getParameter())){
                 String parametrized = params.get(v.getParameter().trim());
@@ -77,9 +75,19 @@ public class GraphDBAPI implements GraphDB {
             }
             evaluatedParameters.put(k, value);
         });
+        return evaluatedParameters;
+    }
 
-        //TODO fetch total results
-        return new Tuple<>(service.query(cypherQuery.query(), evaluatedParameters, cypherQuery.aliasMap(), paginationParam), null);
+    @Override
+    public Tuple<Collection<NormalizedJsonLd>, Long> executeQuery(QuerySpecification query, DataStage stage, Map<String, String> params, PaginationParam paginationParam, Tuple<Set<SpaceName>, Set<UUID>> accessFilter){
+        Tuple<PreparedCypherQuery, Optional<PreparedCypherQuery>> cypherQuery = queryToCypherService.createCypherQuery(stage, query, paginationParam, accessFilter);
+        Collection<NormalizedJsonLd> dataQuery = service.query(cypherQuery.getA().query(), evaluateParameters(cypherQuery.getA(), params), cypherQuery.getA().aliasMap(), paginationParam);
+        Long totalCount = null;
+        if(cypherQuery.getB().isPresent()){
+            PreparedCypherQuery countQuery = cypherQuery.getB().get();
+            totalCount = service.queryCount(countQuery.query(), evaluateParameters(countQuery, params));
+        }
+        return new Tuple<>(dataQuery, totalCount);
     }
 
     @Override
