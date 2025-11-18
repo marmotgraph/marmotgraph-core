@@ -68,7 +68,7 @@ public class InstancesV3Beta {
     @PostMapping("/instances")
     @Simple
     public ResultWithExecutionDetails<NormalizedJsonLd> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \"" + SpaceName.PRIVATE_SPACE + "\" if you want to store it to your private space") String space, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
-        return instancesV3.createNewInstance(jsonLdDoc, space, responseConfiguration);
+        return instancesV3.createNewInstance(jsonLdDoc, space, false, false, responseConfiguration);
     }
 
 
@@ -82,7 +82,7 @@ public class InstancesV3Beta {
     @PostMapping("/instances/{id}")
     @Simple
     public ResultWithExecutionDetails<NormalizedJsonLd> createNewInstanceWithId(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \"" + SpaceName.PRIVATE_SPACE + "\" if you want to store it to your private space") String space, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
-        return instancesV3.createNewInstanceWithId(jsonLdDoc, id, space, responseConfiguration);
+        return instancesV3.createNewInstanceWithId(jsonLdDoc, id, space, false, false, responseConfiguration);
     }
 
 
@@ -90,7 +90,7 @@ public class InstancesV3Beta {
     @PutMapping("/instances/{id}")
     @Simple
     public ResultWithExecutionDetails<NormalizedJsonLd> contributeToInstanceFullReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
-        return instancesV3.contributeToInstanceFullReplacement(jsonLdDoc, id, responseConfiguration);
+        return instancesV3.contributeToInstanceFullReplacement(jsonLdDoc, id, false, responseConfiguration);
     }
 
     @Operation(summary = "Partially update contribution to an existing instance")

@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Test;
 import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.jsonld.IndexedJsonLdDoc;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
-import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.core.api.testutils.TestDataFactory;
@@ -47,15 +46,12 @@ class WorkflowSystemTest extends AbstractInstancesLoadTest {
     @Autowired
     private InstancesV3 instances;
 
-    @Autowired
-    private IdUtils idUtils;
-
 
     @Test
     void testReleaseAndUnreleaseAndReReleaseInstance() {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
-        ResultWithExecutionDetails<NormalizedJsonLd> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
+        ResultWithExecutionDetails<NormalizedJsonLd> instance = instances.createNewInstance(payload, "test", false, false, DEFAULT_RESPONSE_CONFIG);
         String id = instance.getData().id();
         IndexedJsonLdDoc from = IndexedJsonLdDoc.from(instance.getData());
 
@@ -80,7 +76,7 @@ class WorkflowSystemTest extends AbstractInstancesLoadTest {
     void testInsertAndDeleteInstance() throws IOException {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
-        ResultWithExecutionDetails<NormalizedJsonLd> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
+        ResultWithExecutionDetails<NormalizedJsonLd> instance = instances.createNewInstance(payload, "test", false, false, DEFAULT_RESPONSE_CONFIG);
         UUID id = instance.getData().idAsUUID();
 
         //When
@@ -100,7 +96,7 @@ class WorkflowSystemTest extends AbstractInstancesLoadTest {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
 
-        ResultWithExecutionDetails<NormalizedJsonLd> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
+        ResultWithExecutionDetails<NormalizedJsonLd> instance = instances.createNewInstance(payload, "test", false, false, DEFAULT_RESPONSE_CONFIG);
         UUID id = instance.getData().idAsUUID();
 
         //When
@@ -117,7 +113,7 @@ class WorkflowSystemTest extends AbstractInstancesLoadTest {
     void testFullCycle() throws IOException {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
-        ResultWithExecutionDetails<NormalizedJsonLd> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
+        ResultWithExecutionDetails<NormalizedJsonLd> instance = instances.createNewInstance(payload, "test", false, false, DEFAULT_RESPONSE_CONFIG);
         UUID id = instance.getData().idAsUUID();
         IndexedJsonLdDoc from = IndexedJsonLdDoc.from(instance.getData());
 

@@ -53,7 +53,7 @@ public class CreateInstanceWithSpecifiedUUIDTest extends AbstractInstanceTest {
 
     @Override
     protected void run(){
-        response = instances.createNewInstanceWithId(testData, clientSpecifiedUUID, "functionalityTest", defaultResponseConfiguration);
+        response = instances.createNewInstanceWithId(testData, clientSpecifiedUUID, "functionalityTest", false, false, defaultResponseConfiguration);
     }
 
 }

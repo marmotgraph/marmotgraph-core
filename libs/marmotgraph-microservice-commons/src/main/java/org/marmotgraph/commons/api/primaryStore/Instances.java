@@ -24,6 +24,7 @@
 
 package org.marmotgraph.commons.api.primaryStore;
 
+import org.marmotgraph.commons.Tuple;
 import org.marmotgraph.commons.exception.AmbiguousException;
 import org.marmotgraph.commons.exception.AmbiguousIdException;
 import org.marmotgraph.commons.jsonld.InstanceId;
@@ -50,7 +51,7 @@ public interface Instances {
     @ExposesData
     NormalizedJsonLd getInstanceById(UUID id, DataStage stage, boolean removeInternalProperties);
 
-    NormalizedJsonLd getNativeInstanceById(UUID id, String userId);
+    Tuple<NormalizedJsonLd, String> getNativeInstanceById(UUID id, String userId);
 
     ReleaseStatus getReleaseStatus(UUID id, ReleaseTreeScope releaseTreeScope);
 

@@ -117,7 +117,7 @@ public class TestSimpleQueryTest extends AbstractTest {
     }
 
     private NormalizedJsonLd createTestInstance(JsonLdDoc doc, String space){
-        return instances.createNewInstance(doc, space, defaultResponseConfiguration).getData();
+        return instances.createNewInstance(doc, space, false, false, defaultResponseConfiguration).getData();
     }
 
     @Override

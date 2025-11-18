@@ -40,13 +40,16 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 
-@Profile("neo4j")
 @Component
 public class TypesAPI implements Types.Client {
 
     @Override
     public Paginated<TypeInformation> listTypes(DataStage stage, String space, boolean withProperties,
                                                 boolean withIncomingLinks, PaginationParam paginationParam) {
+        // SELECT count(i.uuid) AS count, t.types, i.space_name FROM inferred_payload_types t LEFT JOIN instance_information i ON i.uuid = t.inferred_payload_uuid WHERE i.space_name IN ('demo') OR i.uuid IN ('f00ca0f7-4086-4d38-b1ac-6f197f23c02c') GROUP BY t.types, i.space_name;
+
+
+
         throw new NotImplementedException();
     }
 

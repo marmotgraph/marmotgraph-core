@@ -99,7 +99,7 @@ class ReleaseSystemTest extends AbstractInstancesLoadTest {
         List<ResultWithExecutionDetails<NormalizedJsonLd>> l = new ArrayList<>();
         for (int i = 0; i < smallBatchInsertion; i++) {
             Mockito.doReturn(i).when(testInformation).getExecutionNumber();
-            ResultWithExecutionDetails<NormalizedJsonLd> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
+            ResultWithExecutionDetails<NormalizedJsonLd> instance = instances.createNewInstance(payload, "test", false, false, DEFAULT_RESPONSE_CONFIG);
             l.add(instance);
         }
 

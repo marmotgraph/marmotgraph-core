@@ -48,11 +48,11 @@ public class CoreQueryController {
     private final CoreInstanceController instanceController;
 
     public ResultWithExecutionDetails<NormalizedJsonLd> createNewQuery(NormalizedJsonLd query, UUID queryId, SpaceName space) {
-        return instanceController.createNewInstance(query, queryId, space, new ExtendedResponseConfiguration());
+        return instanceController.createNewInstance(query, queryId, space, false, false,  new ExtendedResponseConfiguration());
     }
 
     public ResultWithExecutionDetails<NormalizedJsonLd> updateQuery(NormalizedJsonLd query, InstanceId instanceId) {
-        return instanceController.contributeToInstance(query, instanceId, false, new ExtendedResponseConfiguration());
+        return instanceController.contributeToInstance(query, instanceId, false, true, new ExtendedResponseConfiguration());
     }
 
     public Paginated<NormalizedJsonLd> listQueries(String search, PaginationParam paginationParam) {

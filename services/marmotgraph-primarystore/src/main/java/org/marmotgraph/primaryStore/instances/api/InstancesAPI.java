@@ -104,10 +104,10 @@ public class InstancesAPI implements Instances.Client {
     }
 
     @Override
-    public NormalizedJsonLd getNativeInstanceById(UUID id, String userId) {
-        NormalizedJsonLd normalizedJsonLd = payloadService.getNativeInstanceById(id, userId).orElse(null);
-        if(normalizedJsonLd != null) {
-            normalizedJsonLd.removeAllInternalProperties();
+    public Tuple<NormalizedJsonLd, String> getNativeInstanceById(UUID id, String userId) {
+        Tuple<NormalizedJsonLd, String> normalizedJsonLd = payloadService.getNativeInstanceById(id, userId).orElse(null);
+        if(normalizedJsonLd != null && normalizedJsonLd.getA()!=null) {
+            normalizedJsonLd.getA().removeAllInternalProperties();
         }
         return normalizedJsonLd;
     }
@@ -253,7 +253,7 @@ public class InstancesAPI implements Instances.Client {
     @Override
     public StreamedQueryResult executeQuery(MarmotGraphQuery query, Map<String, String> params, PaginationParam paginationParam) {
         //FIXME evict the intermediate step once it works properly
-        query.getPayload().recursiveVisitOfProperties(query.getPayload(), Collections.emptyList(), query.getPayload(),
+        NormalizedJsonLd.recursiveVisitOfProperties(query.getPayload(), Collections.emptyList(), query.getPayload(),
                 (name, value, path, parentMap, orderNumber) -> {
                     String queryPrefix = "https://core.kg.ebrains.eu/vocab/query/";
                     if(name.startsWith(queryPrefix)){

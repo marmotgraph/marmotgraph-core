@@ -97,10 +97,13 @@ public class InstancesV3 {
             @RequestParam(value = "space")
             @Parameter(description = "The space name the instance shall be stored in or \"" + SpaceName.PRIVATE_SPACE + "\" if you want to store it to your private space")
             String space,
-
+            @RequestParam(value="updateIfExists", defaultValue = "false")
+            boolean updateIfExists,
+            @RequestParam(value="skipIfUnchanged", defaultValue = "false")
+            boolean skipIfUnchanged,
             @ParameterObject ExtendedResponseConfiguration responseConfiguration
     ) {
-        return createNewInstanceWithId(jsonLdDoc, UUID.randomUUID(), space, responseConfiguration);
+        return createNewInstanceWithId(jsonLdDoc, UUID.randomUUID(), space, updateIfExists, skipIfUnchanged, responseConfiguration);
     }
 
 
@@ -123,15 +126,17 @@ public class InstancesV3 {
     public ResultWithExecutionDetails<NormalizedJsonLd> createNewInstanceWithId(
             @RequestBody JsonLdDoc jsonLdDoc,
             @PathVariable("id") UUID id,
-
             @RequestParam(value = "space")
             @Parameter(description = "The space name the instance shall be stored in or \"" + SpaceName.PRIVATE_SPACE + "\" if you want to store it to your private space")
             String space,
-
+            @RequestParam(value="updateIfExists", defaultValue = "false")
+            boolean updateIfExists,
+            @RequestParam(value="skipIfUnchanged", defaultValue = "false")
+            boolean skipIfUnchanged,
             @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
         SpaceName spaceName = authContext.resolveSpaceName(space);
         logger.debug(String.format("Creating new instance with id %s", id));
-        ResultWithExecutionDetails<NormalizedJsonLd> newInstance = instanceController.createNewInstance(normalizePayload(jsonLdDoc, true), id, spaceName, responseConfiguration);
+        ResultWithExecutionDetails<NormalizedJsonLd> newInstance = instanceController.createNewInstance(normalizePayload(jsonLdDoc, true), id, spaceName, updateIfExists, skipIfUnchanged, responseConfiguration);
         logger.debug(String.format("Done creating new instance with id %s", id));
         return newInstance;
     }
@@ -149,13 +154,13 @@ public class InstancesV3 {
         return new NormalizedJsonLd(jsonLdDoc);
     }
 
-    private ResultWithExecutionDetails<NormalizedJsonLd> contributeToInstance(NormalizedJsonLd normalizedJsonLd, UUID id, ExtendedResponseConfiguration responseConfiguration, boolean removeNonDeclaredFields) {
+    private ResultWithExecutionDetails<NormalizedJsonLd> contributeToInstance(NormalizedJsonLd normalizedJsonLd, UUID id, boolean skipIfUnchanged, ExtendedResponseConfiguration responseConfiguration, boolean removeNonDeclaredFields) {
         logger.debug(String.format("Contributing to instance with id %s", id));
         final InstanceId instanceId = instanceController.findIdForContribution(id, normalizedJsonLd.identifiers());
         if (instanceId == null) {
             return null;
         }
-        ResultWithExecutionDetails<NormalizedJsonLd> result = instanceController.contributeToInstance(normalizedJsonLd, instanceId, removeNonDeclaredFields, responseConfiguration);
+        ResultWithExecutionDetails<NormalizedJsonLd> result = instanceController.contributeToInstance(normalizedJsonLd, instanceId, skipIfUnchanged, removeNonDeclaredFields, responseConfiguration);
         logger.debug(String.format("Done contributing to instance with id %s", id));
         return result;
     }
@@ -168,9 +173,11 @@ public class InstancesV3 {
     public ResultWithExecutionDetails<NormalizedJsonLd> contributeToInstanceFullReplacement(
             @RequestBody JsonLdDoc jsonLdDoc,
             @PathVariable("id") UUID id,
+            @RequestParam(value="skipIfUnchanged", defaultValue = "false")
+            boolean skipIfUnchanged,
             @ParameterObject ExtendedResponseConfiguration responseConfiguration
     ) {
-        return contributeToInstance(normalizePayload(jsonLdDoc, true), id, responseConfiguration, true);
+        return contributeToInstance(normalizePayload(jsonLdDoc, true), id, skipIfUnchanged, responseConfiguration, true);
     }
 
     @Operation(summary = "Partially update contribution to an existing instance")
@@ -183,7 +190,7 @@ public class InstancesV3 {
             @PathVariable("id") UUID id,
             @ParameterObject ExtendedResponseConfiguration responseConfiguration
     ) {
-        return contributeToInstance(normalizePayload(jsonLdDoc, false), id, responseConfiguration, false);
+        return contributeToInstance(normalizePayload(jsonLdDoc, false), id, false, responseConfiguration, false);
     }
 
     @Operation(summary = "Get the instance")

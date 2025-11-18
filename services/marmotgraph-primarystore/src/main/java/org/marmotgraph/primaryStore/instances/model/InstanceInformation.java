@@ -53,5 +53,6 @@ public class InstanceInformation {
 
     @ElementCollection
     @CollectionTable(name="alternative_ids", indexes = @Index(name="alternativeIdLookup", unique = true, columnList = "alternative_ids"))
+    @Column(length = 2000)
     private Set<String> alternativeIds;
 }

@@ -26,6 +26,8 @@ package org.marmotgraph.core.controller;
 
 import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.AuthContext;
+import org.marmotgraph.commons.JsonAdapter;
+import org.marmotgraph.commons.Tuple;
 import org.marmotgraph.commons.api.authentication.Invitation;
 import org.marmotgraph.commons.api.primaryStore.Events;
 import org.marmotgraph.commons.api.primaryStore.Instances;
@@ -46,6 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.util.DigestUtils;
 
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -65,6 +68,7 @@ public class CoreInstanceController {
     private final Scopes.Client scopes;
     private final Invitation.Client invitation;
     private final Permissions permissions;
+    private final JsonAdapter jsonAdapter;
 
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -194,20 +198,32 @@ public class CoreInstanceController {
      *
      * @throws CancelProcessException in case an instance with the same id (or one of the given identifiers in http://schema.org/identifier) already exists in the DB
      */
-    public ResultWithExecutionDetails<NormalizedJsonLd> createNewInstance(NormalizedJsonLd normalizedJsonLd, UUID id, SpaceName spaceName, ExtendedResponseConfiguration responseConfiguration) {
-        checkIdForCreation(id, normalizedJsonLd.allIdentifiersIncludingId());
-        normalizedJsonLd.setFieldUpdateTimes(new NormalizedJsonLd.FieldUpdateTimes(normalizedJsonLd.keySet().stream().collect(Collectors.toMap(k -> k, k -> ZonedDateTime.now().withZoneSameInstant(ZoneOffset.UTC)))));
-        Event upsertEvent = createUpsertEvent(id, normalizedJsonLd, spaceName);
-        InstanceId instanceId = events.postEvent(upsertEvent);
-        return handleIngestionResponse(responseConfiguration, Collections.singleton(instanceId));
+    public ResultWithExecutionDetails<NormalizedJsonLd> createNewInstance(NormalizedJsonLd normalizedJsonLd, UUID id, SpaceName spaceName, boolean updateIfExists, boolean skipIfUnchanged, ExtendedResponseConfiguration responseConfiguration) {
+        InstanceId instanceId = findIdForContribution(id, normalizedJsonLd.allIdentifiersIncludingId());
+        if (instanceId != null) {
+            if (!updateIfExists) {
+                final ResultWithExecutionDetails<?> nok = ResultWithExecutionDetails.nok(HttpStatus.CONFLICT.value(), String.format("The payload you're providing is pointing to the instance %s (either by the %s or the %s field it contains). Please do a PUT or a PATCH to the mentioned id instead.", instanceId.serialize(), JsonLdConsts.ID, SchemaOrgVocabulary.IDENTIFIER), instanceId.getUuid());
+                throw new CancelProcessException(nok, HttpStatus.CONFLICT.value());
+            } else {
+                return contributeToInstance(normalizedJsonLd, instanceId, skipIfUnchanged, true, responseConfiguration);
+            }
+        } else {
+            normalizedJsonLd.setFieldUpdateTimes(new NormalizedJsonLd.FieldUpdateTimes(normalizedJsonLd.keySet().stream().collect(Collectors.toMap(k -> k, k -> ZonedDateTime.now().withZoneSameInstant(ZoneOffset.UTC)))));
+            Event upsertEvent = createUpsertEvent(id, normalizedJsonLd, spaceName);
+            instanceId = events.postEvent(upsertEvent);
+            return handleIngestionResponse(responseConfiguration, Collections.singleton(instanceId));
+        }
     }
 
 
-    public ResultWithExecutionDetails<NormalizedJsonLd> contributeToInstance(NormalizedJsonLd normalizedJsonLd, InstanceId instanceId, boolean removeNonDeclaredProperties, ResponseConfiguration responseConfiguration) {
-        normalizedJsonLd = patchInstance(instanceId, normalizedJsonLd, removeNonDeclaredProperties);
-        Event upsertEvent = createUpsertEvent(instanceId.getUuid(), normalizedJsonLd, instanceId.getSpace());
-        InstanceId updatedInstanceId = events.postEvent(upsertEvent);
-        return handleIngestionResponse(responseConfiguration, Collections.singleton(updatedInstanceId));
+    public ResultWithExecutionDetails<NormalizedJsonLd> contributeToInstance(NormalizedJsonLd normalizedJsonLd, InstanceId instanceId, boolean skipIfUnchanged, boolean removeNonDeclaredProperties, ResponseConfiguration responseConfiguration) {
+        normalizedJsonLd = patchInstance(instanceId, normalizedJsonLd, skipIfUnchanged, removeNonDeclaredProperties);
+        if (normalizedJsonLd != null) {
+            Event upsertEvent = createUpsertEvent(instanceId.getUuid(), normalizedJsonLd, instanceId.getSpace());
+            InstanceId updatedInstanceId = events.postEvent(upsertEvent);
+            return handleIngestionResponse(responseConfiguration, Collections.singleton(updatedInstanceId));
+        }
+        return ResultWithExecutionDetails.ok(null, "Skipping because the provided payload is unchanged.");
     }
 
 
@@ -237,7 +253,7 @@ public class CoreInstanceController {
             if (permissions.hasPermission(authContext.getUserWithRoles(), Functionality.CREATE, targetSpace)) {
                 //FIXME make this transactional.
                 deleteInstance(id);
-                return createNewInstance(instance, id, targetSpace, responseConfiguration);
+                return createNewInstance(instance, id, targetSpace, false, false, responseConfiguration);
             } else {
                 throw new ForbiddenException(String.format("You are not allowed to move an instance to the space %s", targetSpace));
             }
@@ -250,14 +266,21 @@ public class CoreInstanceController {
     }
 
 
-    private NormalizedJsonLd patchInstance(InstanceId instanceId, NormalizedJsonLd normalizedJsonLd, boolean removeNonDefinedKeys) {
-        NormalizedJsonLd instance = instances.getNativeInstanceById(instanceId.getUuid(), authContext.getUserId());
-        if (instance == null) {
+    private NormalizedJsonLd patchInstance(InstanceId instanceId, NormalizedJsonLd normalizedJsonLd, boolean skipIfUnchanged, boolean removeNonDefinedKeys) {
+        Tuple<NormalizedJsonLd, String> instanceWithHash = instances.getNativeInstanceById(instanceId.getUuid(), authContext.getUserId());
+        if (instanceWithHash == null) {
             NormalizedJsonLd.FieldUpdateTimes updateTimes = new NormalizedJsonLd.FieldUpdateTimes();
             normalizedJsonLd.keySet().forEach(k -> updateTimes.put(k, ZonedDateTime.now().withZoneSameInstant(ZoneOffset.UTC)));
             normalizedJsonLd.setFieldUpdateTimes(updateTimes);
             return normalizedJsonLd;
         } else {
+            if(skipIfUnchanged){
+                String newHash = DigestUtils.md5DigestAsHex(jsonAdapter.toJson(normalizedJsonLd).getBytes());
+                if(newHash.equals(instanceWithHash.getB())){
+                    return null;
+                }
+            }
+            NormalizedJsonLd instance = instanceWithHash.getA();
             NormalizedJsonLd.FieldUpdateTimes updateTimesFromInstance = instance.getFieldUpdateTimes();
             NormalizedJsonLd.FieldUpdateTimes updateTimes = updateTimesFromInstance != null ? updateTimesFromInstance : new NormalizedJsonLd.FieldUpdateTimes();
             Set<String> oldKeys = new HashSet<>(instance.keySet());

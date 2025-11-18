@@ -71,9 +71,7 @@ public class EventProcessor {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    @Transactional
-    // We spawn the transaction across the whole event persistence to ensure that we don't end up with partial data
-    public InstanceId postEvent(Event event) {
+   public InstanceId postEvent(Event event) {
         SpaceName space = evaluateSpace(event).orElseThrow(() -> new IllegalStateException(String.format("Space information for instance %s is missing", event.getInstanceId())));
         //We only require the extended space information for INSERT and UPDATE
         Optional<Space> spaceInformation;
@@ -86,7 +84,7 @@ public class EventProcessor {
                 spaceInformation = Optional.empty();
         }
         PersistedEvent eventToPersist = checkPermission(event, space, spaceInformation);
-        PersistedEvent persistedEvent = persistEvent(eventToPersist);
+        PersistedEvent persistedEvent = eventService.persistEvent(eventToPersist);
         processEvent(persistedEvent, spaceInformation);
         return new InstanceId(persistedEvent.getInstanceId(), persistedEvent.getSpaceName());
     }
@@ -116,7 +114,7 @@ public class EventProcessor {
                 Tuple<NormalizedJsonLd, Set<IncomingRelation>> preparedToIndex = payloadService.prepareToIndex(inferredDocumentPayload, incomingAndOutgoingRelations);
                 indexing.upsert(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), preparedToIndex.getA(), DataStage.IN_PROGRESS, preparedToIndex.getB());
                 if(autorelease){
-                    Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> releasedIncomingAndOutgoingRelations = payloadService.release(persistedEvent.getInstanceId(), jsonAdapter.toJson(inferredDocumentPayload), inferredDocumentPayload.findOutgoingRelations(), persistedEvent.getReportedTimeStampInMs(), instanceInformation, inferredDocumentPayload.types());
+                    Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> releasedIncomingAndOutgoingRelations = payloadService.release(persistedEvent.getInstanceId(), inferredDocumentPayload, inferredDocumentPayload.findOutgoingRelations(), persistedEvent.getReportedTimeStampInMs(), instanceInformation, inferredDocumentPayload.types());
                     Tuple<NormalizedJsonLd, Set<IncomingRelation>> releasedPreparedToIndex = payloadService.prepareToIndex(inferredDocumentPayload, releasedIncomingAndOutgoingRelations);
                     indexing.upsert(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), releasedPreparedToIndex.getA(), DataStage.RELEASED, releasedPreparedToIndex.getB());
                 }
@@ -127,7 +125,7 @@ public class EventProcessor {
                 break;
             case RELEASE:
                 NormalizedJsonLd payloadToRelease = payloadService.getPayloadToRelease(persistedEvent.getInstanceId());
-                Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> releasedIncomingAndOutgoingRelations = payloadService.release(persistedEvent.getInstanceId(), jsonAdapter.toJson(payloadToRelease), payloadToRelease.findOutgoingRelations(), persistedEvent.getReportedTimeStampInMs(), payloadService.getOrCreateGlobalInstanceInformation(persistedEvent.getInstanceId()), payloadToRelease.types());
+                Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> releasedIncomingAndOutgoingRelations = payloadService.release(persistedEvent.getInstanceId(), payloadToRelease, payloadToRelease.findOutgoingRelations(), persistedEvent.getReportedTimeStampInMs(), payloadService.getOrCreateGlobalInstanceInformation(persistedEvent.getInstanceId()), payloadToRelease.types());
                 Tuple<NormalizedJsonLd, Set<IncomingRelation>> releasedPreparedToIndex = payloadService.prepareToIndex(payloadToRelease, releasedIncomingAndOutgoingRelations);
                 indexing.upsert(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), releasedPreparedToIndex.getA(), DataStage.RELEASED, releasedPreparedToIndex.getB());
                 break;
@@ -201,42 +199,7 @@ public class EventProcessor {
         throw new ForbiddenException();
     }
 
-    public PersistedEvent persistEvent(PersistedEvent eventToPersist) {
-        try {
-            ensureInternalIdInPayload(eventToPersist);
-            if (Objects.requireNonNull(eventToPersist.getType()) == Event.Type.DELETE) {
-                ReleaseStatus releaseStatus = payloadService.getReleaseStatus(eventToPersist.getInstanceId());
-                if (releaseStatus != ReleaseStatus.UNRELEASED) {
-                    throw new IllegalStateException(String.format("Was not able to remove instance %s because it is released still", eventToPersist.getInstanceId()));
-                }
-            }
-            eventService.saveEvent(eventToPersist);
-            switch (eventToPersist.getType()){
-                case INSERT:
-                case UPDATE:
-                    payloadService.upsertNativePayloadFromEvent(eventToPersist);
-                    break;
-                case DELETE:
-                    // The deletion causes all contributions to be removed as well.
-                    payloadService.removeNativePayloadsFromEvent(eventToPersist);
-                    break;
-            }
-        }
-        catch (Exception e) {
-            throw new FailedEventException(eventToPersist, e);
-        }
-        return eventToPersist;
-    }
 
-    private void ensureInternalIdInPayload(@NonNull PersistedEvent persistedEvent) {
-        if (persistedEvent.getData() != null) {
-            String idFromPayload = persistedEvent.getData().id();
-            if (idFromPayload != null) {
-                //Save the original id as an "identifier"
-                persistedEvent.getData().addIdentifiers(idFromPayload);
-            }
-            persistedEvent.getData().setId(persistedEvent.getInstanceId().toString());
-        }
-    }
+
 
 }

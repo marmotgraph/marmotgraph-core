@@ -24,6 +24,7 @@
 
 package org.marmotgraph.primaryStore.indexing.service;
 
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
@@ -42,7 +43,6 @@ import java.util.UUID;
 public class IndexingService {
 
     private final org.marmotgraph.graphdb.GraphDB graphDB;
-
 
     public void delete(UUID instanceId, SpaceName spaceName, DataStage stage) {
         graphDB.delete(instanceId, spaceName, stage);

@@ -32,6 +32,10 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
+@Getter
+@Setter
 public class ReleasedPayload extends Payload {
 
+    @OneToMany(targetEntity = ReleasedProperties.class, cascade = CascadeType.ALL, mappedBy = "compositeId.uuid")
+    private List<ReleasedProperties> properties;
 }

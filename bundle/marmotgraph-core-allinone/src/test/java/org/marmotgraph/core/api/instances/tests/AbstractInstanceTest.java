@@ -44,7 +44,7 @@ public abstract class AbstractInstanceTest extends AbstractTest {
 
     protected NormalizedJsonLd createInstanceWithServerDefinedUUID(int iteration) {
         JsonLdDoc originalDoc = TestDataFactory.createTestData(smallPayload, iteration, true);
-        ResultWithExecutionDetails<NormalizedJsonLd> response = instances.createNewInstance(originalDoc, "functionalityTest", defaultResponseConfiguration);
+        ResultWithExecutionDetails<NormalizedJsonLd> response = instances.createNewInstance(originalDoc, "functionalityTest", false, false, defaultResponseConfiguration);
         return response.getData();
     }
 

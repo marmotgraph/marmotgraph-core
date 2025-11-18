@@ -24,10 +24,11 @@
 
 package org.marmotgraph.primaryStore.instances.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
 
 @Entity
 @Getter
@@ -36,4 +37,7 @@ public class InferredPayload extends Payload {
 
     @Column(columnDefinition = "TEXT")
     private String alternative;
+
+    @OneToMany(targetEntity = InferredProperties.class, cascade = CascadeType.ALL, mappedBy = "compositeId.uuid")
+    private List<InferredProperties> properties;
 }

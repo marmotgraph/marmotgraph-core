@@ -56,4 +56,5 @@ public class PersistedEvent extends Event implements EventId {
         this.eventId = UUID.randomUUID().toString();
         this.key = this.eventId;
     }
+
 }

@@ -57,4 +57,7 @@ public class NativePayload {
     @Column(columnDefinition = "TEXT")
     private String propertyUpdates;
 
+    @Column(length = 32)
+    private String md5hash;
+
 }

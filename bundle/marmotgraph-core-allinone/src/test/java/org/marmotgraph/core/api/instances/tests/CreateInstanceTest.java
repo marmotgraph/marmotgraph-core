@@ -50,6 +50,6 @@ public class CreateInstanceTest extends AbstractInstanceTest {
 
     @Override
     protected void run(){
-        response = instances.createNewInstance(testData, "functionalityTest", defaultResponseConfiguration);
+        response = instances.createNewInstance(testData, "functionalityTest", false, false, defaultResponseConfiguration);
     }
 }

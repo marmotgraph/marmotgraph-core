@@ -67,7 +67,7 @@ public abstract class AbstractInstancesLoadTest extends AbstractLoadTest {
         utils.addSection(title.toString());
 
         // When
-        List<ResultWithExecutionDetails<NormalizedJsonLd>> results = utils.executeMany(numberOfFields, normalize, numberOfIterations, parallelize, link, p -> instances.createNewInstance(p, "test", DEFAULT_RESPONSE_CONFIG));
+        List<ResultWithExecutionDetails<NormalizedJsonLd>> results = utils.executeMany(numberOfFields, normalize, numberOfIterations, parallelize, link, p -> instances.createNewInstance(p, "test", false, false, DEFAULT_RESPONSE_CONFIG));
 
         //Then
         for (int i = 0; i < results.size(); i++) {

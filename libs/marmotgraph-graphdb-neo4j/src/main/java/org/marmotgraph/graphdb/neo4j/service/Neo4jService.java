@@ -24,6 +24,7 @@
 
 package org.marmotgraph.graphdb.neo4j.service;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.apache.commons.text.StringSubstitutor;
@@ -35,7 +36,6 @@ import org.marmotgraph.commons.model.PaginationParam;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.relations.IncomingRelation;
 import org.marmotgraph.graphdb.neo4j.Neo4J;
-import org.neo4j.driver.summary.ResultSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.neo4j.core.Neo4jClient;
@@ -55,6 +55,7 @@ public class Neo4jService {
     private transient final Logger logger = LoggerFactory.getLogger(getClass());
     private final PayloadSplitter payloadSplitter;
     private final Neo4jClient neo4jClient;
+
 
     private boolean isValidURI(String uriStr) {
         if (uriStr == null || uriStr.isBlank()) {
@@ -86,13 +87,13 @@ public class Neo4jService {
     }
 
     @Transactional
-    public void upsert(UUID uuid, DataStage stage, SpaceName spaceName, NormalizedJsonLd json, Set<IncomingRelation> incomingRelations) {
+    public synchronized void upsert(UUID uuid, DataStage stage, SpaceName spaceName, NormalizedJsonLd json, Set<IncomingRelation> incomingRelations) {
         String type = handleType(json);
         if (type.isBlank()) {
             throw new InvalidRequestException("The payload doesn't contain any valid @type");
         }
         PayloadSplitter.PayloadSplit splitEntity = payloadSplitter.createEntities(json, uuid);
-        Stream<Neo4jClient.RunnableSpec> queries = buildUpsertCypherQuery(uuid, spaceName, splitEntity, stage, incomingRelations);
+        List<Neo4jClient.RunnableSpec> queries = buildUpsertCypherQuery(uuid, spaceName, splitEntity, stage, incomingRelations);
         queries.forEach(Neo4jClient.RunnableSpec::run);
     }
 
@@ -150,11 +151,11 @@ public class Neo4jService {
                         "stage", Neo4JCommons.getStageLabel(stage, ":"),
                         "lifecycleIdAlias", NormalizedJsonLd.LIFECYCLE_ALIAS
                 ));
-        logger.info("Preparing Neo4j query to delete all instances in {} with lifecycle id {}", stage.name(), uuid);
+        logger.debug("Preparing Neo4j query to delete all instances in {} with lifecycle id {}", stage.name(), uuid);
         neo4jClient.query(query).bind(uuid.toString()).to("lifecycleId").run();
     }
 
-    Stream<Neo4jClient.RunnableSpec> buildUpsertCypherQuery(UUID lifeCycleId, SpaceName spaceName, PayloadSplitter.PayloadSplit splitEntity, DataStage stage, Set<IncomingRelation> incomingRelations) {
+    List<Neo4jClient.RunnableSpec> buildUpsertCypherQuery(UUID lifeCycleId, SpaceName spaceName, PayloadSplitter.PayloadSplit splitEntity, DataStage stage, Set<IncomingRelation> incomingRelations) {
         StringSubstitutor stringSubstitutor = new StringSubstitutor(Map.of(
                 "stage", Neo4JCommons.getStageLabel(stage, ":"),
                 "lifecycleIdAlias", NormalizedJsonLd.LIFECYCLE_ALIAS
@@ -164,17 +165,12 @@ public class Neo4jService {
                 DETACH DELETE e
          """));
 
-        Neo4jClient.RunnableSpec clearRelations = neo4jClient.query(stringSubstitutor.replace("""
-                MATCH ()-[r${stage} {${lifecycleIdAlias}: $lifecycleId}]->()
-                DELETE r;
-                """));
-
-
-        Stream<Neo4jClient.RunnableSpec> clearStream = Stream.of(
-                clearInstances.bind(lifeCycleId.toString()).to("lifecycleId"),
-                clearRelations.bind(lifeCycleId.toString()).to("lifecycleId")
-        );
-        return Stream.concat(clearStream, Stream.concat(instancesStream(splitEntity, spaceName, stage), Stream.concat(incomingRelationStream(incomingRelations, stage), outgoingRelationStream(splitEntity, spaceName, stage))));
+        List<Neo4jClient.RunnableSpec> queries = new ArrayList<>();
+        queries.add(clearInstances.bind(lifeCycleId.toString()).to("lifecycleId"));
+        queries.addAll(instancesStream(splitEntity, spaceName, stage).toList());
+        queries.addAll(incomingRelationStream(incomingRelations, stage).toList());
+        queries.addAll(outgoingRelationStream(splitEntity, spaceName, stage).toList());
+        return queries;
     }
 
     private Stream<Neo4jClient.RunnableSpec> incomingRelationStream(Set<IncomingRelation> incomingRelations, DataStage stage) {
@@ -215,7 +211,7 @@ public class Neo4jService {
                     "stage", Neo4JCommons.getStageLabel(stage, ":")
             )).replace(relationTemplate);
             Neo4jClient.RunnableSpec query = neo4jClient.query(q);
-            logger.info("Preparing Neo4j query (relation {} from {} to {}): {}", relation.getRelationName(), relation.getFrom(), relation.getTo(), q);
+            logger.debug("Preparing Neo4j query (relation {} from {} to {}): {}", relation.getRelationName(), relation.getFrom(), relation.getTo(), q);
             return query.bindAll(Map.of(
                     "sourceId", relation.getFrom(),
                     "targetId", relation.getTo(),
@@ -230,7 +226,7 @@ public class Neo4jService {
 
     private Stream<Neo4jClient.RunnableSpec> instancesStream(PayloadSplitter.PayloadSplit splitEntity, SpaceName spaceName, DataStage stage) {
         final String template = """
-                  CREATE (i${extra}${stage}${spaceName}${types} $payload)
+                      CREATE (i${extra}${stage}${spaceName}${types} $payload)
         """;
         return splitEntity.getInstances().stream().map(instance -> {
             Collection<String> types = instance.types();
@@ -240,7 +236,7 @@ public class Neo4jService {
                     "extra", instance.isEmbedded() ? ":embedded" : "",
                     "types", types.isEmpty() ? "" : String.format(":%s", types.stream().map(Neo4JCommons::sanitizeLabel).collect(Collectors.joining(":")))
             )).replace(template);
-            logger.info("Preparing Neo4j query (instance {}): {}", instance.getId(), q);
+            logger.debug("Preparing Neo4j query (instance {}): {}", instance.getId(), q);
             Neo4jClient.RunnableSpec query = neo4jClient.query(q);
             Map<String, Object> payload = instance.getPayload();
             payload.put(NormalizedJsonLd.ID_ALIAS, instance.getId());

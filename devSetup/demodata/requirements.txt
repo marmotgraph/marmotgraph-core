@@ -1,2 +1,3 @@
 ebrains-kg-core
 requests
+marmotgraph==4.0.0

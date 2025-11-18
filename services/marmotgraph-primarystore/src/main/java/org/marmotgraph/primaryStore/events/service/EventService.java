@@ -25,29 +25,34 @@
 package org.marmotgraph.primaryStore.events.service;
 
 import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.JsonAdapter;
 import org.marmotgraph.commons.model.DataStage;
+import org.marmotgraph.commons.model.Event;
 import org.marmotgraph.commons.model.PersistedEvent;
+import org.marmotgraph.commons.model.ReleaseStatus;
+import org.marmotgraph.primaryStore.events.exceptions.FailedEventException;
 import org.marmotgraph.primaryStore.events.model.PrimaryStoreEvent;
 import org.marmotgraph.primaryStore.events.model.PrimaryStoreFailedEvent;
+import org.marmotgraph.primaryStore.instances.service.PayloadService;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 
+@AllArgsConstructor
 @Service
 public class EventService {
 
     private final EventRepository eventRepository;
     private final JsonAdapter jsonAdapter;
     private final EntityManager entityManager;
+    private final PayloadService payloadService;
 
-    public EventService(EventRepository eventRepository, JsonAdapter jsonAdapter, EntityManager entityManager) {
-        this.eventRepository = eventRepository;
-        this.jsonAdapter = jsonAdapter;
-        this.entityManager = entityManager;
-    }
 
     public void saveEvent(PersistedEvent event){
         eventRepository.save(PrimaryStoreEvent.fromPersistedEvent(event, jsonAdapter));
@@ -67,4 +72,44 @@ public class EventService {
 
     }
 
+
+    @Transactional
+    public PersistedEvent persistEvent(PersistedEvent eventToPersist) {
+        try {
+            ensureInternalIdInPayload(eventToPersist);
+            if (Objects.requireNonNull(eventToPersist.getType()) == Event.Type.DELETE) {
+                ReleaseStatus releaseStatus = payloadService.getReleaseStatus(eventToPersist.getInstanceId());
+                if (releaseStatus != ReleaseStatus.UNRELEASED) {
+                    throw new IllegalStateException(String.format("Was not able to remove instance %s because it is released still", eventToPersist.getInstanceId()));
+                }
+            }
+            saveEvent(eventToPersist);
+            switch (eventToPersist.getType()){
+                case INSERT:
+                case UPDATE:
+                    payloadService.upsertNativePayloadFromEvent(eventToPersist);
+                    break;
+                case DELETE:
+                    // The deletion causes all contributions to be removed as well.
+                    payloadService.removeNativePayloadsFromEvent(eventToPersist);
+                    break;
+            }
+        }
+        catch (Exception e) {
+            throw new FailedEventException(eventToPersist, e);
+        }
+        return eventToPersist;
+    }
+
+
+    private void ensureInternalIdInPayload(@NonNull PersistedEvent persistedEvent) {
+        if (persistedEvent.getData() != null) {
+            String idFromPayload = persistedEvent.getData().id();
+            if (idFromPayload != null) {
+                //Save the original id as an "identifier"
+                persistedEvent.getData().addIdentifiers(idFromPayload);
+            }
+            persistedEvent.getData().setId(persistedEvent.getInstanceId().toString());
+        }
+    }
 }
