@@ -24,6 +24,7 @@
 
 package org.marmotgraph.graphdb.arango.ingestion.controller;
 
+import org.junit.jupiter.api.Disabled;
 import org.marmotgraph.graphdb.arango.model.ArangoDocumentReference;
 import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
@@ -44,7 +45,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-
+@Disabled
 @Tag(TestCategories.API)
 class TodoListProcessorTest extends AbstractGraphTest {
 

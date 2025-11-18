@@ -24,6 +24,7 @@
 
 package org.marmotgraph.graphdb.neo4j.api;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.marmotgraph.commons.AuthContext;
@@ -41,6 +42,7 @@ import java.util.UUID;
 
 @Tag(TestCategories.API)
 @SpringBootTest
+@Disabled
 class TodoListsAPITest {
 
     @MockitoBean

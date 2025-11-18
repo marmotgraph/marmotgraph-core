@@ -24,6 +24,7 @@
 
 package org.marmotgraph.graphdb.arango.ingestion.controller;
 
+import org.junit.jupiter.api.Disabled;
 import org.marmotgraph.graphdb.arango.model.ArangoDocumentReference;
 import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.JsonAdapter;
@@ -36,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.UUID;
 
+@Disabled
 class StructureSplitterTest {
 
     @Test

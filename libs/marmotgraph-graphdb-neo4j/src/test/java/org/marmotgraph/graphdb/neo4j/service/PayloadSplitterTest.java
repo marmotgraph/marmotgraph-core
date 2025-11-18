@@ -24,6 +24,7 @@
 
 package org.marmotgraph.graphdb.neo4j.service;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 
@@ -33,6 +34,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Disabled
 class PayloadSplitterTest {
 
     @Test

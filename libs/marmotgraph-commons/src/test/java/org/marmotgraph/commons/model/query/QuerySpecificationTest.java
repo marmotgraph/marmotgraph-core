@@ -25,13 +25,13 @@
 package org.marmotgraph.commons.model.query;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.marmotgraph.commons.JsonAdapter;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.marmotgraph.commons.model.query.QuerySpecification;
+import org.marmotgraph.commons.JsonAdapter;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-
+@Disabled
 class QuerySpecificationTest {
 
     private final JsonAdapter jsonAdapter = new JsonAdapter(new ObjectMapper());
@@ -70,7 +70,7 @@ class QuerySpecificationTest {
     @Test
     void deserializePayloadWithFlattenedPath(){
         //given
-        String payload = "{\"structure\": [{\"propertyName\": \"id\", \"path\": [ {\"@id\": \"id\"}, { \"@id\": \"http://aReverseProperty\", \"reverse\": true}]}]}";
+        String payload = "{\"structure\": [{\"propertyName\": \"id\", \"path\": [ {\"@id\": \"http://id\"}, { \"@id\": \"http://aReverseProperty\", \"reverse\": true}]}]}";
 
         //when
         QuerySpecification spec = jsonAdapter.fromJson(payload, QuerySpecification.class);

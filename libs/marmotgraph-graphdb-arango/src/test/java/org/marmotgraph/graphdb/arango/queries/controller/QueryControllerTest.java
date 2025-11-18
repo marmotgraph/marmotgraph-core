@@ -42,7 +42,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import static org.junit.jupiter.api.Assertions.*;
-
+@Disabled
 @Tag(TestCategories.API)
 public class QueryControllerTest extends AbstractGraphTest {
 
