@@ -47,7 +47,7 @@ public abstract class DocumentRelation {
     public static class CompositeId implements Serializable {
         private UUID uuid;
         private String targetReference;
-       // private String propertyName;
+        private String propertyName;
     }
 
     private UUID resolvedTarget;
@@ -60,6 +60,10 @@ public abstract class DocumentRelation {
         @JoinColumn(name = "uuid", referencedColumnName = "uuid", insertable = false, updatable = false)
         private Payload.InferredPayload payload;
 
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "resolvedTarget", referencedColumnName = "uuid", insertable = false, updatable = false)
+        private Payload.InferredPayload targetPayload;
+
     }
 
     @Entity
@@ -69,6 +73,10 @@ public abstract class DocumentRelation {
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "uuid", referencedColumnName = "uuid", insertable = false, updatable = false)
         private Payload.ReleasedPayload payload;
+
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "resolvedTarget", referencedColumnName = "uuid", insertable = false, updatable = false)
+        private Payload.ReleasedPayload targetPayload;
 
     }
 }

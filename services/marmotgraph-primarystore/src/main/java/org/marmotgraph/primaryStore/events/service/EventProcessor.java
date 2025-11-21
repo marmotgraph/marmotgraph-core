@@ -108,7 +108,7 @@ public class EventProcessor {
                 NormalizedJsonLd inferredDocumentPayload = inferredDocument.asIndexed().getDoc();
                 boolean autorelease = spaceInformation.isPresent() && spaceInformation.get().isAutoRelease();
                 InstanceInformation instanceInformation = payloadService.upsertInstanceInformation(persistedEvent.getInstanceId(), persistedEvent.getSpaceName(), persistedEvent.getData().identifiers());
-                Set<String> outgoingRelations = inferredDocumentPayload.findOutgoingRelations();
+                Set<Tuple<String, String>> outgoingRelations = inferredDocumentPayload.findOutgoingRelations();
                 inferredDocumentPayload.addIdsToEmbedded(persistedEvent.getInstanceId());
                 Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> incomingAndOutgoingRelations = payloadService.upsertInferredPayload(persistedEvent.getInstanceId(), instanceInformation, inferredDocumentPayload, outgoingRelations, inferredDocument.getAlternatives(), autorelease, persistedEvent.getReportedTimeStampInMs(), spaceInformation.isEmpty());
                 Tuple<NormalizedJsonLd, Set<IncomingRelation>> preparedToIndex = payloadService.prepareToIndex(inferredDocumentPayload, incomingAndOutgoingRelations);

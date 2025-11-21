@@ -298,7 +298,7 @@ public class PayloadService {
 
 
     @Transactional
-    public Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> upsertInferredPayload(UUID instanceId, InstanceInformation instanceInformation, NormalizedJsonLd payload, Set<String> relations, JsonLdDoc alternatives, boolean autoRelease, Long reportedTimeStampInMs, boolean createSpace) {
+    public Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> upsertInferredPayload(UUID instanceId, InstanceInformation instanceInformation, NormalizedJsonLd payload, Set<Tuple<String, String>> relations, JsonLdDoc alternatives, boolean autoRelease, Long reportedTimeStampInMs, boolean createSpace) {
         String newPayload = jsonAdapter.toJson(payload);
         if (createSpace) {
             Space s = new Space();
@@ -368,7 +368,7 @@ public class PayloadService {
 
 
     private record IncomingRelationInformation(String targetReference, UUID origin, UUID resolvedTarget,
-                                               String sourcePayload) {
+                                               String sourcePayload, String  propertyName) {
 
         public Set<IncomingRelation> getRelationInformation(JsonAdapter jsonAdapter) {
             if (resolvedTarget != null) {
@@ -391,28 +391,28 @@ public class PayloadService {
         CriteriaQuery<IncomingRelationInformation> criteriaQuery = criteriaBuilder.createQuery(IncomingRelationInformation.class);
         Root<? extends DocumentRelation> root = criteriaQuery.from(documentRelation);
         Join<Object, Object> payloadJoin = root.join("payload", JoinType.LEFT);
-        criteriaQuery.select(criteriaBuilder.construct(IncomingRelationInformation.class, root.get("compositeId").get("targetReference"), root.get("compositeId").get("uuid"), root.get("resolvedTarget"), payloadJoin.get("jsonPayload")));
+        criteriaQuery.select(criteriaBuilder.construct(IncomingRelationInformation.class, root.get("compositeId").get("targetReference"), root.get("compositeId").get("uuid"), root.get("resolvedTarget"), payloadJoin.get("jsonPayload"), root.get("compositeId").get("propertyName")));
         criteriaQuery.where(root.get("compositeId").get("targetReference").in(alternativeIds));
         List<IncomingRelationInformation> incomingRelations = entityManager.createQuery(criteriaQuery).getResultList();
         return incomingRelations.stream().map(i -> {
             if (i.resolvedTarget() == null || !i.resolvedTarget().equals(instanceId)) {
                 try {
                     T upsertRelation = (T) documentRelation.getConstructor().newInstance();
-                    upsertRelation.setCompositeId(new DocumentRelation.CompositeId(i.origin(), i.targetReference()));
+                    upsertRelation.setCompositeId(new DocumentRelation.CompositeId(i.origin(), i.targetReference(), i.propertyName()));
                     upsertRelation.setResolvedTarget(instanceId);
                     repository.save(upsertRelation);
                 } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
                          InvocationTargetException e) {
                     throw new RuntimeException(e);
                 }
-                return new IncomingRelationInformation(i.targetReference(), i.origin(), instanceId, i.sourcePayload());
+                return new IncomingRelationInformation(i.targetReference(), i.origin(), instanceId, i.sourcePayload(), i.propertyName());
             }
             return i;
         }).map(i -> i.getRelationInformation(jsonAdapter)).flatMap(Collection::stream).collect(Collectors.toSet());
     }
 
 
-    private <T extends DocumentRelation> Set<OutgoingRelation> handleOutgoingDocumentRelations(UUID instanceId, Set<String> newRelations, Class<T> clazz, JpaRepository<T, DocumentRelation.CompositeId> repository, DataStage stage) {
+    private <T extends DocumentRelation> Set<OutgoingRelation> handleOutgoingDocumentRelations(UUID instanceId, Set<Tuple<String, String>> newRelations, Class<T> clazz, JpaRepository<T, DocumentRelation.CompositeId> repository, DataStage stage) {
         //Analyze
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         CriteriaQuery<T> criteriaQuery = criteriaBuilder.createQuery(clazz);
@@ -426,7 +426,7 @@ public class PayloadService {
         Map<Boolean, List<T>> toBeKeptByResolutionState = toBeKept.stream().collect(Collectors.partitioningBy(e -> e.getResolvedTarget() != null));
         List<T> toBeKeptUnresolved = toBeKeptByResolutionState.get(false);
         List<T> toBeKeptResolved = toBeKeptByResolutionState.get(true);
-        Set<String> toBeAdded = newRelations.stream().filter(n -> !toBeKeptTargetReference.contains(n)).collect(Collectors.toSet());
+        Set<Tuple<String, String>> toBeAdded = newRelations.stream().filter(n -> !toBeKeptTargetReference.contains(n)).collect(Collectors.toSet());
 
         //Remove
         toBeRemoved.forEach(r -> repository.deleteById(r.getCompositeId()));
@@ -446,15 +446,15 @@ public class PayloadService {
         }
 
         //Add new
-        Map<UUID, InstanceId> resolvedLinks = resolveIds(toBeAdded.stream().map(i -> new IdWithAlternatives(UUID.nameUUIDFromBytes(i.getBytes(StandardCharsets.UTF_8)), null, Collections.singleton(i))).toList(), stage);
+        Map<UUID, InstanceId> resolvedLinks = resolveIds(toBeAdded.stream().map(i -> new IdWithAlternatives(UUID.nameUUIDFromBytes(i.getB().getBytes(StandardCharsets.UTF_8)), null, Collections.singleton(i.getB()))).toList(), stage);
         Set<T> added = toBeAdded.stream().map(r -> {
             try {
                 T documentRelation = clazz.getConstructor().newInstance();
-                UUID resolutionKey = UUID.nameUUIDFromBytes(r.getBytes(StandardCharsets.UTF_8));
+                UUID resolutionKey = UUID.nameUUIDFromBytes(r.getB().getBytes(StandardCharsets.UTF_8));
                 if (resolvedLinks.containsKey(resolutionKey)) {
                     documentRelation.setResolvedTarget(resolvedLinks.get(resolutionKey).getUuid());
                 }
-                documentRelation.setCompositeId(new DocumentRelation.CompositeId(instanceId, r));
+                documentRelation.setCompositeId(new DocumentRelation.CompositeId(instanceId, r.getB(), r.getA()));
                 repository.save(documentRelation);
                 return documentRelation;
             } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
@@ -467,7 +467,7 @@ public class PayloadService {
 
 
     @Transactional
-    public Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> release(UUID instanceId, NormalizedJsonLd jsonPayload, Set<String> outgoingRelations, Long reportedTimestamp, InstanceInformation instanceInformation, List<String> types) {
+    public Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> release(UUID instanceId, NormalizedJsonLd jsonPayload, Set<Tuple<String, String>> outgoingRelations, Long reportedTimestamp, InstanceInformation instanceInformation, List<String> types) {
         if (instanceInformation.getFirstRelease() == null) {
             instanceInformation.setFirstRelease(reportedTimestamp);
         }

@@ -67,6 +67,10 @@ public abstract class TypeStructure {
     @EqualsAndHashCode(callSuper = true)
     public static class InferredTypeStructure extends TypeStructure{
 
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "uuid", referencedColumnName = "uuid", insertable = false, updatable = false)
+        private Payload.InferredPayload payload;
+
     }
 
 
@@ -76,5 +80,9 @@ public abstract class TypeStructure {
     @Table(name="structure.released.type")
     @EqualsAndHashCode(callSuper = true)
     public static class ReleasedTypeStructure extends TypeStructure{
+
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "uuid", referencedColumnName = "uuid", insertable = false, updatable = false)
+        private Payload.ReleasedPayload payload;
     }
 }

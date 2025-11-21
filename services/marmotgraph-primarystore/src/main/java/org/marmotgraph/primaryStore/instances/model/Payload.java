@@ -60,11 +60,14 @@ public abstract class Payload<T extends TypeStructure> {
         @Column(columnDefinition = "TEXT")
         private String alternative;
 
-        @OneToMany(targetEntity = TypeStructure.InferredTypeStructure.class, cascade = CascadeType.ALL, mappedBy = "compositeId.uuid")
+        @OneToMany(targetEntity = TypeStructure.InferredTypeStructure.class, cascade = CascadeType.ALL, mappedBy = "payload")
         private List<TypeStructure.InferredTypeStructure> typeStructures;
 
-        @OneToMany(targetEntity = DocumentRelation.InferredDocumentRelation.class, mappedBy = "compositeId.uuid")
+        @OneToMany(targetEntity = DocumentRelation.InferredDocumentRelation.class, mappedBy = "payload")
         private List<DocumentRelation.InferredDocumentRelation> documentRelations;
+
+        @OneToMany(targetEntity = DocumentRelation.InferredDocumentRelation.class, mappedBy = "targetPayload", fetch = FetchType.LAZY)
+        private List<DocumentRelation.InferredDocumentRelation> incomingRelations;
 
     }
 
@@ -76,11 +79,14 @@ public abstract class Payload<T extends TypeStructure> {
     @Table(name="instances.released")
     public static class ReleasedPayload extends Payload<TypeStructure.ReleasedTypeStructure> {
 
-        @OneToMany(targetEntity = TypeStructure.ReleasedTypeStructure.class, cascade = CascadeType.ALL, mappedBy = "compositeId.uuid")
+        @OneToMany(targetEntity = TypeStructure.ReleasedTypeStructure.class, cascade = CascadeType.ALL, mappedBy = "payload")
         private List<TypeStructure.ReleasedTypeStructure> typeStructures;
 
-        @OneToMany(targetEntity = DocumentRelation.ReleasedDocumentRelation.class, mappedBy = "compositeId.uuid")
+        @OneToMany(targetEntity = DocumentRelation.ReleasedDocumentRelation.class, mappedBy = "payload")
         private List<DocumentRelation.ReleasedDocumentRelation> documentRelations;
+
+        @OneToMany(targetEntity = DocumentRelation.ReleasedDocumentRelation.class, mappedBy = "targetPayload", fetch = FetchType.LAZY)
+        private List<DocumentRelation.ReleasedDocumentRelation> incomingRelations;
     }
 
 

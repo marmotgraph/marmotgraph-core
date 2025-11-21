@@ -26,6 +26,7 @@ package org.marmotgraph.commons.jsonld;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.marmotgraph.commons.Tuple;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.relations.IncomingRelation;
 import org.marmotgraph.commons.model.relations.OutgoingRelation;
@@ -106,9 +107,9 @@ public class NormalizedJsonLd extends JsonLdDoc {
     }
 
 
-    public Set<String> findOutgoingRelations() {
-        Set<String> result = new HashSet<>();
-        recursiveOutgoingRelationDetection(this, true, result);
+    public Set<Tuple<String, String>> findOutgoingRelations() {
+        Set<Tuple<String, String>> result = new HashSet<>();
+        recursiveOutgoingRelationDetection(this, null, true, result);
         return result;
     }
 
@@ -270,19 +271,19 @@ public class NormalizedJsonLd extends JsonLdDoc {
         }, null, collector);
     }
 
-    private void recursiveOutgoingRelationDetection(Object object, boolean rootLevel, Set<String> collector) {
+    private void recursiveOutgoingRelationDetection(Object object, String propertyName, boolean rootLevel, Set<Tuple<String, String>> collector) {
         if (object instanceof Map<?, ?> map) {
             if (!rootLevel && map.containsKey(JsonLdConsts.ID)) {
                 //A json ld id which is not on the root level means an outgoing relation
                 Object referenceValue = map.get(JsonLdConsts.ID);
                 if (referenceValue instanceof String) {
-                    collector.add((String) referenceValue);
+                    collector.add(new Tuple<>(propertyName, (String) referenceValue));
                 }
             } else {
-                map.keySet().stream().filter(k -> k instanceof String).forEach(k -> recursiveOutgoingRelationDetection(map.get(k), false, collector));
+                map.keySet().stream().filter(k -> k instanceof String).forEach(k -> recursiveOutgoingRelationDetection(map.get(k), (String)k, false, collector));
             }
         } else if (object instanceof List) {
-            ((List<?>) object).forEach(o -> recursiveOutgoingRelationDetection(o, false, collector));
+            ((List<?>) object).forEach(o -> recursiveOutgoingRelationDetection(o, propertyName, false, collector));
         }
     }
 

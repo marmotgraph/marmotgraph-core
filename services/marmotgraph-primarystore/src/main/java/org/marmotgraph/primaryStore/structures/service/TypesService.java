@@ -25,15 +25,15 @@
 package org.marmotgraph.primaryStore.structures.service;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.*;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.marmotgraph.commons.Tuple;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.Paginated;
 import org.marmotgraph.commons.model.PaginationParam;
-import org.marmotgraph.commons.model.external.types.Property;
-import org.marmotgraph.commons.model.external.types.SpaceTypeInformation;
-import org.marmotgraph.commons.model.external.types.TypeInformation;
+import org.marmotgraph.commons.model.external.types.*;
 import org.marmotgraph.primaryStore.instances.model.TypeStructure;
 import org.marmotgraph.primaryStore.instances.service.SpaceService;
 import org.springframework.stereotype.Service;
@@ -51,20 +51,128 @@ public class TypesService {
 
     private record PropertyPerSpaceInfo(Long instanceCount, String type, String space, String propertyName){}
 
+    private record IncomingLinksInfo(String sourceType, String spaceName, String propertyName,  String targetType){}
+
     @Transactional
     public Paginated<TypeInformation> listTypes(DataStage stage, String space, boolean withProperties,
                                                 boolean withIncomingLinks, PaginationParam paginationParam) {
-
-        Class<? extends TypeStructure> clazz = stage == DataStage.IN_PROGRESS ? TypeStructure.InferredTypeStructure.class : TypeStructure.ReleasedTypeStructure.class;
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        Class<? extends TypeStructure> clazz = stage == DataStage.IN_PROGRESS ? TypeStructure.InferredTypeStructure.class : TypeStructure.ReleasedTypeStructure.class;
+        Tuple<Map<String, List<TypePerSpaceInfo>>, Optional<Long>> byTypeWithTotal = fetchGenericTypeInformation(clazz, criteriaBuilder, paginationParam);
+        Map<String, List<TypePerSpaceInfo>> byType = byTypeWithTotal.getA();
+        Map<String, List<PropertyPerSpaceInfo>> propertiesByType = fetchPropertiesByType(withProperties, criteriaBuilder, clazz, byType);
+        Map<String, List<IncomingLinksInfo>> incomingLinksByType = fetchIncomingLinks(withIncomingLinks, criteriaBuilder, clazz, byType);
+        List<TypeInformation> result = new ArrayList<>();
+        byType.forEach((k, v) -> {
+            TypeInformation typeInformation = new TypeInformation();
+            typeInformation.setIdentifier(k);
+            Map<String, List<PropertyPerSpaceInfo>> propertyPerSpaceInfos = propertiesByType.getOrDefault(k, Collections.emptyList()).stream().collect(Collectors.groupingBy(p -> p.space));
+            typeInformation.setSpaces(evaluateSpaceTypeInformation(withProperties, v, propertyPerSpaceInfos));
+            if(withIncomingLinks) {
+                evaluateIncomingLinks(k, incomingLinksByType, typeInformation);
+            }
+            consolidateProperties(withProperties, typeInformation);
+            result.add(typeInformation);
+        });
+        result.sort(Comparator.comparing(TypeInformation::getIdentifier));
+        Long total = null;
+        if(paginationParam == null){
+            total = (long)result.size();
+        }
+        else if(byTypeWithTotal.getB().isPresent()){
+            total = byTypeWithTotal.getB().get();
+        }
+
+        return new Paginated<>(result, total, result.size(), paginationParam != null ? paginationParam.getFrom() : 0);
+    }
+
+    private Tuple<Map<String, List<TypePerSpaceInfo>>, Optional<Long>> fetchGenericTypeInformation(Class<? extends TypeStructure> clazz, CriteriaBuilder criteriaBuilder, PaginationParam paginationParam){
         CriteriaQuery<TypePerSpaceInfo> query = criteriaBuilder.createQuery(TypePerSpaceInfo.class);
         Root<? extends TypeStructure> root = query.from(clazz);
         Join<Object, Object> instanceInformation = root.join("instanceInformation", JoinType.LEFT);
         query.select(criteriaBuilder.construct(TypePerSpaceInfo.class, criteriaBuilder.count(root.get("compositeId").get("uuid")), root.get("compositeId").get("type"), instanceInformation.get("spaceName")));
         query.groupBy(root.get("compositeId").get("type"), instanceInformation.get("spaceName"));
         query.orderBy(criteriaBuilder.asc(root.get("compositeId").get("type")));
-        Map<String, List<TypePerSpaceInfo>> byType = entityManager.createQuery(query).getResultStream().collect(Collectors.groupingBy(k -> k.type));
-        List<TypeInformation> result = new ArrayList<>();
+        TypedQuery<TypePerSpaceInfo> typedQuery = entityManager.createQuery(query);
+        Long totalResults = null;
+        if(paginationParam != null){
+            if(paginationParam.isReturnTotalResults()) {
+                CriteriaQuery<Long> totalCountQuery = criteriaBuilder.createQuery(Long.class);
+                totalCountQuery.select(criteriaBuilder.countDistinct(totalCountQuery.from(clazz).get("compositeId").get("type")));
+                totalResults = entityManager.createQuery(totalCountQuery).getSingleResult();
+            }
+            typedQuery.setFirstResult((int)paginationParam.getFrom());
+            if(paginationParam.getSize()!=null){
+                typedQuery.setMaxResults(paginationParam.getSize().intValue());
+            }
+        }
+        return new Tuple<>(typedQuery.getResultStream().collect(Collectors.groupingBy(k -> k.type)), Optional.ofNullable(totalResults));
+    }
+
+    private static List<SpaceTypeInformation> evaluateSpaceTypeInformation(boolean withProperties, List<TypePerSpaceInfo> v, Map<String, List<PropertyPerSpaceInfo>> propertyPerSpaceInfos) {
+        return v.stream().map(value -> {
+            SpaceTypeInformation spaceTypeInformation = new SpaceTypeInformation();
+            spaceTypeInformation.setOccurrences(value.instanceCount.intValue());
+            spaceTypeInformation.setSpace(value.space);
+            if (withProperties) {
+                List<PropertyPerSpaceInfo> properties = propertyPerSpaceInfos.getOrDefault(value.space, Collections.emptyList());
+                spaceTypeInformation.setProperties(properties.stream().map(p -> {
+                    Property property = new Property();
+                    property.setIdentifier(p.propertyName);
+                    property.setOccurrences(p.instanceCount.intValue());
+                    return property;
+                }).sorted(Comparator.comparing(Property::getIdentifier)).toList());
+            }
+            return spaceTypeInformation;
+        }).toList();
+    }
+
+    private static void consolidateProperties(boolean withProperties, TypeInformation typeInformation) {
+        typeInformation.setOccurrences(0);
+        Map<String, Property> properties = new HashMap<>();
+        typeInformation.getSpaces().forEach(s -> {
+            typeInformation.setOccurrences(typeInformation.getOccurrences() + s.getOccurrences());
+            if (withProperties) {
+                s.getProperties().forEach(p -> {
+                    Property property = properties.get(p.getIdentifier());
+                    if (property == null) {
+                        property = new Property();
+                        property.setIdentifier(p.getIdentifier());
+                        property.setOccurrences(0);
+                        properties.put(p.getIdentifier(), property);
+                    }
+                    property.setOccurrences(property.getOccurrences() + p.getOccurrences());
+                });
+                typeInformation.setProperties(properties.values().stream().sorted(Comparator.comparing(Property::getIdentifier)).toList());
+            }
+        });
+    }
+
+    private static void evaluateIncomingLinks(String k, Map<String, List<IncomingLinksInfo>> incomingLinksByType, TypeInformation typeInformation) {
+        List<IncomingLink> incomingLinks = new ArrayList<>();
+        Map<String, List<IncomingLinksInfo>> incomingLinksPerPropertyInfos = incomingLinksByType.getOrDefault(k, Collections.emptyList()).stream().collect(Collectors.groupingBy(p -> p.propertyName));
+        incomingLinksPerPropertyInfos.forEach((key, value ) -> {
+            IncomingLink incomingLink = new IncomingLink();
+            incomingLink.setIdentifier(key);
+            Map<String, List<IncomingLinksInfo>> bySourceType = value.stream().collect(Collectors.groupingBy(p -> p.sourceType));
+            List<SourceType> sourceTypes = new ArrayList<>();
+            bySourceType.forEach((sourceTypeK, sourceTypeV) -> {
+                SourceType sourceType = new SourceType();
+                sourceType.setType(sourceTypeK);
+                sourceType.setSpaces(sourceTypeV.stream().map(sourceTypeVal -> {
+                    SpaceReference spaceReference = new SpaceReference();
+                    spaceReference.setSpace(sourceTypeVal.spaceName);
+                    return spaceReference;
+                }).toList());
+                sourceTypes.add(sourceType);
+            });
+            incomingLink.setSourceTypes(sourceTypes);
+            incomingLinks.add(incomingLink);
+        });
+        typeInformation.setIncomingLinks(incomingLinks);
+    }
+
+    private Map<String, List<PropertyPerSpaceInfo>> fetchPropertiesByType(boolean withProperties, CriteriaBuilder criteriaBuilder, Class<? extends TypeStructure> clazz, Map<String, List<TypePerSpaceInfo>> byType) {
         Map<String, List<PropertyPerSpaceInfo>> propertiesByType;
         if(withProperties) {
             CriteriaQuery<PropertyPerSpaceInfo> propertyQuery = criteriaBuilder.createQuery(PropertyPerSpaceInfo.class);
@@ -79,48 +187,33 @@ public class TypesService {
         else{
             propertiesByType = Collections.emptyMap();
         }
-        byType.forEach((k, v) -> {
-            TypeInformation typeInformation = new TypeInformation();
-            typeInformation.setIdentifier(k);
-            Map<String, List<PropertyPerSpaceInfo>> propertyPerSpaceInfos = propertiesByType.getOrDefault(k, Collections.emptyList()).stream().collect(Collectors.groupingBy(p -> p.space));
-            typeInformation.setSpaces(v.stream().map(value -> {
-                SpaceTypeInformation spaceTypeInformation = new SpaceTypeInformation();
-                spaceTypeInformation.setOccurrences(value.instanceCount.intValue());
-                spaceTypeInformation.setSpace(value.space);
-                if(withProperties) {
-                    List<PropertyPerSpaceInfo> properties = propertyPerSpaceInfos.getOrDefault(value.space, Collections.emptyList());
-                    spaceTypeInformation.setProperties(properties.stream().map(p -> {
-                        Property property = new Property();
-                        property.setIdentifier(p.propertyName);
-                        property.setOccurrences(p.instanceCount.intValue());
-                        return property;
-                    }).sorted(Comparator.comparing(Property::getIdentifier)).toList());
-                }
-                return spaceTypeInformation;
-            }).toList());
-            typeInformation.setOccurrences(0);
-            Map<String, Property> properties = new HashMap<>();
-            typeInformation.getSpaces().forEach(s -> {
-                typeInformation.setOccurrences(typeInformation.getOccurrences() + s.getOccurrences());
-                if (withProperties) {
-                    s.getProperties().forEach(p -> {
-                        Property property = properties.get(p.getIdentifier());
-                        if (property == null) {
-                            property = new Property();
-                            property.setIdentifier(p.getIdentifier());
-                            property.setOccurrences(0);
-                            properties.put(p.getIdentifier(), property);
-                        }
-                        property.setOccurrences(property.getOccurrences() + p.getOccurrences());
-                    });
-                    typeInformation.setProperties(properties.values().stream().sorted(Comparator.comparing(Property::getIdentifier)).toList());
-                }
-            });
-            result.add(typeInformation);
-        });
-        return new Paginated<>(result, (long) result.size(), result.size(), 0);
+        return propertiesByType;
     }
 
+    private Map<String, List<IncomingLinksInfo>> fetchIncomingLinks(boolean withIncomingLinks, CriteriaBuilder criteriaBuilder, Class<? extends TypeStructure> clazz, Map<String, List<TypePerSpaceInfo>> byType) {
+        Map<String, List<IncomingLinksInfo>> incomingLinksByType;
+        if(withIncomingLinks) {
+            CriteriaQuery<IncomingLinksInfo> incomingLinks = criteriaBuilder.createQuery(IncomingLinksInfo.class);
+            Root<? extends TypeStructure> incomingLinksRoot = incomingLinks.from(clazz);
+            Join<Object, Object> payloadJoin = incomingLinksRoot.join("payload", JoinType.LEFT);
+            Join<Object, Object> incomingRelationsJoin = payloadJoin.join("incomingRelations", JoinType.LEFT);
+            Join<Object, Object> incomingRelationPayloadJoin = incomingRelationsJoin.join("payload", JoinType.LEFT);
+            Join<Object, Object> typeOfIncomingLinksJoin = incomingRelationPayloadJoin.join("typeStructures", JoinType.LEFT);
+            Join<Object, Object> instanceInfoOfIncomingLinksJoin = incomingRelationPayloadJoin.join("instanceInformation", JoinType.LEFT);
+            incomingLinks.select(criteriaBuilder.construct(IncomingLinksInfo.class, typeOfIncomingLinksJoin.get("compositeId").get("type"), instanceInfoOfIncomingLinksJoin.get("spaceName"), incomingRelationsJoin.get("compositeId").get("propertyName"), incomingLinksRoot.get("compositeId").get("type")));
+            incomingLinks.groupBy(typeOfIncomingLinksJoin.get("compositeId").get("type"), instanceInfoOfIncomingLinksJoin.get("spaceName"), incomingRelationsJoin.get("compositeId").get("propertyName"), incomingLinksRoot.get("compositeId").get("type"));
+            incomingLinks.where(criteriaBuilder.and(
+                    typeOfIncomingLinksJoin.get("compositeId").get("type").isNotNull(),
+                    incomingLinksRoot.get("compositeId").get("type").in(byType.keySet())
+                    ));
+
+            incomingLinksByType = entityManager.createQuery(incomingLinks).getResultStream().collect(Collectors.groupingBy(k -> k.targetType));
+        }
+        else{
+            incomingLinksByType = Collections.emptyMap();
+        }
+        return incomingLinksByType;
+    }
 
 
 }
