@@ -31,7 +31,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
-@Table(indexes = @Index(name="byPrefix", columnList = "prefix", unique = true))
+@Table(name="global.curie_prefix", indexes = @Index(name="byPrefix", columnList = "prefix", unique = true))
 @Entity
 @Getter
 @Setter

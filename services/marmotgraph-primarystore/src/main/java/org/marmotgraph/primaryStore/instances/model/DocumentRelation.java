@@ -45,10 +45,30 @@ public abstract class DocumentRelation {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class CompositeId implements Serializable {
-        private UUID instanceId;
+        private UUID uuid;
         private String targetReference;
+       // private String propertyName;
     }
 
     private UUID resolvedTarget;
 
+    @Table(name = "instances.inferred.relation", indexes = {@Index(name="inferred_relations_byUUID", columnList = "uuid"), @Index(name="inferred_relations_byTargetReference", columnList = "target_reference")})
+    @Entity
+    public static class InferredDocumentRelation extends DocumentRelation {
+
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "uuid", referencedColumnName = "uuid", insertable = false, updatable = false)
+        private Payload.InferredPayload payload;
+
+    }
+
+    @Entity
+    @Table(name = "instances.released.relation", indexes = {@Index(name="released_relations_byUUID", columnList = "uuid"), @Index(name="released_relations_byTargetReference", columnList = "target_reference")})
+    public static class ReleasedDocumentRelation extends DocumentRelation {
+
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "uuid", referencedColumnName = "uuid", insertable = false, updatable = false)
+        private Payload.ReleasedPayload payload;
+
+    }
 }

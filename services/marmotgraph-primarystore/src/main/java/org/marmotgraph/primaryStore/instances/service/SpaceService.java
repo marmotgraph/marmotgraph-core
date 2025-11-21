@@ -26,6 +26,9 @@ package org.marmotgraph.primaryStore.instances.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.model.Paginated;
@@ -82,13 +85,15 @@ public class SpaceService {
 
     public Paginated<SpaceInformation> listSpaces(PaginationParam paginationParam) {
         Set<SpaceName> whitelistedSpaceReads = whitelistedSpaceReads(authContext.getUserWithRoles());
-        TypedQuery<Space> query;
-        if(whitelistedSpaceReads == null){
-            query = entityManager.createQuery("select s from Space s order by s.name", Space.class);
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Space> criteriaQuery = criteriaBuilder.createQuery(Space.class);
+        Root<Space> root = criteriaQuery.from(Space.class);
+        criteriaQuery.select(criteriaQuery.from(Space.class));
+        criteriaQuery.orderBy(criteriaBuilder.asc(root.get("name")));
+        if(whitelistedSpaceReads != null){
+            criteriaQuery.where(root.get("name").in(whitelistedSpaceReads));
         }
-        else{
-            query = entityManager.createQuery("select s from Space s where s.name in :whitelist order by s.name", Space.class).setParameter("whitelist", whitelistedSpaceReads);
-        }
+        TypedQuery<Space> query = entityManager.createQuery(criteriaQuery);
         if(paginationParam.getSize()!=null) {
             query = query.setFirstResult((int) paginationParam.getFrom()).setMaxResults(paginationParam.getSize().intValue());
         }
@@ -100,6 +105,11 @@ public class SpaceService {
 
 
     public Set<SpaceName> allSpaces(){
-        return entityManager.createQuery("select s.name from Space s order by s.name", String.class).getResultList().stream().map(SpaceName::fromString).collect(Collectors.toSet());
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<String> criteriaQuery = criteriaBuilder.createQuery(String.class);
+        Root<Space> root = criteriaQuery.from(Space.class);
+        criteriaQuery.select(root.get("name"));
+        criteriaQuery.orderBy(criteriaBuilder.asc(root.get("name")));
+        return entityManager.createQuery(criteriaQuery).getResultList().stream().map(SpaceName::fromString).collect(Collectors.toSet());
     }
 }

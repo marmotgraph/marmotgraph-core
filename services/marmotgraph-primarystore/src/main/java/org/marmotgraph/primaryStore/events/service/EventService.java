@@ -25,6 +25,9 @@
 package org.marmotgraph.primaryStore.events.service;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.JsonAdapter;
@@ -64,7 +67,16 @@ public class EventService {
 
     @Cacheable("firstReleases")
     public String getFirstRelease(UUID instanceId){
-        Long firstRelease = entityManager.createQuery("SELECT e.indexedTimestamp from PrimaryStoreEvent e WHERE e.uuid = :id and e.stage = :stage ORDER BY e.indexedTimestamp ASC LIMIT 1", Long.class).setParameter("id", instanceId).setParameter("stage", DataStage.RELEASED).getSingleResult();
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Long> criteriaQuery = criteriaBuilder.createQuery(Long.class);
+        Root<PrimaryStoreEvent> root = criteriaQuery.from(PrimaryStoreEvent.class);
+        criteriaQuery.select(root.get("indexedTimestamp"));
+        criteriaQuery.where(criteriaBuilder.and(
+                criteriaBuilder.equal(root.get("uuid"), instanceId),
+                criteriaBuilder.equal(root.get("stage"), DataStage.RELEASED)
+        ));
+        criteriaQuery.orderBy(criteriaBuilder.asc(root.get("indexedTimestamp")));
+        Long firstRelease = entityManager.createQuery(criteriaQuery).setMaxResults(1).getSingleResult();
         if(firstRelease != null){
             return Instant.ofEpochMilli(firstRelease).toString();
         }

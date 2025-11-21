@@ -313,4 +313,27 @@ public class NormalizedJsonLd extends JsonLdDoc {
 
     }
 
+
+    public interface Visitor {
+        void visit(String key, Object value, Map<?, ?> parentMap);
+    }
+
+    public void walk(Visitor visitor){
+        walk(this, visitor, this);
+    }
+
+    private static void walk(Object obj, Visitor visitor, Map<?, ?> parentMap) {
+        if (obj instanceof Map<?, ?> map) {
+            for (var entry : map.entrySet()) {
+                visitor.visit(entry.getKey().toString(), entry.getValue(), map);
+                walk(entry.getValue(), visitor, map);
+            }
+        } else if (obj instanceof Iterable<?> iterable) {
+            for (Object element : iterable) {
+                walk(element, visitor, parentMap);
+            }
+        }
+    }
+
+
 }

@@ -25,17 +25,56 @@
 package org.marmotgraph.primaryStore.instances.model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
-@Entity
+@MappedSuperclass
 @Getter
 @Setter
-public class ReleasedPayload extends Payload {
+@EqualsAndHashCode
+public abstract class TypeStructure {
 
-    @OneToMany(targetEntity = ReleasedProperties.class, cascade = CascadeType.ALL, mappedBy = "compositeId.uuid")
-    private List<ReleasedProperties> properties;
+    @EmbeddedId
+    private TypeStructure.CompositeId compositeId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "uuid", referencedColumnName = "uuid", insertable = false, updatable = false)
+    private InstanceInformation instanceInformation;
+
+    @ElementCollection
+    private List<String> properties;
+
+    @Embeddable
+    @Getter
+    @Setter
+    @EqualsAndHashCode
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class CompositeId implements Serializable {
+        private UUID uuid;
+        private String type;
+        //This can vary if the property originates from an embedded object
+        private String embeddedIdentifier;
+    }
+
+    @Entity
+    @Getter
+    @Setter
+    @Table(name="structure.inferred.type")
+    @EqualsAndHashCode(callSuper = true)
+    public static class InferredTypeStructure extends TypeStructure{
+
+    }
+
+
+    @Entity
+    @Getter
+    @Setter
+    @Table(name="structure.released.type")
+    @EqualsAndHashCode(callSuper = true)
+    public static class ReleasedTypeStructure extends TypeStructure{
+    }
 }

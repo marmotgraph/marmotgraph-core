@@ -25,11 +25,10 @@
 package org.marmotgraph.primaryStore.instances.service;
 
 import org.marmotgraph.primaryStore.instances.model.DocumentRelation;
-import org.marmotgraph.primaryStore.instances.model.InferredDocumentRelation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface InferredDocumentRelationRepository extends JpaRepository<InferredDocumentRelation, DocumentRelation.CompositeId> {
+public interface InferredDocumentRelationRepository extends JpaRepository<DocumentRelation.InferredDocumentRelation, DocumentRelation.CompositeId> {
 
 }

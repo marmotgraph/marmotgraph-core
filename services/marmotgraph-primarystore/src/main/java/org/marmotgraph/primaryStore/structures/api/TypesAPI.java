@@ -24,6 +24,7 @@
 
 package org.marmotgraph.primaryStore.structures.api;
 
+import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.NotImplementedException;
 import org.marmotgraph.commons.api.primaryStore.Types;
 import org.marmotgraph.commons.jsonld.DynamicJson;
@@ -34,6 +35,7 @@ import org.marmotgraph.commons.model.Paginated;
 import org.marmotgraph.commons.model.PaginationParam;
 import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
+import org.marmotgraph.primaryStore.structures.service.TypesService;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
@@ -41,16 +43,17 @@ import java.util.List;
 import java.util.Map;
 
 @Component
+@AllArgsConstructor
 public class TypesAPI implements Types.Client {
+
+    private final TypesService typesService;
+
 
     @Override
     public Paginated<TypeInformation> listTypes(DataStage stage, String space, boolean withProperties,
                                                 boolean withIncomingLinks, PaginationParam paginationParam) {
-        // SELECT count(i.uuid) AS count, t.types, i.space_name FROM inferred_payload_types t LEFT JOIN instance_information i ON i.uuid = t.inferred_payload_uuid WHERE i.space_name IN ('demo') OR i.uuid IN ('f00ca0f7-4086-4d38-b1ac-6f197f23c02c') GROUP BY t.types, i.space_name;
+        return typesService.listTypes(stage, space, withProperties, withIncomingLinks, paginationParam);
 
-
-
-        throw new NotImplementedException();
     }
 
     @Override

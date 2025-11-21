@@ -25,6 +25,9 @@
 package org.marmotgraph.authorization.service;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import lombok.AllArgsConstructor;
 import org.marmotgraph.authorization.models.Permission;
 import org.marmotgraph.commons.JsonAdapter;
@@ -44,7 +47,11 @@ public class PermissionsService {
 
 
     public List<Permission> getAllRoleDefinitions(){
-        return em.createQuery("select p from Permission p order by p.id asc", Permission.class).getResultList();
+        CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+        CriteriaQuery<Permission> criteriaQuery = criteriaBuilder.createQuery(Permission.class);
+        Root<Permission> root = criteriaQuery.from(Permission.class);
+        criteriaQuery.orderBy(criteriaBuilder.asc(root.get("id")));
+        return em.createQuery(criteriaQuery).getResultList();
     }
 
     public JsonLdDoc getClaimForRole(Role role) {

@@ -30,7 +30,7 @@ import lombok.*;
 import java.io.Serializable;
 import java.util.UUID;
 
-@Table(indexes = @Index(name = "byInstanceId", columnList = "instanceId"))
+@Table(name="instances.native", indexes = @Index(name = "byUUID", columnList = "uuid"))
 @Entity
 @Getter
 @Setter
@@ -44,7 +44,7 @@ public class NativePayload {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class CompositeId implements Serializable {
-        private UUID instanceId;
+        private UUID uuid;
         private String userId;
     }
 

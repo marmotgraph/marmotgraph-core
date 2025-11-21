@@ -32,6 +32,7 @@ import org.marmotgraph.commons.model.ReleaseStatus;
 import java.util.Set;
 import java.util.UUID;
 
+@Table(name="instances.information")
 @Entity
 @Getter
 @Setter
@@ -51,8 +52,8 @@ public class InstanceInformation {
     @Enumerated(EnumType.STRING)
     private ReleaseStatus releaseStatus;
 
-    @ElementCollection
-    @CollectionTable(name="alternative_ids", indexes = @Index(name="alternativeIdLookup", unique = true, columnList = "alternative_ids"))
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name="instances.information.alternative_ids", indexes = @Index(name="alternativeIdLookup", unique = true, columnList = "alternative_ids"))
     @Column(length = 2000)
     private Set<String> alternativeIds;
 }

@@ -26,6 +26,7 @@ package org.marmotgraph.primaryStore.instances.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import org.marmotgraph.commons.model.external.spaces.SpaceInformation;
@@ -34,6 +35,7 @@ import org.marmotgraph.commons.model.external.spaces.SpaceSpecification;
 @Entity
 @Getter
 @Setter
+@Table(name="space")
 public class Space {
 
     @Id

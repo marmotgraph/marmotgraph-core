@@ -24,13 +24,13 @@
 
 package org.marmotgraph.primaryStore.instances.service;
 
-import org.marmotgraph.primaryStore.instances.model.ReleasedPayload;
+import org.marmotgraph.primaryStore.instances.model.Payload;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
 
 @Repository
-public interface ReleasedPayloadRepository extends JpaRepository<ReleasedPayload, UUID> {
+public interface ReleasedPayloadRepository extends JpaRepository<Payload.ReleasedPayload, UUID> {
 
 }

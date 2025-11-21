@@ -17,37 +17,38 @@
 #   Framework Programme for Research and Innovation under
 #   Specific Grant Agreements No. 720270, No. 785907, and No. 945539
 #   (Human Brain Project SGA1, SGA2 and SGA3).
-
 import os
-from kg_core.request import Stage
+
 from kg_core.kg import kg
+from kg_core.request import Stage, Pagination
+from marmotgraph.marmotgraph import MarmotGraph
 
 skip_until = ""
 skip_types = []
 
-
-endpoint = os.getenv("CORE_ENDPOINT")
 sa_client_id = os.getenv("UPLOADER_SERVICE_ACCOUNT_CLIENT_ID")
 sa_client_secret = os.getenv("UPLOADER_SERVICE_ACCOUNT_CLIENT_SECRET")
-oidc_client = os.getenv("OIDC_CLIENT")
 
-target_kg = kg(host=endpoint).with_credentials(sa_client_id, sa_client_secret).build()
-ebrains_kg = kg(host="core.kg-ppd.ebrains.eu").build()
+target_kg = MarmotGraph.client("core.kg-v4.tds.cscs.ch").with_credentials(sa_client_id, sa_client_secret).build(Stage.IN_PROGRESS)
+cscs_kg = MarmotGraph.client("core.kg-dev.tds.cscs.ch").build(Stage.IN_PROGRESS)
 skip = True
-for t in ebrains_kg.types.list(stage=Stage.IN_PROGRESS).items():
-    if t.identifier == skip_until:
+
+for t in cscs_kg.types.list().invoke():
+    if not skip_until or t.identifier == skip_until:
         skip = False
     do_skip = skip or t.identifier in skip_types
     print(f"Skipping {t}" if do_skip else f"Process {t}")
     if not do_skip:
         counter = 0
-        for i in ebrains_kg.instances.list(t.identifier, stage=Stage.IN_PROGRESS).items():
-            counter += 1
-            if counter%100==0:
-                print(f"{counter} instances handled")
-            space = i.get('https://core.kg.ebrains.eu/vocab/meta/space', None)
-            if space:
-                for k in set(i.keys()):
-                    if k.startswith("https://core.kg.ebrains.eu/vocab/meta") or k == '@id':
-                        del i[k]
-                target_kg.instances.create_new_with_id(i, i.uuid, space)
+        page = cscs_kg.instances.list(t.identifier).size(200).invoke()
+        while page and page.instances:
+            bulk_update = MarmotGraph.Instances.BulkUpdate()
+            for i in page.instances:
+                space = i.get('https://core.kg.ebrains.eu/vocab/meta/space', None)
+                if space:
+                    for k in set(i.keys()):
+                        if k.startswith("https://core.kg.ebrains.eu/vocab/meta") or k == '@id':
+                            del i[k]
+                    bulk_update.add(target_kg.instances.create_new_with_id(i.uuid, space).update_if_exists().skip_if_unchanged().return_payload(False), i)
+            result = bulk_update.invoke(max_workers=10)
+            page = page.next_page()

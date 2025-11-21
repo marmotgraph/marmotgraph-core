@@ -25,6 +25,10 @@
 package org.marmotgraph.primaryStore.instances.service;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Root;
 import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.ScopeElement;
@@ -59,7 +63,13 @@ public class InstanceScopeService {
     }
 
     public List<UUID> getRelatedIds(List<UUID> ids){
-       return em.createQuery("select distinct r from InstanceScope s JOIN s.relatedIds r where s.instanceId IN :instanceIds", UUID.class).setParameter("instanceIds", ids).getResultList();
+        CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+        CriteriaQuery<UUID> query = criteriaBuilder.createQuery(UUID.class);
+        Root<InstanceScope> root = query.from(InstanceScope.class);
+        Join<InstanceScope, UUID> r = root.join("relatedIds");
+        query.select(r).distinct(true);
+        query.where(root.get("uuid").in(ids));
+        return em.createQuery(query).getResultList();
     }
 
     private Set<UUID> collectIds(ScopeElement s, Set<UUID> collector) {

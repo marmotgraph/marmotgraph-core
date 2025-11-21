@@ -46,7 +46,7 @@ public class Invitation {
     @NoArgsConstructor
     public static class CompositeId implements Serializable {
         private String userId;
-        private UUID instanceId;
+        private UUID uuid;
     }
 
     @EmbeddedId

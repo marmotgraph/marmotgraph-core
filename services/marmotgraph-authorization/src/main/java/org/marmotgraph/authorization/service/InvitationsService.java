@@ -25,6 +25,9 @@
 package org.marmotgraph.authorization.service;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import lombok.AllArgsConstructor;
 import org.marmotgraph.authorization.models.Invitation;
 import org.marmotgraph.commons.api.primaryStore.Scopes;
@@ -44,15 +47,29 @@ public class InvitationsService {
     private final Scopes.Client scopes;
 
     public List<String> getAllInvitedUsersByInstanceId(UUID instanceId){
-        return em.createQuery("select i.compositeId.userId from Invitation i where i.compositeId.instanceId = :instanceId", String.class).setParameter("instanceId", instanceId).getResultList();
+        CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+        CriteriaQuery<String> criteriaQuery = criteriaBuilder.createQuery(String.class);
+        Root<Invitation> root = criteriaQuery.from(Invitation.class);
+        criteriaQuery.select(root.get("compositeId").get("userId"));
+        criteriaQuery.where(criteriaBuilder.equal(root.get("compositeId").get("uuid"), instanceId));
+        return em.createQuery(criteriaQuery).getResultList();
     }
 
     public List<UUID> getAllInstancesWithInvitation(){
-        return em.createQuery("select distinct i.compositeId.instanceId from Invitation i", UUID.class).getResultList();
+        CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+        CriteriaQuery<UUID> criteriaQuery = criteriaBuilder.createQuery(UUID.class);
+        Root<Invitation> root = criteriaQuery.from(Invitation.class);
+        criteriaQuery.select(root.get("compositeId").get("uuid")).distinct(true);
+        return em.createQuery(criteriaQuery).getResultList();
     }
 
     public List<UUID> getAllInvitationsForUserId(String userId) {
-        List<UUID> instanceIds = em.createQuery("select i.compositeId.instanceId from Invitation i where i.compositeId.userId = :userId", UUID.class).setParameter("userId", userId).getResultList();
+        CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+        CriteriaQuery<UUID> criteriaQuery = criteriaBuilder.createQuery(UUID.class);
+        Root<Invitation> root = criteriaQuery.from(Invitation.class);
+        criteriaQuery.select(root.get("compositeId").get("uuid"));
+        criteriaQuery.where(criteriaBuilder.equal(root.get("compositeId").get("userId"), userId));
+        List<UUID> instanceIds = em.createQuery(criteriaQuery).getResultList();
         if(instanceIds.isEmpty()){
             return Collections.emptyList();
         }

@@ -25,9 +25,7 @@
 package org.marmotgraph.primaryStore.instances.model;
 
 
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -41,10 +39,11 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
+@Table(name = "instances.scope")
 public class InstanceScope {
 
     @Id
-    private UUID instanceId;
+    private UUID uuid;
 
     @ElementCollection
     private Set<UUID> relatedIds;

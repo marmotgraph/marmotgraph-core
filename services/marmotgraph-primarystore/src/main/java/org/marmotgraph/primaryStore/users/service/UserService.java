@@ -26,6 +26,8 @@ package org.marmotgraph.primaryStore.users.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.validation.constraints.NotNull;
 import org.marmotgraph.commons.model.Paginated;
 import org.marmotgraph.commons.model.PaginationParam;
@@ -64,7 +66,7 @@ public class UserService {
         else {
             Long totalCount = null;
             long from = 0L;
-            TypedQuery<PrimaryStoreUser> query = entityManager.createQuery("SELECT p from PrimaryStoreUser p", PrimaryStoreUser.class);
+            TypedQuery<PrimaryStoreUser> query = entityManager.createQuery(entityManager.getCriteriaBuilder().createQuery(PrimaryStoreUser.class));
             if (paginationParam != null) {
                 from = paginationParam.getFrom();
                 query.setFirstResult((int) from);

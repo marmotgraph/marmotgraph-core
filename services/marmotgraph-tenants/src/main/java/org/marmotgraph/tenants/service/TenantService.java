@@ -25,6 +25,9 @@
 package org.marmotgraph.tenants.service;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.JsonAdapter;
 import org.marmotgraph.commons.cache.CacheConstant;
@@ -70,7 +73,11 @@ public class TenantService {
     public List<String> listTenants(){
         List<String> result = new ArrayList<>();
         result.add("default");
-        List<String> fromDB = entityManager.createQuery("select t.name from Tenant t", String.class).getResultList();
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<String> query = criteriaBuilder.createQuery(String.class);
+        Root<Tenant> root = query.from(Tenant.class);
+        query.select(root.get("name"));
+        List<String> fromDB = entityManager.createQuery(query).getResultList();
         if(!CollectionUtils.isEmpty(fromDB)){
             result.addAll(fromDB);
         }

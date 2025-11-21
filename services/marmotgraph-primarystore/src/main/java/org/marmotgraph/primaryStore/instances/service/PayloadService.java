@@ -29,6 +29,7 @@ import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.*;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.JsonAdapter;
 import org.marmotgraph.commons.Tuple;
@@ -43,7 +44,6 @@ import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permissions.controller.Permissions;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
-import org.marmotgraph.primaryStore.instances.model.Properties;
 import org.marmotgraph.primaryStore.instances.model.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
@@ -121,7 +121,7 @@ public class PayloadService {
     public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String typeName, String space, String searchByLabel, String filterProperty, String filterValue, boolean returnPayload, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam) {
         //FIXME take into account all the other attributes
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
-        Class<? extends Payload> clazz = stage == DataStage.IN_PROGRESS ? InferredPayload.class : ReleasedPayload.class;
+        Class<? extends Payload> clazz = stage == DataStage.IN_PROGRESS ? Payload.InferredPayload.class : Payload.ReleasedPayload.class;
         boolean countTotal = paginationParam != null && paginationParam.isReturnTotalResults();
         List<NormalizedJsonLd> results = null;
         Long totalCount = null;
@@ -144,8 +144,8 @@ public class PayloadService {
                 NormalizedJsonLd document;
                 if (returnPayload) {
                     document = jsonAdapter.fromJson(i.getJsonPayload(), NormalizedJsonLd.class);
-                    if (returnAlternatives && i instanceof InferredPayload) {
-                        document.put(EBRAINSVocabulary.META_ALTERNATIVE, jsonAdapter.fromJson(((InferredPayload) i).getAlternative(), DynamicJson.class));
+                    if (returnAlternatives && i instanceof Payload.InferredPayload) {
+                        document.put(EBRAINSVocabulary.META_ALTERNATIVE, jsonAdapter.fromJson(((Payload.InferredPayload) i).getAlternative(), DynamicJson.class));
                     }
                     if (!returnEmbedded) {
                         document.removeEmbedded();
@@ -175,13 +175,19 @@ public class PayloadService {
             resultMap.put(i.getUuid(), new InstanceId(i.getUuid(), SpaceName.fromString(i.getSpaceName())));
         });
         Set<String> flatListOfAlternatives = idWithAlternatives.stream().filter(i -> !resultMap.containsKey(i.getId())).map(IdWithAlternatives::getAlternatives).flatMap(Collection::stream).collect(Collectors.toSet());
-        Stream<InstanceResolutionResult> result;
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<InstanceResolutionResult> criteriaQuery = criteriaBuilder.createQuery(InstanceResolutionResult.class);
+        Root<InstanceInformation> root = criteriaQuery.from(InstanceInformation.class);
+        Join<InstanceInformation, String> alternativeIds = root.join("alternativeIds");
+        criteriaQuery.select(criteriaBuilder.construct(InstanceResolutionResult.class, root.get("uuid"), root.get("spaceName"), alternativeIds));
+        List<Predicate> predicates = new ArrayList<>();
         if (stage == DataStage.RELEASED) {
             // If we are looking for released information only, we should exclude those resolved ids which are unreleased.
-            result = entityManager.createQuery("select i.uuid, i.spaceName, alternative from InstanceInformation i JOIN i.alternativeIds alternative WHERE i.releaseStatus IN :acceptedReleaseStatus and alternative IN :alternatives", InstanceResolutionResult.class).setParameter("acceptedReleaseStatus", Arrays.asList(ReleaseStatus.RELEASED, ReleaseStatus.HAS_CHANGED)).setParameter("alternatives", flatListOfAlternatives).getResultList().stream();
-        } else {
-            result = entityManager.createQuery("select i.uuid, i.spaceName, alternative from InstanceInformation i JOIN i.alternativeIds alternative WHERE alternative IN :alternatives", InstanceResolutionResult.class).setParameter("alternatives", flatListOfAlternatives).getResultList().stream();
+            predicates.add(root.get("releaseStatus").in(Arrays.asList(ReleaseStatus.RELEASED, ReleaseStatus.HAS_CHANGED)));
         }
+        predicates.add(alternativeIds.in(flatListOfAlternatives));
+        criteriaQuery.where(criteriaBuilder.and(predicates.toArray(new Predicate[0])));
+        Stream<InstanceResolutionResult> result = entityManager.createQuery(criteriaQuery).getResultList().stream();
         if (result != null) {
             Map<String, InstanceId> instanceIdsByAlternative = result.collect(Collectors.toMap(InstanceResolutionResult::alternative, v -> new InstanceId(v.uuid(), SpaceName.fromString(v.spaceName()))));
             idWithAlternatives.forEach(id -> {
@@ -290,62 +296,8 @@ public class PayloadService {
         return prefixStream.collect(Collectors.toMap(CURIEPrefix::getNamespace, CURIEPrefix::getPrefix));
     }
 
-    private <T extends Properties> List<T> extractProperties(UUID instanceId, NormalizedJsonLd normalizedJsonLd, Class<T> clazz) {
-        return NormalizedJsonLd.recursiveVisitOfProperties(normalizedJsonLd, Collections.emptyList(), null, (name, value, path, parentMap, orderNumber) -> {
-            if(name.equals("_id")){
-                return null;
-            }
-            if(!(value instanceof Collection) && parentMap.get(name) instanceof Collection){
-                //This property value belongs to a collection. We only want to take one property entry into account
-                return null;
-            }
-            try {
-                T property = clazz.getConstructor().newInstance();
-                String embeddedId = instanceId.toString();
-                List<String> types = normalizedJsonLd.types();
-                if(path.size()>1){
-                    if(parentMap.get(JsonLdConsts.TYPE) != null){
-                        Object innerType = parentMap.get(JsonLdConsts.TYPE);
-                        if(innerType instanceof Collection<?>){
-                            types = ((Collection<?>)innerType).stream().filter(Objects::nonNull).map(Object::toString).toList();
-                        }
-                        else if(innerType != null){
-                            types = Collections.singletonList(innerType.toString());
-                        }
-                        else{
-                            types = Collections.emptyList();
-                        }
-                    }
-                    if(parentMap.get("_id") == null){
-                        //It's a reference - we skip.
-                        return null;
-                    }
-                    else{
-                        embeddedId = parentMap.get("_id").toString();
-                    }
-                }
-                property.setCompositeId(new Properties.CompositeId(instanceId, name, embeddedId));
-                property.setType(String.join(",", types));
-                if (value instanceof List) {
-                    property.setList(true);
-                    if (!((List<?>) value).isEmpty()) {
-                        Object first = ((List<?>) value).getFirst();
-                        if (first instanceof Map && ((Map<?, ?>) first).containsKey(JsonLdConsts.ID)) {
-                            property.setReference(true);
-                        }
-                    }
-                } else if (value instanceof Map && ((Map<?, ?>) value).containsKey(JsonLdConsts.ID)) {
-                    property.setReference(true);
-                }
-                return property;
-            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                     NoSuchMethodException e) {
-                throw new RuntimeException(e);
-            }
-        }, null, new ArrayList<>());
-    }
 
-
+    @Transactional
     public Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> upsertInferredPayload(UUID instanceId, InstanceInformation instanceInformation, NormalizedJsonLd payload, Set<String> relations, JsonLdDoc alternatives, boolean autoRelease, Long reportedTimeStampInMs, boolean createSpace) {
         String newPayload = jsonAdapter.toJson(payload);
         if (createSpace) {
@@ -354,9 +306,9 @@ public class PayloadService {
             spaceRepository.save(s);
         }
         if (!autoRelease) {
-            Optional<ReleasedPayload> releasedInstance = releasedPayloadRepository.findById(instanceId);
+            Optional<Payload.ReleasedPayload> releasedInstance = releasedPayloadRepository.findById(instanceId);
             if (releasedInstance.isPresent()) {
-                ReleasedPayload existingReleasedInstance = releasedInstance.get();
+                Payload.ReleasedPayload existingReleasedInstance = releasedInstance.get();
                 if (existingReleasedInstance.getJsonPayload().equals(newPayload)) {
                     instanceInformation.setReleaseStatus(ReleaseStatus.RELEASED);
                 } else {
@@ -364,19 +316,55 @@ public class PayloadService {
                 }
             }
         }
-        InferredPayload inferredPayload = new InferredPayload();
+        Payload.InferredPayload inferredPayload = new Payload.InferredPayload();
         inferredPayload.setUuid(instanceId);
         inferredPayload.setAlternative(jsonAdapter.toJson(alternatives));
         inferredPayload.setJsonPayload(newPayload);
         inferredPayload.setTypes(payload.types());
-        Set<IncomingRelation> incomingRelations = handleIncomingDocumentRelations(instanceId, instanceInformation.getAlternativeIds(), inferredDocumentRelationRepository, DataStage.IN_PROGRESS);
-        Set<OutgoingRelation> outgoingRelations = handleOutgoingDocumentRelations(instanceId, relations, InferredDocumentRelation.class, inferredDocumentRelationRepository, DataStage.IN_PROGRESS);
-        inferredPayload.setProperties(extractProperties(instanceId, payload, InferredProperties.class));
-
-
+        handleStructure(instanceId, payload, inferredPayload, TypeStructure.InferredTypeStructure.class);
         inferredPayloadRepository.save(inferredPayload);
+        Set<IncomingRelation> incomingRelations = handleIncomingDocumentRelations(instanceId, instanceInformation.getAlternativeIds(), inferredDocumentRelationRepository, DataStage.IN_PROGRESS);
+        Set<OutgoingRelation> outgoingRelations = handleOutgoingDocumentRelations(instanceId, relations, DocumentRelation.InferredDocumentRelation.class, inferredDocumentRelationRepository, DataStage.IN_PROGRESS);
         return new Tuple<>(incomingRelations, outgoingRelations);
     }
+
+    private <T extends TypeStructure> void handleStructure(UUID instanceId, NormalizedJsonLd jsonld, Payload<T> payload, Class<T> typeStructureClass){
+        Map<TypeStructure.CompositeId, T> typeStructures = new HashMap<>();
+        jsonld.walk((key, value, parentMap) -> {
+            if(!key.equals(JsonLdConsts.ID) && !key.equals(JsonLdConsts.TYPE) && !key.equals("_id")) {
+                Object embeddedId = parentMap.get("_id");
+                Object type = parentMap.get(JsonLdConsts.TYPE);
+                String typeString = null;
+                if (type instanceof Collection<?>) {
+                    typeString = StringUtils.join((Collection<?>) type, ", ");
+                } else if (type != null) {
+                    typeString = type.toString();
+                }
+
+                String embeddedIdString = null;
+                if (embeddedId instanceof String) {
+                    embeddedIdString = embeddedId.toString();
+                }
+                try {
+                    TypeStructure.CompositeId typeStructureId = new TypeStructure.CompositeId(instanceId, typeString, embeddedIdString);
+                    T typeStructure = typeStructures.get(typeStructureId);
+                    if(typeStructure == null) {
+                        typeStructure = typeStructureClass.getConstructor().newInstance();
+                        typeStructure.setCompositeId(typeStructureId);
+                        typeStructure.setProperties(new ArrayList<>());
+                        typeStructures.put(typeStructureId, typeStructure);
+                    }
+                    typeStructure.getProperties().add(key);
+                } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                         NoSuchMethodException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+        payload.setTypeStructures(new ArrayList<>(typeStructures.values()));
+    }
+
+
 
 
     private record IncomingRelationInformation(String targetReference, UUID origin, UUID resolvedTarget,
@@ -398,10 +386,14 @@ public class PayloadService {
         if (stage == DataStage.NATIVE) {
             throw new IllegalArgumentException("Can not handle document relations in native space");
         }
-        Class<? extends DocumentRelation> documentRelation = stage == DataStage.RELEASED ? ReleasedDocumentRelation.class : InferredDocumentRelation.class;
-        Class<? extends Payload> payload = stage == DataStage.RELEASED ? ReleasedPayload.class : InferredPayload.class;
-
-        List<IncomingRelationInformation> incomingRelations = entityManager.createQuery(String.format("select i.compositeId.targetReference, i.compositeId.instanceId, i.resolvedTarget, p.jsonPayload from %s i left join %s p on i.compositeId.instanceId=p.uuid where i.compositeId.targetReference in :alternativeIds", documentRelation.getSimpleName(), payload.getSimpleName()), IncomingRelationInformation.class).setParameter("alternativeIds", alternativeIds).getResultList();
+        Class<? extends DocumentRelation> documentRelation = stage == DataStage.RELEASED ? DocumentRelation.ReleasedDocumentRelation.class : DocumentRelation.InferredDocumentRelation.class;
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<IncomingRelationInformation> criteriaQuery = criteriaBuilder.createQuery(IncomingRelationInformation.class);
+        Root<? extends DocumentRelation> root = criteriaQuery.from(documentRelation);
+        Join<Object, Object> payloadJoin = root.join("payload", JoinType.LEFT);
+        criteriaQuery.select(criteriaBuilder.construct(IncomingRelationInformation.class, root.get("compositeId").get("targetReference"), root.get("compositeId").get("uuid"), root.get("resolvedTarget"), payloadJoin.get("jsonPayload")));
+        criteriaQuery.where(root.get("compositeId").get("targetReference").in(alternativeIds));
+        List<IncomingRelationInformation> incomingRelations = entityManager.createQuery(criteriaQuery).getResultList();
         return incomingRelations.stream().map(i -> {
             if (i.resolvedTarget() == null || !i.resolvedTarget().equals(instanceId)) {
                 try {
@@ -422,7 +414,11 @@ public class PayloadService {
 
     private <T extends DocumentRelation> Set<OutgoingRelation> handleOutgoingDocumentRelations(UUID instanceId, Set<String> newRelations, Class<T> clazz, JpaRepository<T, DocumentRelation.CompositeId> repository, DataStage stage) {
         //Analyze
-        List<T> existingDocumentRelations = entityManager.createQuery(String.format("select i from %s i where i.compositeId.instanceId = :uuid", clazz.getSimpleName()), clazz).setParameter("uuid", instanceId).getResultList();
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<T> criteriaQuery = criteriaBuilder.createQuery(clazz);
+        Root<T> root = criteriaQuery.from(clazz);
+        criteriaQuery.where(criteriaBuilder.equal(root.get("compositeId").get("uuid"), instanceId));
+        List<T> existingDocumentRelations = entityManager.createQuery(criteriaQuery).getResultList();
         Map<Boolean, List<T>> existingRelationsByToKeepStatus = existingDocumentRelations.stream().collect(Collectors.partitioningBy(e -> newRelations.contains(e.getCompositeId().getTargetReference())));
         List<T> toBeRemoved = existingRelationsByToKeepStatus.get(false);
         List<T> toBeKept = existingRelationsByToKeepStatus.get(true);
@@ -470,23 +466,25 @@ public class PayloadService {
     }
 
 
+    @Transactional
     public Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> release(UUID instanceId, NormalizedJsonLd jsonPayload, Set<String> outgoingRelations, Long reportedTimestamp, InstanceInformation instanceInformation, List<String> types) {
         if (instanceInformation.getFirstRelease() == null) {
             instanceInformation.setFirstRelease(reportedTimestamp);
         }
         instanceInformation.setLastRelease(reportedTimestamp);
         instanceInformation.setReleaseStatus(ReleaseStatus.RELEASED);
-        ReleasedPayload releasedPayload = new ReleasedPayload();
+        Payload.ReleasedPayload releasedPayload = new Payload.ReleasedPayload();
         releasedPayload.setUuid(instanceId);
         releasedPayload.setJsonPayload(jsonAdapter.toJson(jsonPayload));
         releasedPayload.setTypes(types);
-        Set<IncomingRelation> incomingRelationsSet = handleIncomingDocumentRelations(instanceId, instanceInformation.getAlternativeIds(), releasedDocumentRelationRepository, DataStage.RELEASED);
-        Set<OutgoingRelation> outgoingRelationsSet = handleOutgoingDocumentRelations(instanceId, outgoingRelations, ReleasedDocumentRelation.class, releasedDocumentRelationRepository, DataStage.RELEASED);
         instanceInformationRepository.save(instanceInformation);
-        releasedPayload.setProperties(extractProperties(instanceId, jsonPayload, ReleasedProperties.class));
+        handleStructure(instanceId, jsonPayload, releasedPayload, TypeStructure.ReleasedTypeStructure.class);
         releasedPayloadRepository.save(releasedPayload);
+        Set<IncomingRelation> incomingRelationsSet = handleIncomingDocumentRelations(instanceId, instanceInformation.getAlternativeIds(), releasedDocumentRelationRepository, DataStage.RELEASED);
+        Set<OutgoingRelation> outgoingRelationsSet = handleOutgoingDocumentRelations(instanceId, outgoingRelations, DocumentRelation.ReleasedDocumentRelation.class, releasedDocumentRelationRepository, DataStage.RELEASED);
         return new Tuple<>(incomingRelationsSet, outgoingRelationsSet);
     }
+
 
     public ReleaseStatus getReleaseStatus(UUID instanceId) {
         Optional<InstanceInformation> byId = instanceInformationRepository.findById(instanceId);
@@ -497,15 +495,40 @@ public class PayloadService {
     }
 
     public List<ReleaseStatus> getDistinctReleaseStatus(Set<UUID> instanceIds) {
-        return entityManager.createQuery("select distinct r.releaseStatus from InstanceInformation r where r.uuid in :instanceIds", ReleaseStatus.class).setParameter("instanceIds", instanceIds).getResultList();
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<ReleaseStatus> criteriaQuery = criteriaBuilder.createQuery(ReleaseStatus.class);
+        Root<InstanceInformation> root = criteriaQuery.from(InstanceInformation.class);
+        criteriaQuery.select(root.get("releaseStatus"));
+        criteriaQuery.where(root.get("uuid").in(instanceIds));
+        return entityManager.createQuery(criteriaQuery).getResultList();
     }
 
     public Map<InstanceId, ReleaseStatus> getReleaseStatus(List<UUID> instanceIds) {
-        return entityManager.createQuery("select p.uuid, p.spaceName, p.releaseStatus from InstanceInformation p where p.uuid in :instanceIds", ReleaseStatusById.class).setParameter("instanceIds", instanceIds).getResultStream().collect(Collectors.toMap(k -> new InstanceId(k.uuid, SpaceName.fromString(k.spaceName)), v -> v.releaseStatus));
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<ReleaseStatusById> criteriaQuery = criteriaBuilder.createQuery(ReleaseStatusById.class);
+        Root<InstanceInformation> root = criteriaQuery.from(InstanceInformation.class);
+        criteriaQuery.select(criteriaBuilder.construct(ReleaseStatusById.class, root.get("uuid"), root.get("spaceName"), root.get("releaseStatus")));
+        criteriaQuery.where(root.get("uuid").in(instanceIds));
+        return entityManager.createQuery(criteriaQuery).getResultStream().collect(Collectors.toMap(k -> new InstanceId(k.uuid, SpaceName.fromString(k.spaceName)), v -> v.releaseStatus));
     }
 
     record ReleaseStatusById(UUID uuid, String spaceName, ReleaseStatus releaseStatus) {
     }
+
+
+    private <R extends DocumentRelation> void removeRelations(UUID instanceId, Class<R> relationClass){
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaDelete<R> criteriaDelete = cb.createCriteriaDelete(relationClass);
+        Root<R> deleteRoot = criteriaDelete.from(relationClass);
+        criteriaDelete.where(cb.equal(deleteRoot.get("compositeId").get("uuid"), instanceId));
+        entityManager.createQuery(criteriaDelete).executeUpdate();
+
+        CriteriaUpdate<R> criteriaUpdate = cb.createCriteriaUpdate(relationClass);
+        Root<R> updateRoot = criteriaUpdate.from(relationClass);
+        criteriaUpdate.set(updateRoot.get("resolvedTarget"), (Object) null).where(cb.equal(updateRoot.get("resolvedTarget"), instanceId));
+        entityManager.createQuery(criteriaUpdate).executeUpdate();
+    }
+
 
     public void delete(UUID instanceId) {
         Optional<InstanceInformation> byId = instanceInformationRepository.findById(instanceId);
@@ -514,18 +537,17 @@ public class PayloadService {
                 throw new IllegalStateException(String.format("It's not allowed to delete instance %s because it is still released", instanceId));
             }
         }
-        entityManager.createQuery("delete from InferredDocumentRelation r where r.compositeId.instanceId = :instanceId").setParameter("instanceId", instanceId).executeUpdate();
-        entityManager.createQuery("update InferredDocumentRelation r set r.resolvedTarget = null where r.resolvedTarget = :instanceId").setParameter("instanceId", instanceId).executeUpdate();
+        removeRelations(instanceId, DocumentRelation.InferredDocumentRelation.class);
         inferredPayloadRepository.deleteById(instanceId);
         instanceInformationRepository.deleteById(instanceId);
     }
+
 
     public void unrelease(UUID instanceId) {
         InstanceInformation instanceInformation = getOrCreateGlobalInstanceInformation(instanceId);
         instanceInformation.setReleaseStatus(ReleaseStatus.UNRELEASED);
         instanceInformation.setLastRelease(null);
-        entityManager.createQuery("delete from ReleasedDocumentRelation r where r.compositeId.instanceId = :instanceId").setParameter("instanceId", instanceId).executeUpdate();
-        entityManager.createQuery("update ReleasedDocumentRelation r set r.resolvedTarget = null where r.resolvedTarget = :instanceId").setParameter("instanceId", instanceId).executeUpdate();
+        removeRelations(instanceId, DocumentRelation.ReleasedDocumentRelation.class);
         releasedPayloadRepository.deleteById(instanceId);
         instanceInformationRepository.save(instanceInformation);
     }
@@ -540,9 +562,9 @@ public class PayloadService {
     }
 
     public NormalizedJsonLd getPayloadToRelease(UUID instanceId) {
-        Optional<InferredPayload> inferredPayload = inferredPayloadRepository.findById(instanceId);
+        Optional<Payload.InferredPayload> inferredPayload = inferredPayloadRepository.findById(instanceId);
         if (inferredPayload.isPresent()) {
-            InferredPayload existingPayload = inferredPayload.get();
+            Payload.InferredPayload existingPayload = inferredPayload.get();
             return jsonAdapter.fromJson(existingPayload.getJsonPayload(), NormalizedJsonLd.class);
         } else {
             throw new InstanceNotFoundException(String.format("Could not release instance %s because it was not found", instanceId));
@@ -562,7 +584,11 @@ public class PayloadService {
 
     public void removeNativePayloadsFromEvent(PersistedEvent event) {
         if (event != null) {
-            entityManager.createQuery("delete from NativePayload p where p.compositeId.instanceId = :instanceId").setParameter("instanceId", event.getInstanceId()).executeUpdate();
+            CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+            CriteriaDelete<NativePayload> criteriaDelete = criteriaBuilder.createCriteriaDelete(NativePayload.class);
+            Root<NativePayload> deleteRoot = criteriaDelete.from(NativePayload.class);
+            criteriaDelete.where(criteriaBuilder.equal(deleteRoot.get("compositeId").get("uuid"), event.getInstanceId()));
+            entityManager.createQuery(criteriaDelete).executeUpdate();
         }
     }
 
@@ -576,61 +602,59 @@ public class PayloadService {
     }
 
     public Stream<NormalizedJsonLd> getSourceDocumentsForInstanceFromDB(UUID instanceId, String excludeUserId) {
-        return entityManager.createQuery("select d.jsonPayload, d.propertyUpdates from NativePayload d where d.compositeId.instanceId = :instanceId and d.compositeId.userId != :userId", SourceDocument.class)
-                .setParameter("instanceId", instanceId)
-                .setParameter("userId", excludeUserId)
-                .getResultList().stream()
-                .map(d -> d.toNormalizedJsonLd(jsonAdapter));
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<SourceDocument> query = criteriaBuilder.createQuery(SourceDocument.class);
+        Root<NativePayload> root = query.from(NativePayload.class);
+        query.select(criteriaBuilder.construct(SourceDocument.class, root.get("jsonPayload"), root.get("propertyUpdates")));
+        query.where(
+                criteriaBuilder.and(
+                        criteriaBuilder.equal(root.get("compositeId").get("uuid"), instanceId),
+                        criteriaBuilder.notEqual(root.get("compositeId").get("userId"), excludeUserId)
+                ));
+        return entityManager.createQuery(query).getResultList().stream().map(d -> d.toNormalizedJsonLd(jsonAdapter));
     }
 
+
+    private List<? extends Payload<?>> fetchInstancesByIds(Class<? extends Payload<?>> payloadType, List<UUID> ids){
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<? extends Payload<?>> criteriaQuery = criteriaBuilder.createQuery(payloadType);
+        Root<? extends Payload<?>> root = criteriaQuery.from(payloadType);
+        criteriaQuery.where(root.get("uuid").in(ids));
+        return entityManager.createQuery(criteriaQuery).getResultList();
+    }
 
     public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<UUID> ids, DataStage stage, String typeRestriction, boolean returnPayload, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize) {
         //TODO typeRestriction
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
         if (!returnPayload) {
-            return entityManager.createQuery("select i from InstanceInformation i where i.uuid in :ids", InstanceInformation.class).setParameter("ids", ids).getResultStream().collect(Collectors.toMap(k -> k.getUuid(), v -> {
+            CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+            CriteriaQuery<InstanceInformation> query = criteriaBuilder.createQuery(InstanceInformation.class);
+            Root<InstanceInformation> root = query.from(InstanceInformation.class);
+            query.where(root.get("uuid").in(ids));
+            return entityManager.createQuery(query).getResultStream().collect(Collectors.toMap(InstanceInformation::getUuid, v -> {
                 NormalizedJsonLd normalizedJsonLd = new NormalizedJsonLd();
                 normalizedJsonLd.setId(v.getUuid().toString());
                 normalizedJsonLd.put(EBRAINSVocabulary.META_SPACE, resolveSpaceName(v.getSpaceName(), userWithRoles.getPrivateSpace()));
                 return Result.ok(normalizedJsonLd);
             }));
         } else {
-            switch (stage) {
-                case NATIVE ->
-                        throw new UnsupportedOperationException("You can not request an instance by id for the native stage");
-                case IN_PROGRESS -> {
-                    List<InferredPayload> resultStream = entityManager.createQuery("select i from InferredPayload i where i.uuid in :uuids", InferredPayload.class).setParameter("uuids", ids).getResultList();
-                    return resultStream.stream().collect(Collectors.toMap(InferredPayload::getUuid, v -> {
-                        NormalizedJsonLd result = jsonAdapter.fromJson(v.getJsonPayload(), NormalizedJsonLd.class);
-                        if (!returnEmbedded) {
-                            result.removeEmbedded();
-                        }
-                        if (returnAlternatives) {
-                            result.put(EBRAINSVocabulary.META_ALTERNATIVE, jsonAdapter.fromJson(v.getAlternative(), DynamicJson.class));
-                        }
-                        //TODO incoming links
-                        return Result.ok(result);
-                    }));
-                }
-                case RELEASED -> {
-                    List<InferredPayload> resultStream = entityManager.createQuery("select i from ReleasedPayload i where i.uuid in :uuids", InferredPayload.class).setParameter("uuids", ids).getResultList();
-                    return resultStream.stream().collect(Collectors.toMap(InferredPayload::getUuid, v -> {
-                        NormalizedJsonLd result = jsonAdapter.fromJson(v.getJsonPayload(), NormalizedJsonLd.class);
-                        if (!returnEmbedded) {
-                            //TODO remove embedded entries
-
-                        }
-                        if (returnAlternatives) {
-                            NormalizedJsonLd alternative = jsonAdapter.fromJson(v.getAlternative(), NormalizedJsonLd.class);
-                            result.put(EBRAINSVocabulary.META_ALTERNATIVE, alternative);
-                        }
-
-                        //TODO incoming links
-                        return ResultWithExecutionDetails.ok(result);
-                    }));
-                }
+            if(stage == DataStage.NATIVE){
+                throw new UnsupportedOperationException("You can not request an instance by id for the native stage");
             }
-            return new HashMap<>();
+            else{
+                List<? extends Payload<?>> resultStream = fetchInstancesByIds(stage == DataStage.IN_PROGRESS ? Payload.InferredPayload.class : Payload.ReleasedPayload.class, ids);
+                return resultStream.stream().collect(Collectors.toMap(Payload::getUuid, v -> {
+                    NormalizedJsonLd result = jsonAdapter.fromJson(v.getJsonPayload(), NormalizedJsonLd.class);
+                    if (!returnEmbedded) {
+                        result.removeEmbedded();
+                    }
+                    if (returnAlternatives && v instanceof Payload.InferredPayload) {
+                        result.put(EBRAINSVocabulary.META_ALTERNATIVE, jsonAdapter.fromJson(((Payload.InferredPayload)v).getAlternative(), DynamicJson.class));
+                    }
+                    //TODO incoming links
+                    return Result.ok(result);
+                }));
+            }
         }
     }
 
@@ -641,9 +665,9 @@ public class PayloadService {
             case NATIVE ->
                     throw new UnsupportedOperationException("You can not request an instance by id for the native stage");
             case IN_PROGRESS -> {
-                Optional<InferredPayload> byId = inferredPayloadRepository.findById(id);
+                Optional<Payload.InferredPayload> byId = inferredPayloadRepository.findById(id);
                 if (byId.isPresent()) {
-                    InferredPayload inferredPayload = byId.get();
+                    Payload.InferredPayload inferredPayload = byId.get();
                     if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.READ, SpaceName.fromString(inferredPayload.getInstanceInformation().getSpaceName()), inferredPayload.getUuid())) {
                         throw new ForbiddenException();
                     }
@@ -656,9 +680,9 @@ public class PayloadService {
                 }
             }
             case RELEASED -> {
-                Optional<ReleasedPayload> byId = releasedPayloadRepository.findById(id);
+                Optional<Payload.ReleasedPayload> byId = releasedPayloadRepository.findById(id);
                 if (byId.isPresent()) {
-                    ReleasedPayload releasedPayload = byId.get();
+                    Payload.ReleasedPayload releasedPayload = byId.get();
                     if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.READ_RELEASED, SpaceName.fromString(releasedPayload.getInstanceInformation().getSpaceName()), releasedPayload.getUuid())) {
                         throw new ForbiddenException();
                     }

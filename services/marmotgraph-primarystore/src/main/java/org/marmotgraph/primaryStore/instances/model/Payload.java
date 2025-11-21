@@ -33,7 +33,7 @@ import java.util.UUID;
 @MappedSuperclass
 @Getter
 @Setter
-public abstract class Payload {
+public abstract class Payload<T extends TypeStructure> {
 
     @Id
     private UUID uuid;
@@ -47,5 +47,41 @@ public abstract class Payload {
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "uuid", referencedColumnName = "uuid")
     private InstanceInformation instanceInformation;
+
+    public abstract void setTypeStructures(List<T> typeStructures);
+
+
+    @Entity
+    @Getter
+    @Setter
+    @Table(name="instances.inferred")
+    public static class InferredPayload extends Payload<TypeStructure.InferredTypeStructure> {
+
+        @Column(columnDefinition = "TEXT")
+        private String alternative;
+
+        @OneToMany(targetEntity = TypeStructure.InferredTypeStructure.class, cascade = CascadeType.ALL, mappedBy = "compositeId.uuid")
+        private List<TypeStructure.InferredTypeStructure> typeStructures;
+
+        @OneToMany(targetEntity = DocumentRelation.InferredDocumentRelation.class, mappedBy = "compositeId.uuid")
+        private List<DocumentRelation.InferredDocumentRelation> documentRelations;
+
+    }
+
+
+
+    @Entity
+    @Getter
+    @Setter
+    @Table(name="instances.released")
+    public static class ReleasedPayload extends Payload<TypeStructure.ReleasedTypeStructure> {
+
+        @OneToMany(targetEntity = TypeStructure.ReleasedTypeStructure.class, cascade = CascadeType.ALL, mappedBy = "compositeId.uuid")
+        private List<TypeStructure.ReleasedTypeStructure> typeStructures;
+
+        @OneToMany(targetEntity = DocumentRelation.ReleasedDocumentRelation.class, mappedBy = "compositeId.uuid")
+        private List<DocumentRelation.ReleasedDocumentRelation> documentRelations;
+    }
+
 
 }
