@@ -30,6 +30,7 @@ import org.marmotgraph.authorization.service.InvitationsService;
 import org.marmotgraph.authorization.service.PermissionsService;
 import org.marmotgraph.authorization.service.UserInfoService;
 import org.marmotgraph.commons.AuthTokenContext;
+import org.marmotgraph.commons.AuthTokens;
 import org.marmotgraph.commons.JsonAdapter;
 import org.marmotgraph.commons.Tuple;
 import org.marmotgraph.commons.api.authorization.Authorization;
@@ -66,7 +67,8 @@ public class AuthorizationAPI implements Authorization.Client {
 
     @Override
     public User getMyUserInfo() {
-        if(authTokenContext.getAuthTokens()!=null && authTokenContext.getAuthTokens().getUserAuthToken() != null) {
+        AuthTokens authTokens = authTokenContext.getAuthTokens();
+        if(authTokens != null && authTokenContext.getAuthTokens().getUserAuthToken() != null) {
             return userInfoService.getUserOrClientProfile(authTokenContext.getAuthTokens().getUserAuthToken().getBearerToken()).getA();
         }
         return null;
@@ -74,17 +76,15 @@ public class AuthorizationAPI implements Authorization.Client {
 
     @Override
     public UserWithRoles getRoles() {
-        if(authTokenContext.getAuthTokens()!=null && authTokenContext.getAuthTokens().getUserAuthToken() != null) {
-            Tuple<User, List<String>> userProfile = userInfoService.getUserOrClientProfile(authTokenContext.getAuthTokens().getUserAuthToken().getBearerToken());
+        AuthTokens authTokens = authTokenContext.getAuthTokens();
+        if(authTokens != null && authTokens.getUserAuthToken() != null) {
+            Tuple<User, List<String>> userProfile = userInfoService.getUserOrClientProfile(authTokens.getUserAuthToken().getBearerToken());
             if (userProfile != null) {
                 Tuple<User, List<String>> clientProfile = null;
-                if(authTokenContext.getAuthTokens().getClientAuthToken()!=null) {
-                    clientProfile = userInfoService.getUserOrClientProfile(authTokenContext.getAuthTokens().getClientAuthToken().getBearerToken());
+                if(authTokens.getClientAuthToken() != null) {
+                    clientProfile = userInfoService.getUserOrClientProfile(authTokens.getClientAuthToken().getBearerToken());
                     if (clientProfile != null && !clientProfile.getA().isServiceAccount()) {
                         throw new UnauthorizedException("The client authorization credentials you've passed doesn't belong to a service account. This is not allowed!");
-                    }
-                    else{
-                        throw new UnauthorizedException("The client authorization credentials couldn't be validated.");
                     }
                 }
                 //TODO we could skip the invitation roles if the user already has global permissions starting from REVIEWER role (since the user is allowed to read everything)

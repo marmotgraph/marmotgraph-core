@@ -28,6 +28,7 @@ import org.marmotgraph.commons.AuthContext;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.marmotgraph.commons.AuthTokens;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,14 +61,17 @@ public class MetricsAspect {
             } catch (Throwable throwable) {
                 throw throwable;
             } finally {
-                if(authContext!=null && authContext.getAuthTokens()!=null) {
-                    Instant end = Instant.now();
-                    MethodExecution execution = new MethodExecution();
-                    execution.setPackageName(proceedingJoinPoint.getSignature().getDeclaringType().getSimpleName());
-                    execution.setMethodName(proceedingJoinPoint.getSignature().getName());
-                    execution.setStartTime(start.toEpochMilli());
-                    execution.setEndTime(end.toEpochMilli());
-                    testInformation.getMethodExecutions().computeIfAbsent(authContext.getAuthTokens().getTransactionId(), f -> new ArrayList<>()).add(execution);
+                if(authContext!=null) {
+                    AuthTokens authTokens = authContext.getAuthTokens();
+                    if(authTokens != null) {
+                        Instant end = Instant.now();
+                        MethodExecution execution = new MethodExecution();
+                        execution.setPackageName(proceedingJoinPoint.getSignature().getDeclaringType().getSimpleName());
+                        execution.setMethodName(proceedingJoinPoint.getSignature().getName());
+                        execution.setStartTime(start.toEpochMilli());
+                        execution.setEndTime(end.toEpochMilli());
+                        testInformation.getMethodExecutions().computeIfAbsent(authTokens.getTransactionId(), f -> new ArrayList<>()).add(execution);
+                    }
                 }
             }
             return value;
