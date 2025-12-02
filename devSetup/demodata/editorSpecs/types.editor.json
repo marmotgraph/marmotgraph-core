@@ -1,0 +1,37 @@
+{
+  "@context": {
+    "@vocab": "https://marmotgraph.org/types/",
+    "s": "http://schema.org/",
+    "kg": "https://core.kg.ebrains.eu/vocab/meta/"
+  },
+  "Country": {
+    "s:description": "A country is an area of land, which has its own government and laws, or used to have them, such as a state, a nation, a nation state, or other political entity. When referring to a specific polity, the term \"country\" may refer to a sovereign state, a state with limited recognition, a constituent country, or a dependent territory.",
+    "s:name": "Country",
+    "kg:color": "#0AA6D8",
+    "kg:type/labelProperty": "https://marmotgraph.org/properties/name"
+  },
+  "LanguageExample": {
+    "s:description": "An example of a saying in English containing translations",
+    "s:name": "Language example",
+    "kg:color": "#0AA6D8",
+    "kg:type/labelProperty": "https://marmotgraph.org/properties/name"
+  },
+  "Translation": {
+    "s:description": "A translation of the given language example",
+    "s:name": "Translation",
+    "kg:color": "#0AA6D8",
+    "kg:type/labelProperty": "https://marmotgraph.org/properties/value"
+  },
+  "Language": {
+    "s:description": "Language is a structured system of communication that consists of grammar and vocabulary.",
+    "s:name": "Language",
+    "kg:color": "#0AA6D8",
+    "kg:type/labelProperty": "https://marmotgraph.org/properties/name"
+  },
+  "MountainRange": {
+    "s:description": "A mountain range or hill range is a series of mountains or hills arranged in a line and connected by high ground.",
+    "s:name": "Mountain range",
+    "kg:color": "#0AA6D8",
+    "kg:type/labelProperty": "https://marmotgraph.org/properties/name"
+  }
+}

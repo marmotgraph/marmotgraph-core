@@ -299,6 +299,7 @@ public class PayloadService {
 
     @Transactional
     public Tuple<Set<IncomingRelation>, Set<OutgoingRelation>> upsertInferredPayload(UUID instanceId, InstanceInformation instanceInformation, NormalizedJsonLd payload, Set<Tuple<String, String>> relations, JsonLdDoc alternatives, boolean autoRelease, Long reportedTimeStampInMs, boolean createSpace) {
+        boolean query = payload.types().contains(EBRAINSVocabulary.META_QUERY_TYPE);
         String newPayload = jsonAdapter.toJson(payload);
         if (createSpace) {
             Space s = new Space();
@@ -321,10 +322,15 @@ public class PayloadService {
         inferredPayload.setAlternative(jsonAdapter.toJson(alternatives));
         inferredPayload.setJsonPayload(newPayload);
         inferredPayload.setTypes(payload.types());
+        if(query){
+            Query q = new Query();
+            q.setUuid(instanceId);
+            inferredPayload.setQuery(q);
+        }
         handleStructure(instanceId, payload, inferredPayload, TypeStructure.InferredTypeStructure.class);
         inferredPayloadRepository.save(inferredPayload);
-        Set<IncomingRelation> incomingRelations = handleIncomingDocumentRelations(instanceId, instanceInformation.getAlternativeIds(), inferredDocumentRelationRepository, DataStage.IN_PROGRESS);
-        Set<OutgoingRelation> outgoingRelations = handleOutgoingDocumentRelations(instanceId, relations, DocumentRelation.InferredDocumentRelation.class, inferredDocumentRelationRepository, DataStage.IN_PROGRESS);
+        Set<IncomingRelation> incomingRelations = query ? Collections.emptySet() : handleIncomingDocumentRelations(instanceId, instanceInformation.getAlternativeIds(), inferredDocumentRelationRepository, DataStage.IN_PROGRESS);
+        Set<OutgoingRelation> outgoingRelations = query ? Collections.emptySet() : handleOutgoingDocumentRelations(instanceId, relations, DocumentRelation.InferredDocumentRelation.class, inferredDocumentRelationRepository, DataStage.IN_PROGRESS);
         return new Tuple<>(incomingRelations, outgoingRelations);
     }
 
@@ -503,6 +509,7 @@ public class PayloadService {
         return entityManager.createQuery(criteriaQuery).getResultList();
     }
 
+    @Transactional
     public Map<InstanceId, ReleaseStatus> getReleaseStatus(List<UUID> instanceIds) {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         CriteriaQuery<ReleaseStatusById> criteriaQuery = criteriaBuilder.createQuery(ReleaseStatusById.class);
@@ -619,6 +626,7 @@ public class PayloadService {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         CriteriaQuery<? extends Payload<?>> criteriaQuery = criteriaBuilder.createQuery(payloadType);
         Root<? extends Payload<?>> root = criteriaQuery.from(payloadType);
+        root.fetch("instanceInformation", JoinType.LEFT);
         criteriaQuery.where(root.get("uuid").in(ids));
         return entityManager.createQuery(criteriaQuery).getResultList();
     }
@@ -651,6 +659,7 @@ public class PayloadService {
                     if (returnAlternatives && v instanceof Payload.InferredPayload) {
                         result.put(EBRAINSVocabulary.META_ALTERNATIVE, jsonAdapter.fromJson(((Payload.InferredPayload)v).getAlternative(), DynamicJson.class));
                     }
+                    result.put(EBRAINSVocabulary.META_SPACE, resolveSpaceName(v.getInstanceInformation().getSpaceName(), userWithRoles.getPrivateSpace()));
                     //TODO incoming links
                     return Result.ok(result);
                 }));

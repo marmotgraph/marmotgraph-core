@@ -37,13 +37,16 @@ import org.marmotgraph.commons.model.external.spaces.SpaceInformation;
 import org.marmotgraph.commons.model.external.spaces.SpaceSpecification;
 import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.permission.Functionality;
+import org.marmotgraph.commons.permission.FunctionalityInstance;
 import org.marmotgraph.commons.permissions.controller.Permissions;
 import org.marmotgraph.primaryStore.instances.model.Space;
 import org.marmotgraph.primaryStore.instances.service.SpaceRepository;
 import org.marmotgraph.primaryStore.instances.service.SpaceService;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @Service
@@ -56,27 +59,33 @@ public class SpacesAPI implements Spaces.Client {
     private final SpaceRepository spaceDefinitionRepository;
     private final SpaceService spaceService;
 
+
     @Override
     public SpaceInformation getSpace(SpaceName space, boolean permissions) {
         Optional<Space> s = spaceService.getSpace(space);
         if(s.isPresent()){
             Space foundSpace = s.get();
-            final SpaceName privateSpace = authContext.getUserWithRoles().getPrivateSpace();
+            UserWithRoles userWithRoles = authContext.getUserWithRoles();
+            final SpaceName privateSpace = userWithRoles.getPrivateSpace();
             if(foundSpace.getName().equals(privateSpace.getName())){
                 foundSpace.setName(SpaceName.PRIVATE_SPACE);
             }
-            //TODO permissions
-            return foundSpace.toSpaceInformation();
+            SpaceInformation spaceInformation = foundSpace.toSpaceInformation();
+            if(permissions){
+                applyPermissions(spaceInformation, userWithRoles);
+            }
+            return spaceInformation;
         }
         return null;
     }
 
     @Override
-    public Paginated<SpaceInformation> listSpaces(PaginationParam paginationParam) {
-        final SpaceName privateSpace = authContext.getUserWithRoles().getPrivateSpace();
+    public Paginated<SpaceInformation> listSpaces(PaginationParam paginationParam, boolean returnPermissions) {
+        UserWithRoles userWithRoles = authContext.getUserWithRoles();
+        final SpaceName privateSpace = userWithRoles.getPrivateSpace();
         Paginated<SpaceInformation> spaceInformationPaginated = spaceService.listSpaces(paginationParam);
         spaceInformationPaginated.getData().stream().filter(s -> s.getName().equals(privateSpace.getName())).findFirst().ifPresent(s -> s.setName(SpaceName.PRIVATE_SPACE));
-        if (authContext.getUserWithRoles().hasInvitations()) {
+        if (userWithRoles.hasInvitations()) {
             if(spaceInformationPaginated.getTotalResults()-spaceInformationPaginated.getSize()<=spaceInformationPaginated.getFrom()){
                 //We're on the last page -> let's add the virtual space
                 SpaceInformation spaceInformation = new SpaceInformation();
@@ -86,7 +95,24 @@ public class SpacesAPI implements Spaces.Client {
             }
             spaceInformationPaginated.increaseTotalResult();
         }
+        if (returnPermissions) {
+            for (SpaceInformation spaceInformation : spaceInformationPaginated.getData()) {
+                applyPermissions(spaceInformation, userWithRoles);
+            }
+        }
         return spaceInformationPaginated;
+    }
+
+    private static void applyPermissions(SpaceInformation spaceInformation, UserWithRoles userWithRoles) {
+        String spaceIdentifier = spaceInformation.getIdentifier();
+        if (spaceIdentifier != null) {
+            final SpaceName internalSpaceName = SpaceName.getInternalSpaceName(spaceIdentifier, userWithRoles.getPrivateSpace());
+            List<Functionality> applyingFunctionalities = userWithRoles.getPermissions().stream().
+                    filter(f -> (f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.INSTANCE
+                                 || f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.TYPES) && f.appliesTo(internalSpaceName, null)
+                    ).map(FunctionalityInstance::getFunctionality).distinct().collect(Collectors.toList());
+            spaceInformation.setPermissions(applyingFunctionalities);
+        }
     }
 
     @Override

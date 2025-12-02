@@ -29,6 +29,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.marmotgraph.commons.model.ReleaseStatus;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -56,4 +57,11 @@ public class InstanceInformation {
     @CollectionTable(name="instances.information.alternative_ids", indexes = @Index(name="alternativeIdLookup", unique = true, columnList = "alternative_ids"))
     @Column(length = 2000)
     private Set<String> alternativeIds;
+
+    @OneToMany(targetEntity=TypeStructure.InferredTypeStructure.class, mappedBy = "instanceInformation", fetch = FetchType.LAZY)
+    private List<TypeStructure.InferredTypeStructure> typeStructures;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "spaceName", referencedColumnName = "name", insertable = false, updatable = false)
+    private Space space;
 }

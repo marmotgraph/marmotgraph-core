@@ -1,3 +1,4 @@
 ebrains-kg-core
+pyld
 requests
 #marmotgraph==4.0.0

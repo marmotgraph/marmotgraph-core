@@ -69,6 +69,9 @@ public abstract class Payload<T extends TypeStructure> {
         @OneToMany(targetEntity = DocumentRelation.InferredDocumentRelation.class, mappedBy = "targetPayload", fetch = FetchType.LAZY)
         private List<DocumentRelation.InferredDocumentRelation> incomingRelations;
 
+        @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+        @PrimaryKeyJoinColumn
+        private Query query;
     }
 
 

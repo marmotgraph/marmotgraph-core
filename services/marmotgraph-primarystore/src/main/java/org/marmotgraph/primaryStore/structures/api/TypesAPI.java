@@ -26,17 +26,20 @@ package org.marmotgraph.primaryStore.structures.api;
 
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.NotImplementedException;
+import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.api.primaryStore.Types;
+import org.marmotgraph.commons.exception.ForbiddenException;
 import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.Paginated;
 import org.marmotgraph.commons.model.PaginationParam;
-import org.marmotgraph.commons.model.ResultWithExecutionDetails;
+import org.marmotgraph.commons.model.Result;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
+import org.marmotgraph.commons.permission.Functionality;
+import org.marmotgraph.commons.permissions.controller.Permissions;
 import org.marmotgraph.primaryStore.structures.service.TypesService;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -46,7 +49,11 @@ import java.util.Map;
 @AllArgsConstructor
 public class TypesAPI implements Types.Client {
 
+    private static final String NO_RIGHTS_TO_DEFINE_TYPES = "You don't have the required rights to define types";
+
     private final TypesService typesService;
+    private final Permissions permissions;
+    private final AuthContext authContext;
 
 
     @Override
@@ -57,40 +64,66 @@ public class TypesAPI implements Types.Client {
     }
 
     @Override
-    public Map<String, ResultWithExecutionDetails<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space,
-                                                                                   boolean withProperties, boolean withIncomingLinks) {
-        throw new NotImplementedException();
+    public Map<String, Result<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space,
+                                                               boolean withProperties, boolean withIncomingLinks) {
+        return typesService.getByName(types, stage, space, withProperties, withIncomingLinks);
     }
+
+    private void canManageTypesAndPropertiesOrThrow(){
+        if(!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.DEFINE_TYPES_AND_PROPERTIES)){
+            throw new ForbiddenException(NO_RIGHTS_TO_DEFINE_TYPES);
+        }
+    }
+
 
     @Override
     public DynamicJson getSpecifyType(String type, boolean global) {
-        throw new NotImplementedException();
+        canManageTypesAndPropertiesOrThrow();
+        return typesService.getTypeSpecification(type, getClientId(global));
     }
+
+
+    private String getClientId(boolean global) {
+        String clientId = "";
+        if (!global) {
+            clientId = authContext.getUserWithRoles().getClientId();
+            if (clientId == null) {
+                throw new IllegalArgumentException("You need to be logged in with a client for non-global specifications");
+            }
+        }
+        return clientId;
+    }
+
 
     @Override
     public void specifyType(JsonLdId typeName, NormalizedJsonLd normalizedJsonLd, boolean global) {
-        throw new NotImplementedException();
+        canManageTypesAndPropertiesOrThrow();
+        typesService.specifyType(typeName, normalizedJsonLd, getClientId(global));
     }
 
     @Override
     public void removeTypeSpecification(JsonLdId typeName, boolean global) {
-        throw new NotImplementedException();
+        canManageTypesAndPropertiesOrThrow();
+        typesService.removeType(typeName, getClientId(global));
     }
 
 
     @Override
-    public DynamicJson getSpecifyProperty(String propertyName, boolean global) {
-        throw new NotImplementedException();
+    public DynamicJson getPropertySpecification(String propertyName, boolean global) {
+        canManageTypesAndPropertiesOrThrow();
+        return typesService.getPropertySpecification(propertyName, getClientId(global));
     }
 
     @Override
     public void specifyProperty(JsonLdId propertyName, NormalizedJsonLd normalizedJsonLd, boolean global) {
-        throw new NotImplementedException();
+        canManageTypesAndPropertiesOrThrow();
+        typesService.specifyProperty(propertyName, normalizedJsonLd, getClientId(global));
     }
 
     @Override
     public void removePropertySpecification(JsonLdId propertyName, boolean global) {
-        throw new NotImplementedException();
+        canManageTypesAndPropertiesOrThrow();
+        typesService.removePropertySpecification(propertyName, getClientId(global));
     }
 
     @Override

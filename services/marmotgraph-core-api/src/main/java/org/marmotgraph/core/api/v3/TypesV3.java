@@ -36,10 +36,7 @@ import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.markers.ExposesType;
 import org.marmotgraph.commons.markers.WritesData;
-import org.marmotgraph.commons.model.PaginatedResult;
-import org.marmotgraph.commons.model.PaginationParam;
-import org.marmotgraph.commons.model.ResultWithExecutionDetails;
-import org.marmotgraph.commons.model.SpaceName;
+import org.marmotgraph.commons.model.*;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.core.model.ExposedStage;
@@ -75,7 +72,7 @@ public class TypesV3 {
     @PostMapping("/typesByName")
     @ExposesType
     @Advanced
-    public ResultWithExecutionDetails<Map<String, ResultWithExecutionDetails<TypeInformation>>> getTypesByName(@RequestBody List<String> typeNames, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space) {
+    public ResultWithExecutionDetails<Map<String, Result<TypeInformation>>> getTypesByName(@RequestBody List<String> typeNames, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space) {
         return ResultWithExecutionDetails.ok(graphDBTypes.getTypesByName(typeNames, stage.getStage(), space, withProperties, withIncomingLinks));
     }
 

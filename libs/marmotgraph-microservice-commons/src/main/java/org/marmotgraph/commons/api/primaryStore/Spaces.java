@@ -36,7 +36,7 @@ public interface Spaces {
 
     SpaceInformation getSpace(SpaceName space, boolean permissions);
 
-    Paginated<SpaceInformation> listSpaces(PaginationParam paginationParam);
+    Paginated<SpaceInformation> listSpaces(PaginationParam paginationParam, boolean permissions);
 
     SpaceSpecification getSpaceSpecification(SpaceName space);
 

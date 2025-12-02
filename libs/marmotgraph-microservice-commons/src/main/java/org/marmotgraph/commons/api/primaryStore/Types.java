@@ -27,10 +27,7 @@ package org.marmotgraph.commons.api.primaryStore;
 import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.model.DataStage;
-import org.marmotgraph.commons.model.Paginated;
-import org.marmotgraph.commons.model.PaginationParam;
-import org.marmotgraph.commons.model.ResultWithExecutionDetails;
+import org.marmotgraph.commons.model.*;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
 
 import java.util.List;
@@ -42,7 +39,7 @@ public interface Types {
 
     Paginated<TypeInformation> listTypes(DataStage stage, String space, boolean withProperties, boolean withIncomingLinks, PaginationParam paginationParam);
 
-    Map<String, ResultWithExecutionDetails<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space, boolean withProperties, boolean withIncomingLinks);
+    Map<String, Result<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space, boolean withProperties, boolean withIncomingLinks);
 
     DynamicJson getSpecifyType(String type, boolean global);
 
@@ -50,7 +47,7 @@ public interface Types {
 
     void removeTypeSpecification(JsonLdId typeName, boolean global);
 
-    DynamicJson getSpecifyProperty(String property, boolean global);
+    DynamicJson getPropertySpecification(String property, boolean global);
 
     void specifyProperty(JsonLdId propertyName, NormalizedJsonLd normalizedJsonLd, boolean global);
 

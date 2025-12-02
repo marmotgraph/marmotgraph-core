@@ -65,7 +65,7 @@ public class PropertiesV3 {
             @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)") @RequestParam(value = "global", required = false) boolean global,
             @RequestParam(value = "property", required = false) String property) {
 
-        DynamicJson propertySpecification = graphDBTypes.getSpecifyProperty(property, global);
+        DynamicJson propertySpecification = graphDBTypes.getPropertySpecification(property, global);
 
         if (propertySpecification != null) {
             return propertySpecification;

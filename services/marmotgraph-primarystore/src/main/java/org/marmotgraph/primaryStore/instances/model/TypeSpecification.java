@@ -22,18 +22,36 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.primaryStore.instances.service;
+package org.marmotgraph.primaryStore.instances.model;
 
-import org.marmotgraph.primaryStore.instances.model.Space;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import jakarta.persistence.*;
+import lombok.*;
 
-import java.util.List;
+import java.io.Serializable;
+import java.util.Comparator;
+import java.util.UUID;
 
-@Repository
-public interface SpaceRepository extends JpaRepository<Space, String> {
+@Entity
+@Getter
+@Setter
+@Table(name="typeSpecification")
+public class TypeSpecification {
 
-    List<Space> getSpacesByScopeRelevant(boolean scopeRelevant);
+    @Embeddable
+    @Getter
+    @Setter
+    @EqualsAndHashCode
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class CompositeId implements Serializable {
+        private String type;
+        private String clientId;
+    }
 
+    @EmbeddedId
+    private CompositeId compositeId;
+
+    @Column(columnDefinition = "TEXT")
+    private String payload;
 
 }

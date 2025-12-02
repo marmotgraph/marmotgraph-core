@@ -1,4 +1,5 @@
 {
+  "id": "490387a4-8079-4aa8-820d-d2c214bcaf86",
   "@context": {
     "@vocab": "https://core.kg.ebrains.eu/vocab/query/",
     "query": "https://schema.hbp.eu/myQuery/",
@@ -44,6 +45,7 @@
         },
         {
           "propertyName": "query:dialects",
+          "required": true,
           "path": {
             "@id": "https://marmotgraph.org/properties/dialectOf",
             "reverse": true

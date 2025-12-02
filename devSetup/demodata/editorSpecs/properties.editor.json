@@ -1,0 +1,63 @@
+{
+  "@context": {
+    "@vocab": "https://marmotgraph.org/properties/",
+    "s": "http://schema.org/",
+    "kg": "https://core.kg.ebrains.eu/vocab/meta/",
+    "kg_p": "https://editor.kg.ebrains.eu/vocab/meta/property/"
+  },
+  "name": {
+    "s:name": "Name",
+    "kg_p:widget": "InputText"
+  },
+  "officialLanguages": {
+    "kg:nameForReverseLink": "is official language of",
+    "s:name": "Official languages",
+    "kg_p:widget": "DynamicDropdown"
+  },
+  "otherLanguages": {
+    "s:name": "Other languages",
+    "kg:nameForReverseLink": "Is other language of",
+    "kg_p:widget": "DynamicDropdown"
+  },
+  "translations": {
+    "s:name": "Translations",
+    "kg:nameForReverseLink": "Is translation of",
+    "kg_p:widget": "DynamicDropdown"
+  },
+  "language": {
+    "s:name": "Language",
+    "kg:nameForReverseLink": "Is language of",
+    "kg_p:widget": "DynamicDropdown"
+  },
+  "value":{
+    "s:name": "Value",
+    "kg_p:widget": "InputText"
+  },
+  "alternativeValues": {
+    "s:name": "Alternative values",
+    "kg_p:widget": "InputTextMultiple"
+  },
+  "dialectOf": {
+    "s:name": "Dialect of",
+    "kg:nameForReverseLink": "Has dialects",
+    "kg_p:widget": "DynamicDropdown"
+  },
+  "countries": {
+    "s:name": "Countries",
+    "kg:nameForReverseLink": "Is country of",
+    "kg_p:widget": "DynamicDropdown"
+  },
+  "vernacularName":{
+    "s:name": "Vernacular name",
+    "kg_p:widget": "InputText"
+  },
+  "image": {
+    "s:name": "Image",
+    "kg_p:widget": "InputText"
+  },
+  "occurrences":{
+    "s:name": "Occurrences",
+    "kg:nameForReverseLink": "Has occurrence of",
+    "kg_p:widget": "DynamicDropdown"
+  }
+}

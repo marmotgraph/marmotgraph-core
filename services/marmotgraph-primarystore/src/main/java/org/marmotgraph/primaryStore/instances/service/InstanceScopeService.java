@@ -25,19 +25,26 @@
 package org.marmotgraph.primaryStore.instances.service;
 
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.Root;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.*;
 import lombok.AllArgsConstructor;
+import org.marmotgraph.commons.Tuple;
+import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.DataStage;
 import org.marmotgraph.commons.model.ScopeElement;
+import org.marmotgraph.commons.model.external.types.TypeInformation;
+import org.marmotgraph.commons.model.internal.spaces.Space;
+import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.graphdb.GraphDB;
 import org.marmotgraph.primaryStore.instances.model.InstanceInformation;
 import org.marmotgraph.primaryStore.instances.model.InstanceScope;
+import org.marmotgraph.primaryStore.instances.model.TypeStructure;
+import org.marmotgraph.primaryStore.structures.service.TypesService;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @AllArgsConstructor
 @Component
@@ -47,16 +54,45 @@ public class InstanceScopeService {
     private final GraphDB graphDB;
     private final EntityManager em;
     private final InstanceInformationRepository instanceInformationRepository;
+    private final InferredTypeStructureRepository inferredTypeStructureRepository;
+    private final SpaceRepository spaceRepository;
+
 
     public void calculateInstanceScope(UUID id) {
-        Optional<InstanceInformation> instanceInformationOptional = this.instanceInformationRepository.findById(id);
-        if(instanceInformationOptional.isPresent()){
-            InstanceInformation instanceInformation = instanceInformationOptional.get();
-            final ScopeElement scopeForInstance = graphDB.getScopeForInstance(instanceInformation.getSpaceName(), instanceInformation.getUuid(), DataStage.IN_PROGRESS, false);
-            final Set<UUID> uuids = collectIds(scopeForInstance, new HashSet<>());
-            repository.saveAndFlush(new InstanceScope(id, new HashSet<>(uuids)));
-        }
+//        fetchScopeRelevantQueries()
+//
+//
+//        List<TypeStructure.InferredTypeStructure> instances = inferredTypeStructureRepository.findByCompositeIdEmbeddedIdentifier(id.toString());
+//        Set<String> types = instances.stream().map(i -> i.getCompositeId().getType()).collect(Collectors.toSet());
+//        Set<String> relevantSpaces = spaceRepository.getSpacesByScopeRelevant(true).stream().map(org.marmotgraph.primaryStore.instances.model.Space::getName).collect(Collectors.toSet());
+//        inferredTypeStructureRepository.findByCompositeIdType(EBRAINSVocabulary.META_QUERY_TYPE)
+//
+//        instances.forEach(f -> {});
+
+        //
+//        Optional<InstanceInformation> instanceInformationOptional = this.instanceInformationRepository.findById(id);
+//        if(instanceInformationOptional.isPresent()){
+//            InstanceInformation instanceInformation = instanceInformationOptional.get();
+//            Stream<NormalizedJsonLd> typeQueries = .types().stream().map(type -> queries.getQueriesByRootType(stage, null, null, false, false, type).getData()).flatMap(Collection::stream);
+//
+//
+//            final ScopeElement scopeForInstance = graphDB.getScopeForInstance(instanceInformation.getSpaceName(), instanceInformation.getUuid(), DataStage.IN_PROGRESS, false);
+//            final Set<UUID> uuids = collectIds(scopeForInstance, new HashSet<>());
+//            repository.saveAndFlush(new InstanceScope(id, new HashSet<>(uuids)));
+//        }
     }
+
+    private List<UUID> fetchScopeRelevantQueries(){
+        CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+        CriteriaQuery<UUID> query = criteriaBuilder.createQuery(UUID.class);
+        Root<? extends InstanceInformation> root = query.from(InstanceInformation.class);
+        query.select(root.get("uuid")).distinct(true);
+        Join<Object, Object> typeStructures = root.join("typeStructures", JoinType.LEFT);
+        Join<Object, Object> space = root.join("space", JoinType.LEFT);
+        query.where(criteriaBuilder.and(criteriaBuilder.isTrue(space.get("scopeRelevant")), criteriaBuilder.equal(typeStructures.get("compositeId").get("type"), EBRAINSVocabulary.META_QUERY_TYPE)));
+        return em.createQuery(query).getResultList();
+    }
+
 
     public Set<UUID> getRelatedIds(UUID id){
         return repository.findById(id).map(InstanceScope::getRelatedIds).orElse(Collections.emptySet());

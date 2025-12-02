@@ -43,7 +43,7 @@ public class CoreSpaceController {
     private final AuthContext authContext;
 
     public Paginated<SpaceInformation> listSpaces(PaginationParam pagination, boolean permissions) {
-        return spaces.listSpaces(pagination);
+        return spaces.listSpaces(pagination, permissions);
     }
 
     public SpaceInformation getSpace(SpaceName space, boolean permissions) {

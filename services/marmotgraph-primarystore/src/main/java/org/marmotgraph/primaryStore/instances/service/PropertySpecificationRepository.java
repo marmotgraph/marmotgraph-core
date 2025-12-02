@@ -23,17 +23,11 @@
  */
 
 package org.marmotgraph.primaryStore.instances.service;
-
-import org.marmotgraph.primaryStore.instances.model.Space;
+import org.marmotgraph.primaryStore.instances.model.PropertySpecification;
+import org.marmotgraph.primaryStore.instances.model.TypeSpecification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
 @Repository
-public interface SpaceRepository extends JpaRepository<Space, String> {
-
-    List<Space> getSpacesByScopeRelevant(boolean scopeRelevant);
-
-
+public interface PropertySpecificationRepository extends JpaRepository<PropertySpecification, PropertySpecification.CompositeId> {
 }

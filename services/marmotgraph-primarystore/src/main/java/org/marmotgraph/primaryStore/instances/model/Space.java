@@ -24,13 +24,13 @@
 
 package org.marmotgraph.primaryStore.instances.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.marmotgraph.commons.model.external.spaces.SpaceInformation;
 import org.marmotgraph.commons.model.external.spaces.SpaceSpecification;
+
+import java.util.List;
 
 @Entity
 @Getter
