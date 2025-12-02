@@ -92,7 +92,7 @@ public class InstancesAPI implements Instances.Client {
 
     @Override
     public NormalizedJsonLd getInstanceById(UUID id, DataStage stage, boolean removeInternalProperties) {
-        Optional<NormalizedJsonLd> instanceById = payloadService.getInstanceById(id, stage, false, authContext.getUserWithRoles());
+        Optional<NormalizedJsonLd> instanceById = payloadService.getInstanceById(id, stage, true,false, authContext.getUserWithRoles());
         if(instanceById.isPresent()) {
             NormalizedJsonLd normalizedJsonLd = instanceById.get();
             if(removeInternalProperties){
@@ -185,7 +185,7 @@ public class InstancesAPI implements Instances.Client {
 
     @Override
     public NormalizedJsonLd getInstanceById(UUID id, DataStage stage, boolean returnPayload, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize, boolean removeInternalProperties) {
-        Optional<NormalizedJsonLd> instanceById = payloadService.getInstanceById(id, stage, returnPayload && returnAlternatives, authContext.getUserWithRoles());
+        Optional<NormalizedJsonLd> instanceById = payloadService.getInstanceById(id, stage, returnPayload && returnEmbedded, returnPayload && returnAlternatives, authContext.getUserWithRoles());
         if(instanceById.isEmpty()){
             return null;
         }
@@ -194,9 +194,7 @@ public class InstancesAPI implements Instances.Client {
             if(removeInternalProperties){
                 result.removeAllInternalProperties();
             }
-            if(!returnEmbedded){
-                result.removeEmbedded();
-            }
+
         }
         else{
             String space = result.getAs(EBRAINSVocabulary.META_SPACE, String.class);

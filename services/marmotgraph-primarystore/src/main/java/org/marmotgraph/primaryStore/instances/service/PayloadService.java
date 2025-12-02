@@ -47,6 +47,7 @@ import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.primaryStore.instances.model.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.DigestUtils;
 
 import java.lang.reflect.InvocationTargetException;
@@ -72,6 +73,8 @@ public class PayloadService {
     private final CURIEPrefixRepository curiePrefixRepository;
     private final SpaceRepository spaceRepository;
     private final Permissions permissions;
+    private final TypeSpecificationRepository typeSpecificationRepository;
+    private final PropertySpecificationRepository propertySpecificationRepository;
 
     public Optional<SpaceName> getSpace(UUID instanceID) {
         return instanceInformationRepository.findById(instanceID).map(i -> SpaceName.fromString(i.getSpaceName()));
@@ -89,67 +92,73 @@ public class PayloadService {
         return spaceName;
     }
 
-    private <T> TypedQuery<T> populateInstanceByTypeQuery(Class<T> targetClass, Class<? extends Payload> clazz, String space, String typeName, Function<Tuple<CriteriaBuilder, Root<? extends Payload>>, Selection<? extends T>> selector) {
+    private <T> TypedQuery<T> populateInstanceByTypeQuery(Class<T> targetClass, Class<? extends Payload<?>> clazz, String space, String typeName, String search, Function<Tuple<CriteriaBuilder, Root<? extends Payload>>, Selection<? extends T>> selector, boolean fetchRelations) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<T> cq = cb.createQuery(targetClass);
-        Root<? extends Payload> root = cq.from(clazz);
-        Join<? extends Payload, ?> typesJoin = root.join("types");
-        Join<? extends Payload, ?> infoJoin = root.join("instanceInformation");
-        Predicate typePredicate = cb.equal(typesJoin, cb.parameter(String.class, "type"));
+        Root<? extends Payload<?>> root = cq.from(clazz);
+        Join<? extends Payload<?>, ?> typesJoin = root.join("types");
+        Join<? extends Payload<?>, ?> infoJoin = root.join("instanceInformation");
+        if(fetchRelations) {
+            root.fetch("documentRelations", JoinType.LEFT);
+            cq.orderBy(cb.asc(root.get("label")), cb.asc(root.get("uuid")));
+        }
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(cb.equal(typesJoin, cb.parameter(String.class, "type")));
         if (targetClass != Long.class) {
             root.fetch("instanceInformation", JoinType.LEFT);
         }
-        cq = cq.select(selector.apply(new Tuple<>(cb, root)));
-        if (space == null) {
-            cq = cq.where(typePredicate);
-        }
         if (space != null) {
-            Predicate spacePredicate = cb.equal(infoJoin.get("spaceName"), cb.parameter(String.class, "space"));
-            cq = cq.where(cb.and(typePredicate, spacePredicate));
+            predicates.add(cb.equal(infoJoin.get("spaceName"), cb.parameter(String.class, "space")));
         }
-
+        cq = cq.select(selector.apply(new Tuple<>(cb, root)));
+        if(StringUtils.isNotBlank(search)) {
+            String searchString = "%"+search.toLowerCase()+"%";
+            predicates.add(cb.or(cb.like(root.get("label"), searchString), cb.like(root.get("searchable"), searchString)));
+        }
+        cq.where(predicates.toArray(new Predicate[0]));
         TypedQuery<T> query = entityManager.createQuery(cq);
         query.setParameter("type", typeName);
         if (space != null) {
             query.setParameter("space", space);
         }
-
         return query;
     }
 
 
-    public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String typeName, String space, String searchByLabel, String filterProperty, String filterValue, boolean returnPayload, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam) {
+    public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String typeName, String space, String search, String filterProperty, String filterValue, boolean returnPayload, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam) {
         //FIXME take into account all the other attributes
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
-        Class<? extends Payload> clazz = stage == DataStage.IN_PROGRESS ? Payload.InferredPayload.class : Payload.ReleasedPayload.class;
+        Class<? extends Payload<?>> clazz = stage == DataStage.IN_PROGRESS ? Payload.InferredPayload.class : Payload.ReleasedPayload.class;
         boolean countTotal = paginationParam != null && paginationParam.isReturnTotalResults();
         List<NormalizedJsonLd> results = null;
         Long totalCount = null;
         if (countTotal) {
-            TypedQuery<Long> countQuery = populateInstanceByTypeQuery(Long.class, clazz, space, typeName, s -> s.getA().countDistinct(s.getB()));
+            TypedQuery<Long> countQuery = populateInstanceByTypeQuery(Long.class, clazz, space, typeName, search, s -> s.getA().countDistinct(s.getB()), false);
             totalCount = countQuery.getSingleResult();
             if (totalCount == 0) {
                 results = Collections.emptyList();
             }
         }
         if (results == null) {
-            TypedQuery<Payload> payloadQuery = populateInstanceByTypeQuery(Payload.class, clazz, space, typeName, Tuple::getB);
+            TypedQuery<? extends Payload> payloadQuery = populateInstanceByTypeQuery(Payload.class, clazz, space, typeName,search, Tuple::getB, true);
             // Pagination
             if (paginationParam != null && paginationParam.getSize() != null) {
                 payloadQuery.setMaxResults(paginationParam.getSize().intValue());
                 payloadQuery.setFirstResult((int) paginationParam.getFrom());
             }
-            List<Payload> resultList = payloadQuery.getResultList();
+            List<? extends Payload> resultList = payloadQuery.getResultList();
             results = resultList.stream().map(i -> {
                 NormalizedJsonLd document;
                 if (returnPayload) {
                     document = jsonAdapter.fromJson(i.getJsonPayload(), NormalizedJsonLd.class);
+                    document.resolveOutgoingRelations(((Payload<?>)i).getDocumentRelations().stream().filter(f -> f.getResolvedTarget() != null).map(f -> new OutgoingRelation(f.getCompositeId().getTargetReference(), f.getResolvedTarget())).collect(Collectors.toSet()));
                     if (returnAlternatives && i instanceof Payload.InferredPayload) {
                         document.put(EBRAINSVocabulary.META_ALTERNATIVE, jsonAdapter.fromJson(((Payload.InferredPayload) i).getAlternative(), DynamicJson.class));
                     }
                     if (!returnEmbedded) {
                         document.removeEmbedded();
                     }
+                    document.removeAllInternalProperties();
                 } else {
                     document = new NormalizedJsonLd();
                     document.setId(i.getUuid().toString());
@@ -317,16 +326,40 @@ public class PayloadService {
                 }
             }
         }
+        String firstType = payload.types().getFirst();
+        Optional<TypeSpecification> globalTypeSpec = typeSpecificationRepository.findById(new TypeSpecification.CompositeId(firstType, TypeSpecification.GLOBAL_CLIENT_ID));
+        String labelProperty = null;
+        List<String> searchableProperties = Collections.emptyList();
+        if(globalTypeSpec.isPresent()){
+            NormalizedJsonLd normalizedJsonLd = jsonAdapter.fromJson(globalTypeSpec.get().getPayload(), NormalizedJsonLd.class);
+            labelProperty = normalizedJsonLd.getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class);
+            searchableProperties = normalizedJsonLd.getAsListOf(EBRAINSVocabulary.META_PROPERTY_SEARCHABLE, String.class);
+        }
+
         Payload.InferredPayload inferredPayload = new Payload.InferredPayload();
         inferredPayload.setUuid(instanceId);
         inferredPayload.setAlternative(jsonAdapter.toJson(alternatives));
         inferredPayload.setJsonPayload(newPayload);
         inferredPayload.setTypes(payload.types());
+        if(labelProperty != null){
+            inferredPayload.setLabel(payload.getAs(labelProperty, String.class).toLowerCase());
+        }
+        if(!CollectionUtils.isEmpty(searchableProperties)){
+            String concatenantedSearchableEntries = searchableProperties.stream().map(s -> payload.getAs(s, String.class)).filter(Objects::nonNull).collect(Collectors.joining(" ")).toLowerCase();
+            inferredPayload.setSearchable(concatenantedSearchableEntries);
+        }
         if(query){
             Query q = new Query();
             q.setUuid(instanceId);
             inferredPayload.setQuery(q);
         }
+        payload.types().forEach(t -> {
+            if(!typeSpecificationRepository.existsById(new TypeSpecification.CompositeId(t, TypeSpecification.GLOBAL_CLIENT_ID))){
+                TypeSpecification typeSpecification = new TypeSpecification();
+                typeSpecification.setCompositeId(new TypeSpecification.CompositeId(t, TypeSpecification.GLOBAL_CLIENT_ID));
+                typeSpecificationRepository.save(typeSpecification);
+            }
+        });
         handleStructure(instanceId, payload, inferredPayload, TypeStructure.InferredTypeStructure.class);
         inferredPayloadRepository.save(inferredPayload);
         Set<IncomingRelation> incomingRelations = query ? Collections.emptySet() : handleIncomingDocumentRelations(instanceId, instanceInformation.getAlternativeIds(), inferredDocumentRelationRepository, DataStage.IN_PROGRESS);
@@ -627,6 +660,7 @@ public class PayloadService {
         CriteriaQuery<? extends Payload<?>> criteriaQuery = criteriaBuilder.createQuery(payloadType);
         Root<? extends Payload<?>> root = criteriaQuery.from(payloadType);
         root.fetch("instanceInformation", JoinType.LEFT);
+        root.fetch("documentRelations", JoinType.LEFT);
         criteriaQuery.where(root.get("uuid").in(ids));
         return entityManager.createQuery(criteriaQuery).getResultList();
     }
@@ -653,12 +687,14 @@ public class PayloadService {
                 List<? extends Payload<?>> resultStream = fetchInstancesByIds(stage == DataStage.IN_PROGRESS ? Payload.InferredPayload.class : Payload.ReleasedPayload.class, ids);
                 return resultStream.stream().collect(Collectors.toMap(Payload::getUuid, v -> {
                     NormalizedJsonLd result = jsonAdapter.fromJson(v.getJsonPayload(), NormalizedJsonLd.class);
+                    result.resolveOutgoingRelations(v.getDocumentRelations().stream().filter(r -> r.getResolvedTarget() != null).map(r -> new OutgoingRelation(r.getCompositeId().getTargetReference(), r.getResolvedTarget())).collect(Collectors.toSet()));
                     if (!returnEmbedded) {
                         result.removeEmbedded();
                     }
                     if (returnAlternatives && v instanceof Payload.InferredPayload) {
                         result.put(EBRAINSVocabulary.META_ALTERNATIVE, jsonAdapter.fromJson(((Payload.InferredPayload)v).getAlternative(), DynamicJson.class));
                     }
+                    result.removeAllInternalProperties();
                     result.put(EBRAINSVocabulary.META_SPACE, resolveSpaceName(v.getInstanceInformation().getSpaceName(), userWithRoles.getPrivateSpace()));
                     //TODO incoming links
                     return Result.ok(result);
@@ -668,7 +704,8 @@ public class PayloadService {
     }
 
 
-    public Optional<NormalizedJsonLd> getInstanceById(UUID id, DataStage stage, boolean returnAlternatives, UserWithRoles userWithRoles) {
+    @Transactional
+    public Optional<NormalizedJsonLd> getInstanceById(UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, UserWithRoles userWithRoles) {
         NormalizedJsonLd result = null;
         switch (stage) {
             case NATIVE ->
@@ -681,9 +718,15 @@ public class PayloadService {
                         throw new ForbiddenException();
                     }
                     result = jsonAdapter.fromJson(inferredPayload.getJsonPayload(), NormalizedJsonLd.class);
+                    result.resolveOutgoingRelations(inferredPayload.getDocumentRelations().stream().filter(r -> r.getResolvedTarget() != null).map(r -> new OutgoingRelation(r.getCompositeId().getTargetReference(), r.getResolvedTarget())).collect(Collectors.toSet()));
+
+                    if (!returnEmbedded) {
+                        result.removeEmbedded();
+                    }
                     if (returnAlternatives) {
                         result.put(EBRAINSVocabulary.META_ALTERNATIVE, jsonAdapter.fromJson(inferredPayload.getAlternative(), DynamicJson.class));
                     }
+                    result.removeAllInternalProperties();
                     result.put(EBRAINSVocabulary.META_SPACE, resolveSpaceName(inferredPayload.getInstanceInformation().getSpaceName(), userWithRoles.getPrivateSpace()));
 
                 }
@@ -696,6 +739,10 @@ public class PayloadService {
                         throw new ForbiddenException();
                     }
                     result = jsonAdapter.fromJson(releasedPayload.getJsonPayload(), NormalizedJsonLd.class);
+                    result.resolveOutgoingRelations(releasedPayload.getDocumentRelations().stream().filter(r -> r.getResolvedTarget() != null).map(r -> new OutgoingRelation(r.getCompositeId().getTargetReference(), r.getResolvedTarget())).collect(Collectors.toSet()));
+                    if (!returnEmbedded) {
+                        result.removeEmbedded();
+                    }
                     result.put(EBRAINSVocabulary.META_SPACE, resolveSpaceName(releasedPayload.getInstanceInformation().getSpaceName(), userWithRoles.getPrivateSpace()));
                 }
             }

@@ -59,5 +59,10 @@
     "s:name": "Occurrences",
     "kg:nameForReverseLink": "Has occurrence of",
     "kg_p:widget": "DynamicDropdown"
+  },
+  "species":{
+    "s:name": "Species",
+    "kg:nameForReverseLink": "Is species of",
+    "kg_p:widget": "DynamicDropdown"
   }
 }

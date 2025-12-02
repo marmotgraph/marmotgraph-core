@@ -25,7 +25,6 @@
 package org.marmotgraph.primaryStore.structures.api;
 
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang3.NotImplementedException;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.api.primaryStore.Types;
 import org.marmotgraph.commons.exception.ForbiddenException;
@@ -39,6 +38,7 @@ import org.marmotgraph.commons.model.Result;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
 import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permissions.controller.Permissions;
+import org.marmotgraph.primaryStore.instances.model.TypeSpecification;
 import org.marmotgraph.primaryStore.structures.service.TypesService;
 import org.springframework.stereotype.Component;
 
@@ -59,14 +59,14 @@ public class TypesAPI implements Types.Client {
     @Override
     public Paginated<TypeInformation> listTypes(DataStage stage, String space, boolean withProperties,
                                                 boolean withIncomingLinks, PaginationParam paginationParam) {
-        return typesService.listTypes(stage, space, withProperties, withIncomingLinks, paginationParam);
+        return typesService.listTypes(stage, space, withProperties, withIncomingLinks, paginationParam, authContext.getUserWithRoles().getClientId());
 
     }
 
     @Override
     public Map<String, Result<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space,
                                                                boolean withProperties, boolean withIncomingLinks) {
-        return typesService.getByName(types, stage, space, withProperties, withIncomingLinks);
+        return typesService.getByName(types, stage, space, withProperties, withIncomingLinks, authContext.getUserWithRoles().getClientId());
     }
 
     private void canManageTypesAndPropertiesOrThrow(){
@@ -84,7 +84,7 @@ public class TypesAPI implements Types.Client {
 
 
     private String getClientId(boolean global) {
-        String clientId = "";
+        String clientId = TypeSpecification.GLOBAL_CLIENT_ID;
         if (!global) {
             clientId = authContext.getUserWithRoles().getClientId();
             if (clientId == null) {
@@ -128,17 +128,21 @@ public class TypesAPI implements Types.Client {
 
     @Override
     public boolean checkPropertyInType(String typeName, String propertyName, boolean global) {
-        throw new NotImplementedException();
+        canManageTypesAndPropertiesOrThrow();
+        DynamicJson propertyInTypeSpecification = typesService.getPropertyInTypeSpecification(typeName, propertyName, getClientId(global));
+        return propertyInTypeSpecification != null;
     }
 
     @Override
     public void addOrUpdatePropertyToType(String typeName, String propertyName, NormalizedJsonLd payload,
                                           boolean global) {
-        throw new NotImplementedException();
+        canManageTypesAndPropertiesOrThrow();
+        typesService.specifyPropertyInType(typeName, propertyName, payload, getClientId(global));
     }
 
     @Override
     public void removePropertyFromType(String typeName, String propertyName, boolean global) {
-        throw new NotImplementedException();
+        canManageTypesAndPropertiesOrThrow();
+        typesService.removePropertyInTypeSpecification(typeName, propertyName, getClientId(global));
     }
 }

@@ -41,6 +41,11 @@ public abstract class Payload<T extends TypeStructure> {
     @Column(columnDefinition = "TEXT")
     private String jsonPayload;
 
+    private String label;
+
+    @Column(columnDefinition = "TEXT")
+    private String searchable;
+
     @ElementCollection
     private List<String> types;
 
@@ -50,20 +55,22 @@ public abstract class Payload<T extends TypeStructure> {
 
     public abstract void setTypeStructures(List<T> typeStructures);
 
+    public abstract List<? extends DocumentRelation> getDocumentRelations();
+    public abstract List<? extends DocumentRelation> getIncomingRelations();
 
     @Entity
     @Getter
     @Setter
-    @Table(name="instances.inferred")
+    @Table(name="instances.inferred", indexes = {@Index(name="labelSearch", columnList = "label"), @Index(name="searchableSearch", columnList = "searchable")})
     public static class InferredPayload extends Payload<TypeStructure.InferredTypeStructure> {
 
         @Column(columnDefinition = "TEXT")
         private String alternative;
 
-        @OneToMany(targetEntity = TypeStructure.InferredTypeStructure.class, cascade = CascadeType.ALL, mappedBy = "payload")
+        @OneToMany(targetEntity = TypeStructure.InferredTypeStructure.class, cascade = CascadeType.ALL, mappedBy = "payload", orphanRemoval = true)
         private List<TypeStructure.InferredTypeStructure> typeStructures;
 
-        @OneToMany(targetEntity = DocumentRelation.InferredDocumentRelation.class, mappedBy = "payload")
+        @OneToMany(targetEntity = DocumentRelation.InferredDocumentRelation.class, mappedBy = "payload", fetch = FetchType.LAZY)
         private List<DocumentRelation.InferredDocumentRelation> documentRelations;
 
         @OneToMany(targetEntity = DocumentRelation.InferredDocumentRelation.class, mappedBy = "targetPayload", fetch = FetchType.LAZY)
@@ -82,7 +89,7 @@ public abstract class Payload<T extends TypeStructure> {
     @Table(name="instances.released")
     public static class ReleasedPayload extends Payload<TypeStructure.ReleasedTypeStructure> {
 
-        @OneToMany(targetEntity = TypeStructure.ReleasedTypeStructure.class, cascade = CascadeType.ALL, mappedBy = "payload")
+        @OneToMany(targetEntity = TypeStructure.ReleasedTypeStructure.class, cascade = CascadeType.ALL, mappedBy = "payload", orphanRemoval = true)
         private List<TypeStructure.ReleasedTypeStructure> typeStructures;
 
         @OneToMany(targetEntity = DocumentRelation.ReleasedDocumentRelation.class, mappedBy = "payload")

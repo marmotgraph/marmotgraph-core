@@ -1,37 +1,50 @@
-{
+  {
   "@context": {
     "@vocab": "https://marmotgraph.org/types/",
     "s": "http://schema.org/",
     "kg": "https://core.kg.ebrains.eu/vocab/meta/"
   },
   "Country": {
-    "s:description": "A country is an area of land, which has its own government and laws, or used to have them, such as a state, a nation, a nation state, or other political entity. When referring to a specific polity, the term \"country\" may refer to a sovereign state, a state with limited recognition, a constituent country, or a dependent territory.",
+    "s:description": "A country is an area of land, which has its own government and laws, or used to have them, such as a state, a nation, a nation state, or other political entity. When referring to a specific polity, the term \"country\" may refer to a sovereign state, a state with limited recognition, a constituent country, or a dependent territory. (Wikipedia)",
     "s:name": "Country",
-    "kg:color": "#0AA6D8",
+    "kg:color": "#e6194b",
     "kg:type/labelProperty": "https://marmotgraph.org/properties/name"
   },
   "LanguageExample": {
     "s:description": "An example of a saying in English containing translations",
     "s:name": "Language example",
-    "kg:color": "#0AA6D8",
+    "kg:color": "#3cb44b",
     "kg:type/labelProperty": "https://marmotgraph.org/properties/name"
   },
   "Translation": {
     "s:description": "A translation of the given language example",
     "s:name": "Translation",
-    "kg:color": "#0AA6D8",
+    "kg:color": "#ffe119",
     "kg:type/labelProperty": "https://marmotgraph.org/properties/value"
   },
   "Language": {
-    "s:description": "Language is a structured system of communication that consists of grammar and vocabulary.",
+    "s:description": "Language is a structured system of communication that consists of grammar and vocabulary. (Wikipedia)",
     "s:name": "Language",
-    "kg:color": "#0AA6D8",
+    "kg:color": "#4363d8",
     "kg:type/labelProperty": "https://marmotgraph.org/properties/name"
   },
   "MountainRange": {
-    "s:description": "A mountain range or hill range is a series of mountains or hills arranged in a line and connected by high ground.",
+    "s:description": "A mountain range or hill range is a series of mountains or hills arranged in a line and connected by high ground. (Wikipedia)",
     "s:name": "Mountain range",
-    "kg:color": "#0AA6D8",
+    "kg:color": "#f58231",
     "kg:type/labelProperty": "https://marmotgraph.org/properties/name"
+  },
+  "Animal": {
+    "s:description": "Animals are multicellular, eukaryotic organisms comprising the biological kingdom Animalia. With few exceptions, animals consume organic material, breathe oxygen, have myocytes and are able to move, can reproduce sexually, and grow from a hollow sphere of cells, the blastula, during embryonic development. (Wikipedia)",
+    "s:name": "Animal",
+    "kg:color": "#911eb4",
+    "kg:type/labelProperty": "https://marmotgraph.org/properties/name"
+  },
+   "Species": {
+    "s:description": "A species is the basic unit of classification and a taxonomic rank of an organism, as well as a unit of biodiversity. (Wikipedia)",
+    "s:name": "Species",
+    "kg:color": "#46f0f0",
+    "kg:type/labelProperty": "https://marmotgraph.org/properties/name",
+    "kg:property/searchable": ["https://marmotgraph.org/properties/vernacularName"]
   }
 }

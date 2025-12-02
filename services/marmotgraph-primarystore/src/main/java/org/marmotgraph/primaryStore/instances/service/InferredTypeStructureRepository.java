@@ -22,36 +22,20 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.primaryStore.instances.model;
+package org.marmotgraph.primaryStore.instances.service;
 
-import jakarta.persistence.*;
-import lombok.*;
+import org.marmotgraph.primaryStore.instances.model.DocumentRelation;
+import org.marmotgraph.primaryStore.instances.model.TypeStructure;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-import java.io.Serializable;
+import java.util.List;
 
-@Entity
-@Getter
-@Setter
-@Table(name="typeSpecification")
-public class TypeSpecification {
+@Repository
+public interface InferredTypeStructureRepository extends JpaRepository<TypeStructure.InferredTypeStructure, TypeStructure.CompositeId> {
 
-    public static final String GLOBAL_CLIENT_ID = "";
+    List<TypeStructure.InferredTypeStructure> findByCompositeIdEmbeddedIdentifier(String embeddedIdentifier);
 
-    @Embeddable
-    @Getter
-    @Setter
-    @EqualsAndHashCode
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class CompositeId implements Serializable {
-        private String type;
-        private String clientId;
-    }
-
-    @EmbeddedId
-    private CompositeId compositeId;
-
-    @Column(columnDefinition = "TEXT")
-    private String payload;
+    List<TypeStructure.InferredTypeStructure> findByCompositeIdType(String type);
 
 }

@@ -1,6 +1,6 @@
 {
   "@context": { "@vocab": "https://marmotgraph.org/properties/" },
-  "@type": "https://marmotgraph.org/types/Animals",
+  "@type": "https://marmotgraph.org/types/Animal",
   "@id": "https://marmotgraph.org/instances/animals/Pufftail",
   "name": "Pufftail",
   "species": [

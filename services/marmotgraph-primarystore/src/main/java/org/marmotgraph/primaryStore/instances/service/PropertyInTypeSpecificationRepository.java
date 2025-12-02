@@ -22,36 +22,13 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.primaryStore.instances.model;
+package org.marmotgraph.primaryStore.instances.service;
+import org.marmotgraph.primaryStore.instances.model.PropertyInTypeSpecification;
+import org.marmotgraph.primaryStore.instances.model.PropertySpecification;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-import jakarta.persistence.*;
-import lombok.*;
-
-import java.io.Serializable;
-
-@Entity
-@Getter
-@Setter
-@Table(name="typeSpecification")
-public class TypeSpecification {
-
-    public static final String GLOBAL_CLIENT_ID = "";
-
-    @Embeddable
-    @Getter
-    @Setter
-    @EqualsAndHashCode
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class CompositeId implements Serializable {
-        private String type;
-        private String clientId;
-    }
-
-    @EmbeddedId
-    private CompositeId compositeId;
-
-    @Column(columnDefinition = "TEXT")
-    private String payload;
+@Repository
+public interface PropertyInTypeSpecificationRepository extends JpaRepository<PropertyInTypeSpecification, PropertyInTypeSpecification.CompositeId> {
 
 }

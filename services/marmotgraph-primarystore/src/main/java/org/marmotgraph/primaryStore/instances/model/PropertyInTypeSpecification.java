@@ -32,8 +32,8 @@ import java.io.Serializable;
 @Entity
 @Getter
 @Setter
-@Table(name="typeSpecification")
-public class TypeSpecification {
+@Table(name="propertyInTypeSpecification")
+public class PropertyInTypeSpecification {
 
     public static final String GLOBAL_CLIENT_ID = "";
 
@@ -45,6 +45,7 @@ public class TypeSpecification {
     @NoArgsConstructor
     public static class CompositeId implements Serializable {
         private String type;
+        private String propertyName;
         private String clientId;
     }
 

@@ -137,7 +137,7 @@ public class NormalizedJsonLd extends JsonLdDoc {
                     Object referenceValue = map.get(JsonLdConsts.ID);
                     if (referenceValue instanceof String && !isEmbeddedId((String) referenceValue)) {
                         Optional<UUID> uuid = relationsMap.get((String) referenceValue);
-                        if (uuid.isPresent()) {
+                        if (uuid!=null && uuid.isPresent()) {
                             map.put(JsonLdConsts.ID, uuid.get().toString());
                         } else {
                             map.remove(JsonLdConsts.ID);

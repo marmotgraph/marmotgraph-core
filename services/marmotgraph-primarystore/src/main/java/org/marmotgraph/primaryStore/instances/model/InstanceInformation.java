@@ -62,6 +62,6 @@ public class InstanceInformation {
     private List<TypeStructure.InferredTypeStructure> typeStructures;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "spaceName", referencedColumnName = "name", insertable = false, updatable = false)
+    @JoinColumn(name = "spaceName", referencedColumnName = "name", insertable = false, updatable = false, foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Space space;
 }
