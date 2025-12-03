@@ -30,7 +30,6 @@ import jakarta.persistence.criteria.*;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.JsonAdapter;
-import org.marmotgraph.commons.Tuple;
 import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
@@ -40,10 +39,7 @@ import org.marmotgraph.commons.model.PaginationParam;
 import org.marmotgraph.commons.model.Result;
 import org.marmotgraph.commons.model.external.types.*;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
-import org.marmotgraph.primaryStore.instances.model.PropertyInTypeSpecification;
-import org.marmotgraph.primaryStore.instances.model.PropertySpecification;
-import org.marmotgraph.primaryStore.instances.model.TypeSpecification;
-import org.marmotgraph.primaryStore.instances.model.TypeStructure;
+import org.marmotgraph.primaryStore.instances.model.*;
 import org.marmotgraph.primaryStore.instances.service.PropertyInTypeSpecificationRepository;
 import org.marmotgraph.primaryStore.instances.service.PropertySpecificationRepository;
 import org.marmotgraph.primaryStore.instances.service.SpaceService;
@@ -72,6 +68,9 @@ public class TypesService {
     private record TypePerSpaceInfo(Long instanceCount, String type, String space) {
     }
 
+    private record TargetTypeInformation(Long instanceCount, String sourceType, String propertyName, String targetType, String space) {
+    }
+
     private record PropertyPerSpaceInfo(Long instanceCount, String type, String space, String propertyName) {
     }
 
@@ -85,10 +84,12 @@ public class TypesService {
     public Paginated<TypeInformation> listTypes(DataStage stage, String space, boolean withProperties,
                                                 boolean withIncomingLinks, PaginationParam paginationParam, String clientId) {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-        Class<? extends TypeStructure> clazz = stage == DataStage.IN_PROGRESS ? TypeStructure.InferredTypeStructure.class : TypeStructure.ReleasedTypeStructure.class;
+        Class<? extends TypeStructure> typeStructureClazz = stage == DataStage.IN_PROGRESS ? TypeStructure.InferredTypeStructure.class : TypeStructure.ReleasedTypeStructure.class;
+        Class<? extends EmbeddedTypeInformation> embeddedTargetTypeClazz = stage == DataStage.IN_PROGRESS ? EmbeddedTypeInformation.InferredEmbeddedTypeInformation.class : EmbeddedTypeInformation.ReleasedEmbeddedTypeInformation.class;
+
         //TODO space filter
-        GenericTypeInformation genericTypeInformation = fetchGenericTypeInformation(clazz, criteriaBuilder, paginationParam, space, null);
-        List<TypeInformation> result = enrichTypeInformation(withProperties, withIncomingLinks, genericTypeInformation, space, criteriaBuilder, clazz, clientId);
+        GenericTypeInformation genericTypeInformation = fetchGenericTypeInformation(typeStructureClazz, criteriaBuilder, paginationParam, space, null);
+        List<TypeInformation> result = enrichTypeInformation(withProperties, withIncomingLinks, genericTypeInformation, space, criteriaBuilder, typeStructureClazz, embeddedTargetTypeClazz, clientId);
         result.sort(Comparator.comparing(TypeInformation::getIdentifier));
         Long total = null;
         if (paginationParam == null) {
@@ -104,9 +105,10 @@ public class TypesService {
     public Map<String, Result<TypeInformation>> getByName(List<String> types, DataStage stage, String space, boolean withProperties, boolean withIncomingLinks, String clientId) {
         //TODO space filter
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-        Class<? extends TypeStructure> clazz = stage == DataStage.IN_PROGRESS ? TypeStructure.InferredTypeStructure.class : TypeStructure.ReleasedTypeStructure.class;
-        GenericTypeInformation genericTypeInformation = fetchGenericTypeInformation(clazz, criteriaBuilder, null, space, types); //No pagination due to restriction by types filter
-        List<TypeInformation> result = enrichTypeInformation(withProperties, withIncomingLinks, genericTypeInformation, space, criteriaBuilder, clazz, clientId);
+        Class<? extends TypeStructure> typeInformationClazz = stage == DataStage.IN_PROGRESS ? TypeStructure.InferredTypeStructure.class : TypeStructure.ReleasedTypeStructure.class;
+        Class<? extends EmbeddedTypeInformation> embeddedTargetTypeClazz = stage == DataStage.IN_PROGRESS ? EmbeddedTypeInformation.InferredEmbeddedTypeInformation.class : EmbeddedTypeInformation.ReleasedEmbeddedTypeInformation.class;
+        GenericTypeInformation genericTypeInformation = fetchGenericTypeInformation(typeInformationClazz, criteriaBuilder, null, space, types); //No pagination due to restriction by types filter
+        List<TypeInformation> result = enrichTypeInformation(withProperties, withIncomingLinks, genericTypeInformation, space, criteriaBuilder, typeInformationClazz, embeddedTargetTypeClazz, clientId);
         Map<String, Result<TypeInformation>> resultMap = result.stream().collect(Collectors.toMap(TypeInformation::getIdentifier, Result::ok));
         types.stream().filter(t -> !resultMap.containsKey(t)).forEach(t ->
                 resultMap.put(t, Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase()))
@@ -115,10 +117,12 @@ public class TypesService {
     }
 
 
-    private List<TypeInformation> enrichTypeInformation(boolean withProperties, boolean withIncomingLinks, GenericTypeInformation genericTypeInformation, String spaceRestriction, CriteriaBuilder criteriaBuilder, Class<? extends TypeStructure> clazz, String clientId) {
-        Map<String, List<PropertyPerSpaceInfo>> propertiesByType = fetchPropertiesByType(withProperties, spaceRestriction, criteriaBuilder, clazz, genericTypeInformation.typePerSpaceInformation);
+    private List<TypeInformation> enrichTypeInformation(boolean withProperties, boolean withIncomingLinks, GenericTypeInformation genericTypeInformation, String spaceRestriction, CriteriaBuilder criteriaBuilder, Class<? extends TypeStructure> typeStructureClazz, Class<? extends EmbeddedTypeInformation> embeddedTypeInfoClazz, String clientId) {
+        Map<String, List<PropertyPerSpaceInfo>> propertiesByType = fetchPropertiesByType(withProperties, spaceRestriction, criteriaBuilder, typeStructureClazz, genericTypeInformation.typePerSpaceInformation);
+        Map<String, List<TargetTypeInformation>> targetTypeInformation = fetchTargetTypeInformation(withProperties, criteriaBuilder, embeddedTypeInfoClazz, genericTypeInformation.typePerSpaceInformation);
+
         // TODO do we also need to restrict the incoming links to only those relevant for the filtered space?
-        Map<String, List<IncomingLinksInfo>> incomingLinksByType = fetchIncomingLinks(withIncomingLinks, criteriaBuilder, clazz, genericTypeInformation.typePerSpaceInformation);
+        Map<String, List<IncomingLinksInfo>> incomingLinksByType = fetchIncomingLinks(withIncomingLinks, criteriaBuilder, typeStructureClazz, genericTypeInformation.typePerSpaceInformation);
         List<TypeInformation> result = new ArrayList<>();
         genericTypeInformation.typePerSpaceInformation.forEach((k, v) -> {
             TypeInformation typeInformation = new TypeInformation();
@@ -129,13 +133,13 @@ public class TypesService {
                 typeInformation.putAll(typeSpecification);
                 searchableProperties = typeSpecification.getAsListOf(EBRAINSVocabulary.META_PROPERTY_SEARCHABLE, String.class);
             }
-
+            Map<String, List<TargetTypeInformation>> targetTypeInformationBySpace = targetTypeInformation.getOrDefault(k, Collections.<TargetTypeInformation>emptyList()).stream().collect(Collectors.groupingBy(t -> t.space));
             if(typeInformation.getName() == null) {
                 String[] nameSplit = k.split("/");
                 typeInformation.setName(nameSplit[nameSplit.length - 1]);
             }
-            Map<String, List<PropertyPerSpaceInfo>> propertyPerSpaceInfos = propertiesByType.getOrDefault(k, Collections.emptyList()).stream().collect(Collectors.groupingBy(p -> p.space));
-            typeInformation.setSpaces(evaluateSpaceTypeInformation(withProperties, v, propertyPerSpaceInfos));
+            Map<String, List<PropertyPerSpaceInfo>> propertyBySpaceInfos = propertiesByType.getOrDefault(k, Collections.emptyList()).stream().collect(Collectors.groupingBy(p -> p.space));
+            typeInformation.setSpaces(evaluateSpaceTypeInformation(withProperties, v, propertyBySpaceInfos, targetTypeInformationBySpace));
             if (withIncomingLinks) {
                 evaluateIncomingLinks(k, incomingLinksByType, typeInformation);
             }
@@ -231,17 +235,31 @@ public class TypesService {
         return new GenericTypeInformation(typeSpecifications, entityManager.createQuery(query).getResultStream().collect(Collectors.groupingBy(k -> k.type)), Optional.ofNullable(totalResults));
     }
 
-    private static List<SpaceTypeInformation> evaluateSpaceTypeInformation(boolean withProperties, List<TypePerSpaceInfo> v, Map<String, List<PropertyPerSpaceInfo>> propertyPerSpaceInfos) {
+    private static List<SpaceTypeInformation> evaluateSpaceTypeInformation(boolean withProperties, List<TypePerSpaceInfo> v, Map<String, List<PropertyPerSpaceInfo>> propertyBySpaceInfos, Map<String, List<TargetTypeInformation>> targetTypeBySpace) {
         return v.stream().map(value -> {
             SpaceTypeInformation spaceTypeInformation = new SpaceTypeInformation();
             spaceTypeInformation.setOccurrences(value.instanceCount.intValue());
             spaceTypeInformation.setSpace(value.space);
             if (withProperties) {
-                List<PropertyPerSpaceInfo> properties = propertyPerSpaceInfos.getOrDefault(value.space, Collections.emptyList());
+                List<PropertyPerSpaceInfo> properties = propertyBySpaceInfos.getOrDefault(value.space, Collections.emptyList());
+                Map<String, List<TargetTypeInformation>> targetTypeByPropertyName = targetTypeBySpace.getOrDefault(value.space, Collections.emptyList()).stream().collect(Collectors.groupingBy(t -> t.propertyName));
                 spaceTypeInformation.setProperties(properties.stream().map(p -> {
                     Property property = new Property();
                     property.setIdentifier(p.propertyName);
                     property.setOccurrences(p.instanceCount.intValue());
+                    List<TargetTypeInformation> targetTypeInformation = targetTypeByPropertyName.get(p.propertyName);
+                    if(!CollectionUtils.isEmpty(targetTypeInformation)){
+                        property.setTargetTypes(targetTypeInformation.stream().map(t -> {
+                            TargetType targetType = new TargetType();
+                            targetType.setType(t.targetType);
+                            targetType.setOccurrences(t.instanceCount.intValue());
+                            SpaceReference reference = new SpaceReference();
+                            reference.setSpace(t.space);
+                            reference.setOccurrences(t.instanceCount.intValue());
+                            targetType.setSpaces(Collections.singletonList(reference));
+                            return targetType;
+                        }).collect(Collectors.toList()));
+                    }
                     return property;
                 }).sorted(Comparator.comparing(Property::getIdentifier)).toList());
             }
@@ -261,10 +279,33 @@ public class TypesService {
                         property = new Property();
                         property.setIdentifier(p.getIdentifier());
                         property.setOccurrences(0);
-                        if(searchableProperties.contains(p.getIdentifier())){
+                        if (searchableProperties.contains(p.getIdentifier())) {
                             property.put(EBRAINSVocabulary.META_PROPERTY_SEARCHABLE, true);
                         }
                         properties.put(p.getIdentifier(), property);
+                    }
+                    if(!CollectionUtils.isEmpty(p.getTargetTypes())){
+                        List<TargetType> propertyTargetTypes = property.getTargetTypes();
+                        Map<String, TargetType> fromSpaceByType = p.getTargetTypes().stream().collect(Collectors.toMap(TargetType::getType, v-> v));
+                        List<TargetType> newTargetTypes = new ArrayList<>(property.getTargetTypes());
+                        newTargetTypes.addAll(fromSpaceByType.keySet().stream().map(t -> {
+                            Optional<TargetType> existingTargetType = propertyTargetTypes.stream().filter(existingType -> existingType.getType().equals(t)).findFirst();
+                            TargetType newTargetType = fromSpaceByType.get(t);
+                            TargetType targetType;
+                            if (existingTargetType.isPresent()) {
+                                targetType = existingTargetType.get();
+                                targetType.setOccurrences(targetType.getOccurrences() + newTargetType.getOccurrences());
+                                targetType.getSpaces().addAll(newTargetType.getSpaces());
+                                return null;
+                            } else {
+                                targetType = new TargetType();
+                                targetType.setType(t);
+                                targetType.setOccurrences(newTargetType.getOccurrences());
+                                targetType.setSpaces(new ArrayList<>(newTargetType.getSpaces()));
+                                return targetType;
+                            }
+                        }).filter(Objects::nonNull).toList());
+                        property.setTargetTypes(newTargetTypes);
                     }
                     property.setOccurrences(property.getOccurrences() + p.getOccurrences());
                 });
@@ -297,6 +338,20 @@ public class TypesService {
         typeInformation.setIncomingLinks(incomingLinks);
     }
 
+    private Map<String, List<TargetTypeInformation>> fetchTargetTypeInformation(boolean withProperties, CriteriaBuilder criteriaBuilder, Class<? extends EmbeddedTypeInformation> clazz, Map<String, List<TypePerSpaceInfo>> byType){
+        if(!withProperties){
+            return Collections.emptyMap();
+        }
+        CriteriaQuery<TargetTypeInformation> embeddedTargetTypesCriteriaQuery = criteriaBuilder.createQuery(TargetTypeInformation.class);
+        Root<? extends EmbeddedTypeInformation> embeddedTypesRoot = embeddedTargetTypesCriteriaQuery.from(clazz);
+        Path<Object> compositeId = embeddedTypesRoot.get("compositeId");
+        Join<Object, Object> instanceInformation = embeddedTypesRoot.join("payload", JoinType.LEFT).join("instanceInformation", JoinType.LEFT);
+        embeddedTargetTypesCriteriaQuery.select(criteriaBuilder.construct(TargetTypeInformation.class, criteriaBuilder.count(compositeId.get("uuid")), compositeId.get("sourceType"), compositeId.get("propertyName"), compositeId.get("targetType"), instanceInformation.get("spaceName")));
+        embeddedTargetTypesCriteriaQuery.groupBy(compositeId.get("sourceType"), compositeId.get("propertyName"), compositeId.get("targetType"), instanceInformation.get("spaceName"));
+        embeddedTargetTypesCriteriaQuery.where(compositeId.get("sourceType").in(byType.keySet()));
+        return  entityManager.createQuery(embeddedTargetTypesCriteriaQuery).getResultList().stream().collect(Collectors.groupingBy(k -> k.sourceType));
+    }
+
     private Map<String, List<PropertyPerSpaceInfo>> fetchPropertiesByType(boolean withProperties, String spaceRestriction, CriteriaBuilder criteriaBuilder, Class<? extends TypeStructure> clazz, Map<String, List<TypePerSpaceInfo>> byType) {
         Map<String, List<PropertyPerSpaceInfo>> propertiesByType;
         if (withProperties) {
@@ -314,6 +369,7 @@ public class TypesService {
                 propertyQuery.where(typeFilter);
             }
             propertiesByType = entityManager.createQuery(propertyQuery).getResultStream().collect(Collectors.groupingBy(k -> k.type));
+            Class<? extends DocumentRelation> documentRelationClazz = clazz == TypeStructure.InferredTypeStructure.class ? DocumentRelation.InferredDocumentRelation.class : DocumentRelation.ReleasedDocumentRelation.class;
         } else {
             propertiesByType = Collections.emptyMap();
         }

@@ -69,12 +69,13 @@ def upload():
             data_dir = os.path.dirname(testdata)
             space = os.path.dirname(data_dir)
             if os.path.basename(data_dir) == "queries":
-                uuid = data.get("id", None)
-                if uuid:
-                    del data["id"]
-                    result = client.queries.save_query(data, uuid, space)
-                else:
-                    print(f"No id specified for query {testdata_file} - skipping upload")
+                pass
+                # uuid = data.get("id", None)
+                # if uuid:
+                #     del data["id"]
+                #     result = client.queries.save_query(data, uuid, space)
+                # else:
+                #     print(f"No id specified for query {testdata_file} - skipping upload")
             else:
                 result = client.instances.create_new(data, space)
             if result:

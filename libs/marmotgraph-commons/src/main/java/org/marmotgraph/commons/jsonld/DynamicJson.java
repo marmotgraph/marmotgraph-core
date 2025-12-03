@@ -92,7 +92,9 @@ public class DynamicJson extends LinkedHashMap<String, Object> {
     }
 
     public void removeAllInternalProperties() {
-        this.keySet().removeIf(DynamicJson::isInternalKey);
+        walkMaps(this, (key, map, parentMap) -> {
+            map.keySet().removeIf(k -> isInternalKey((String)k));
+        }, null, this);
     }
 
     public void visitPublicKeys(BiConsumer<String, Object> consumer) {
@@ -210,6 +212,51 @@ public class DynamicJson extends LinkedHashMap<String, Object> {
         }
         else{
             return null;
+        }
+    }
+
+
+    public interface Visitor {
+        void visit(String key, Object value, Map<?, ?> parentMap);
+    }
+
+
+    public void walk(Visitor visitor){
+        walk(this, visitor, this);
+    }
+
+    private static void walk(Object obj, Visitor visitor, Map<?, ?> parentMap) {
+        if (obj instanceof Map<?, ?> map) {
+            for (Map.Entry<?,?> entry : map.entrySet()) {
+                visitor.visit(entry.getKey().toString(), entry.getValue(), map);
+                walk(entry.getValue(), visitor, map);
+            }
+        } else if (obj instanceof Iterable<?> iterable) {
+            for (Object element : iterable) {
+                walk(element, visitor, parentMap);
+            }
+        }
+    }
+
+
+    public interface MapVisitor {
+        void visit(String key, Map<?, ?> map,  Map<?, ?> parentMap);
+    }
+
+    public void walkMaps(MapVisitor visitor){
+        walkMaps(this, visitor, null, this);
+    }
+
+    private static void walkMaps(Object obj, MapVisitor visitor, String key, Map<?, ?> parentMap) {
+        if (obj instanceof Map<?, ?> map) {
+            visitor.visit(key, map, parentMap);
+            for (Map.Entry<?,?> entry : map.entrySet()) {
+                walkMaps(entry.getValue(), visitor, entry.getKey().toString(), map);
+            }
+        } else if (obj instanceof Iterable<?> iterable) {
+            for (Object element : iterable) {
+                walkMaps(element, visitor, key, parentMap);
+            }
         }
     }
 }

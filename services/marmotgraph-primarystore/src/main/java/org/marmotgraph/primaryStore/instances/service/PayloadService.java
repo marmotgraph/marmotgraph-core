@@ -33,6 +33,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.JsonAdapter;
 import org.marmotgraph.commons.Tuple;
+import org.marmotgraph.commons.TypeUtils;
 import org.marmotgraph.commons.exception.ForbiddenException;
 import org.marmotgraph.commons.exception.InstanceNotFoundException;
 import org.marmotgraph.commons.jsonld.*;
@@ -98,7 +99,7 @@ public class PayloadService {
         Root<? extends Payload<?>> root = cq.from(clazz);
         Join<? extends Payload<?>, ?> typesJoin = root.join("types");
         Join<? extends Payload<?>, ?> infoJoin = root.join("instanceInformation");
-        if(fetchRelations) {
+        if (fetchRelations) {
             root.fetch("documentRelations", JoinType.LEFT);
             cq.orderBy(cb.asc(root.get("label")), cb.asc(root.get("uuid")));
         }
@@ -111,8 +112,8 @@ public class PayloadService {
             predicates.add(cb.equal(infoJoin.get("spaceName"), cb.parameter(String.class, "space")));
         }
         cq = cq.select(selector.apply(new Tuple<>(cb, root)));
-        if(StringUtils.isNotBlank(search)) {
-            String searchString = "%"+search.toLowerCase()+"%";
+        if (StringUtils.isNotBlank(search)) {
+            String searchString = "%" + search.toLowerCase() + "%";
             predicates.add(cb.or(cb.like(root.get("label"), searchString), cb.like(root.get("searchable"), searchString)));
         }
         cq.where(predicates.toArray(new Predicate[0]));
@@ -140,7 +141,7 @@ public class PayloadService {
             }
         }
         if (results == null) {
-            TypedQuery<? extends Payload> payloadQuery = populateInstanceByTypeQuery(Payload.class, clazz, space, typeName,search, Tuple::getB, true);
+            TypedQuery<? extends Payload> payloadQuery = populateInstanceByTypeQuery(Payload.class, clazz, space, typeName, search, Tuple::getB, true);
             // Pagination
             if (paginationParam != null && paginationParam.getSize() != null) {
                 payloadQuery.setMaxResults(paginationParam.getSize().intValue());
@@ -151,7 +152,7 @@ public class PayloadService {
                 NormalizedJsonLd document;
                 if (returnPayload) {
                     document = jsonAdapter.fromJson(i.getJsonPayload(), NormalizedJsonLd.class);
-                    document.resolveOutgoingRelations(((Payload<?>)i).getDocumentRelations().stream().filter(f -> f.getResolvedTarget() != null).map(f -> new OutgoingRelation(f.getCompositeId().getTargetReference(), f.getResolvedTarget())).collect(Collectors.toSet()));
+                    document.resolveOutgoingRelations(((Payload<?>) i).getDocumentRelations().stream().filter(f -> f.getResolvedTarget() != null).map(f -> new OutgoingRelation(f.getCompositeId().getTargetReference(), f.getResolvedTarget())).collect(Collectors.toSet()));
                     if (returnAlternatives && i instanceof Payload.InferredPayload) {
                         document.put(EBRAINSVocabulary.META_ALTERNATIVE, jsonAdapter.fromJson(((Payload.InferredPayload) i).getAlternative(), DynamicJson.class));
                     }
@@ -330,7 +331,7 @@ public class PayloadService {
         Optional<TypeSpecification> globalTypeSpec = typeSpecificationRepository.findById(new TypeSpecification.CompositeId(firstType, TypeSpecification.GLOBAL_CLIENT_ID));
         String labelProperty = null;
         List<String> searchableProperties = Collections.emptyList();
-        if(globalTypeSpec.isPresent()){
+        if (globalTypeSpec.isPresent()) {
             NormalizedJsonLd normalizedJsonLd = jsonAdapter.fromJson(globalTypeSpec.get().getPayload(), NormalizedJsonLd.class);
             labelProperty = normalizedJsonLd.getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class);
             searchableProperties = normalizedJsonLd.getAsListOf(EBRAINSVocabulary.META_PROPERTY_SEARCHABLE, String.class);
@@ -341,20 +342,31 @@ public class PayloadService {
         inferredPayload.setAlternative(jsonAdapter.toJson(alternatives));
         inferredPayload.setJsonPayload(newPayload);
         inferredPayload.setTypes(payload.types());
-        if(labelProperty != null){
+        Set<EmbeddedTypeInformation.InferredEmbeddedTypeInformation> embeddedTypeInformation = new HashSet<>();
+        payload.walkMaps((key, map, parentMap) -> {
+            if (map != payload && map.containsKey(JsonLdConsts.TYPE) && map.containsKey("_id")) {
+                String parentType = TypeUtils.concatenate(parentMap.get(JsonLdConsts.TYPE));
+                String embeddedType = TypeUtils.concatenate(map.get(JsonLdConsts.TYPE));
+                EmbeddedTypeInformation.InferredEmbeddedTypeInformation embeddedInfo = new EmbeddedTypeInformation.InferredEmbeddedTypeInformation();
+                embeddedInfo.setCompositeId(new EmbeddedTypeInformation.CompositeId(instanceId, (String) parentType, key, embeddedType));
+                embeddedTypeInformation.add(embeddedInfo);
+            }
+        });
+        inferredPayload.setEmbeddedTypeInformation(embeddedTypeInformation);
+        if (labelProperty != null) {
             inferredPayload.setLabel(payload.getAs(labelProperty, String.class).toLowerCase());
         }
-        if(!CollectionUtils.isEmpty(searchableProperties)){
-            String concatenantedSearchableEntries = searchableProperties.stream().map(s -> payload.getAs(s, String.class)).filter(Objects::nonNull).collect(Collectors.joining(" ")).toLowerCase();
-            inferredPayload.setSearchable(concatenantedSearchableEntries);
+        if (!CollectionUtils.isEmpty(searchableProperties)) {
+            String concatenatedSearchableEntries = searchableProperties.stream().map(s -> payload.getAs(s, String.class)).filter(Objects::nonNull).collect(Collectors.joining(" ")).toLowerCase();
+            inferredPayload.setSearchable(concatenatedSearchableEntries);
         }
-        if(query){
+        if (query) {
             Query q = new Query();
             q.setUuid(instanceId);
             inferredPayload.setQuery(q);
         }
         payload.types().forEach(t -> {
-            if(!typeSpecificationRepository.existsById(new TypeSpecification.CompositeId(t, TypeSpecification.GLOBAL_CLIENT_ID))){
+            if (!typeSpecificationRepository.existsById(new TypeSpecification.CompositeId(t, TypeSpecification.GLOBAL_CLIENT_ID))) {
                 TypeSpecification typeSpecification = new TypeSpecification();
                 typeSpecification.setCompositeId(new TypeSpecification.CompositeId(t, TypeSpecification.GLOBAL_CLIENT_ID));
                 typeSpecificationRepository.save(typeSpecification);
@@ -367,10 +379,10 @@ public class PayloadService {
         return new Tuple<>(incomingRelations, outgoingRelations);
     }
 
-    private <T extends TypeStructure> void handleStructure(UUID instanceId, NormalizedJsonLd jsonld, Payload<T> payload, Class<T> typeStructureClass){
+    private <T extends TypeStructure> void handleStructure(UUID instanceId, NormalizedJsonLd jsonld, Payload<T> payload, Class<T> typeStructureClass) {
         Map<TypeStructure.CompositeId, T> typeStructures = new HashMap<>();
         jsonld.walk((key, value, parentMap) -> {
-            if(!key.equals(JsonLdConsts.ID) && !key.equals(JsonLdConsts.TYPE) && !key.equals("_id")) {
+            if (!key.equals(JsonLdConsts.ID) && !key.equals(JsonLdConsts.TYPE) && !key.equals("_id")) {
                 Object embeddedId = parentMap.get("_id");
                 Object type = parentMap.get(JsonLdConsts.TYPE);
                 String typeString = null;
@@ -387,7 +399,7 @@ public class PayloadService {
                 try {
                     TypeStructure.CompositeId typeStructureId = new TypeStructure.CompositeId(instanceId, typeString, embeddedIdString);
                     T typeStructure = typeStructures.get(typeStructureId);
-                    if(typeStructure == null) {
+                    if (typeStructure == null) {
                         typeStructure = typeStructureClass.getConstructor().newInstance();
                         typeStructure.setCompositeId(typeStructureId);
                         typeStructure.setProperties(new ArrayList<>());
@@ -404,10 +416,8 @@ public class PayloadService {
     }
 
 
-
-
     private record IncomingRelationInformation(String targetReference, UUID origin, UUID resolvedTarget,
-                                               String sourcePayload, String  propertyName) {
+                                               String sourcePayload, String propertyName) {
 
         public Set<IncomingRelation> getRelationInformation(JsonAdapter jsonAdapter) {
             if (resolvedTarget != null) {
@@ -556,7 +566,7 @@ public class PayloadService {
     }
 
 
-    private <R extends DocumentRelation> void removeRelations(UUID instanceId, Class<R> relationClass){
+    private <R extends DocumentRelation> void removeRelations(UUID instanceId, Class<R> relationClass) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaDelete<R> criteriaDelete = cb.createCriteriaDelete(relationClass);
         Root<R> deleteRoot = criteriaDelete.from(relationClass);
@@ -655,7 +665,7 @@ public class PayloadService {
     }
 
 
-    private List<? extends Payload<?>> fetchInstancesByIds(Class<? extends Payload<?>> payloadType, List<UUID> ids){
+    private List<? extends Payload<?>> fetchInstancesByIds(Class<? extends Payload<?>> payloadType, List<UUID> ids) {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         CriteriaQuery<? extends Payload<?>> criteriaQuery = criteriaBuilder.createQuery(payloadType);
         Root<? extends Payload<?>> root = criteriaQuery.from(payloadType);
@@ -680,10 +690,9 @@ public class PayloadService {
                 return Result.ok(normalizedJsonLd);
             }));
         } else {
-            if(stage == DataStage.NATIVE){
+            if (stage == DataStage.NATIVE) {
                 throw new UnsupportedOperationException("You can not request an instance by id for the native stage");
-            }
-            else{
+            } else {
                 List<? extends Payload<?>> resultStream = fetchInstancesByIds(stage == DataStage.IN_PROGRESS ? Payload.InferredPayload.class : Payload.ReleasedPayload.class, ids);
                 return resultStream.stream().collect(Collectors.toMap(Payload::getUuid, v -> {
                     NormalizedJsonLd result = jsonAdapter.fromJson(v.getJsonPayload(), NormalizedJsonLd.class);
@@ -692,7 +701,7 @@ public class PayloadService {
                         result.removeEmbedded();
                     }
                     if (returnAlternatives && v instanceof Payload.InferredPayload) {
-                        result.put(EBRAINSVocabulary.META_ALTERNATIVE, jsonAdapter.fromJson(((Payload.InferredPayload)v).getAlternative(), DynamicJson.class));
+                        result.put(EBRAINSVocabulary.META_ALTERNATIVE, jsonAdapter.fromJson(((Payload.InferredPayload) v).getAlternative(), DynamicJson.class));
                     }
                     result.removeAllInternalProperties();
                     result.put(EBRAINSVocabulary.META_SPACE, resolveSpaceName(v.getInstanceInformation().getSpaceName(), userWithRoles.getPrivateSpace()));

@@ -25,7 +25,9 @@
 package org.marmotgraph.commons;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class TypeUtils {
 
@@ -49,6 +51,18 @@ public class TypeUtils {
             }
         }
         return result;
+    }
+
+    public static String concatenate(Object object){
+        if(object == null) {
+            return null;
+        }
+        else if(object instanceof Collection<?>){
+            return ((Collection<?>) object).stream().map(Object::toString).collect(Collectors.joining(", "));
+        }
+        else{
+            return object.toString();
+        }
     }
 
 }
