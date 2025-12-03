@@ -24,14 +24,11 @@
 
 package org.marmotgraph.core.api;
 
+import org.marmotgraph.commons.model.*;
 import org.marmotgraph.graphdb.arango.model.ArangoDatabaseProxy;
 import org.marmotgraph.commons.SetupLogic;
 import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.model.ExtendedResponseConfiguration;
-import org.marmotgraph.commons.model.PaginationParam;
-import org.marmotgraph.commons.model.ResultWithExecutionDetails;
-import org.marmotgraph.commons.model.User;
 import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.permission.roles.Role;
 import org.marmotgraph.commons.permission.roles.RoleMapping;
@@ -148,7 +145,7 @@ public abstract class AbstractTest {
     }
 
 
-    public <T> T assureValidPayload(ResultWithExecutionDetails<T> result) {
+    public <T> T assureValidPayload(Result<T> result) {
         notNull(result, "The response body shouldn't be null");
         T data = result.getData();
         notNull(result, "The data section of the body shouldn't be null");

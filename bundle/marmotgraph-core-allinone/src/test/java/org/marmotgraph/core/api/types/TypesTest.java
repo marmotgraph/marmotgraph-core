@@ -27,6 +27,7 @@ package org.marmotgraph.core.api.types;
 import org.junit.jupiter.api.Assertions;
 import org.marmotgraph.commons.exception.ForbiddenException;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
+import org.marmotgraph.commons.model.Result;
 import org.marmotgraph.commons.model.ResultWithExecutionDetails;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
@@ -77,7 +78,7 @@ class TypesTest extends AbstractFunctionalityTest {
 
         //When
         test.execute(() -> {
-            ResultWithExecutionDetails<Map<String, ResultWithExecutionDetails<TypeInformation>>> typesByName = types.getTypesByName(Collections.singletonList(test.typeName), ExposedStage.IN_PROGRESS, false, false,null);
+            ResultWithExecutionDetails<Map<String, Result<TypeInformation>>> typesByName = types.getTypesByName(Collections.singletonList(test.typeName), ExposedStage.IN_PROGRESS, false, false,null);
             TypeInformation data = typesByName.getData().get(test.typeName).getData();
             assertNotNull(data);
             assertEquals(test.typeName, data.getIdentifier());
@@ -224,7 +225,7 @@ class TypesTest extends AbstractFunctionalityTest {
         test.execute(()->{
 
             //Then
-            Map<String, ResultWithExecutionDetails<TypeInformation>> map = test.assureValidPayload(test.response);
+            Map<String, Result<TypeInformation>> map = test.assureValidPayload(test.response);
             test.assureValidPayload(map.get(TestDataFactory.TEST_TYPE));
         });
     }

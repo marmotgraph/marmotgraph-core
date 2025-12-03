@@ -22,7 +22,7 @@
   "translations": {
     "s:name": "Translations",
     "kg:nameForReverseLink": "Is translation of",
-    "kg_p:widget": "DynamicDropdown"
+    "kg_p:widget": "Nested"
   },
   "language": {
     "s:name": "Language",
