@@ -46,6 +46,7 @@ import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permissions.controller.Permissions;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.primaryStore.instances.model.*;
+import org.marmotgraph.primaryStore.structures.service.TypesService;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -76,6 +77,7 @@ public class PayloadService {
     private final Permissions permissions;
     private final TypeSpecificationRepository typeSpecificationRepository;
     private final PropertySpecificationRepository propertySpecificationRepository;
+    private final TypesService typesService;
 
     public Optional<SpaceName> getSpace(UUID instanceID) {
         return instanceInformationRepository.findById(instanceID).map(i -> SpaceName.fromString(i.getSpaceName()));
@@ -114,7 +116,7 @@ public class PayloadService {
         cq = cq.select(selector.apply(new Tuple<>(cb, root)));
         if (StringUtils.isNotBlank(search)) {
             String searchString = "%" + search.toLowerCase() + "%";
-            predicates.add(cb.or(cb.like(root.get("label"), searchString), cb.like(root.get("searchable"), searchString)));
+            predicates.add(cb.like(root.get("searchable"), searchString));
         }
         cq.where(predicates.toArray(new Predicate[0]));
         TypedQuery<T> query = entityManager.createQuery(cq);
@@ -353,12 +355,17 @@ public class PayloadService {
             }
         });
         inferredPayload.setEmbeddedTypeInformation(embeddedTypeInformation);
+        StringBuilder searchString = new StringBuilder();
         if (labelProperty != null) {
-            inferredPayload.setLabel(payload.getAs(labelProperty, String.class).toLowerCase());
+            inferredPayload.setLabel(payload.getAs(labelProperty, String.class));
+            searchString.append(payload.getAs(labelProperty, String.class).toLowerCase());
         }
         if (!CollectionUtils.isEmpty(searchableProperties)) {
             String concatenatedSearchableEntries = searchableProperties.stream().map(s -> payload.getAs(s, String.class)).filter(Objects::nonNull).collect(Collectors.joining(" ")).toLowerCase();
-            inferredPayload.setSearchable(concatenatedSearchableEntries);
+            searchString.append(concatenatedSearchableEntries);
+        }
+        if(!searchString.isEmpty()){
+            inferredPayload.setSearchable(searchString.toString());
         }
         if (query) {
             Query q = new Query();
@@ -675,6 +682,7 @@ public class PayloadService {
         return entityManager.createQuery(criteriaQuery).getResultList();
     }
 
+    @Transactional
     public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<UUID> ids, DataStage stage, String typeRestriction, boolean returnPayload, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize) {
         //TODO typeRestriction
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
@@ -693,8 +701,9 @@ public class PayloadService {
             if (stage == DataStage.NATIVE) {
                 throw new UnsupportedOperationException("You can not request an instance by id for the native stage");
             } else {
-                List<? extends Payload<?>> resultStream = fetchInstancesByIds(stage == DataStage.IN_PROGRESS ? Payload.InferredPayload.class : Payload.ReleasedPayload.class, ids);
-                return resultStream.stream().collect(Collectors.toMap(Payload::getUuid, v -> {
+                List<? extends Payload<?>> results = fetchInstancesByIds(stage == DataStage.IN_PROGRESS ? Payload.InferredPayload.class : Payload.ReleasedPayload.class, ids);
+                Map<UUID, Map<String, Map<String, Map<?, ?>>>> incomingLinks = returnIncomingLinks ? getIncomingLinks(results.stream().map(Payload::getUuid).collect(Collectors.toSet()), stage) : null;
+                return results.stream().collect(Collectors.toMap(Payload::getUuid, v -> {
                     NormalizedJsonLd result = jsonAdapter.fromJson(v.getJsonPayload(), NormalizedJsonLd.class);
                     result.resolveOutgoingRelations(v.getDocumentRelations().stream().filter(r -> r.getResolvedTarget() != null).map(r -> new OutgoingRelation(r.getCompositeId().getTargetReference(), r.getResolvedTarget())).collect(Collectors.toSet()));
                     if (!returnEmbedded) {
@@ -705,7 +714,9 @@ public class PayloadService {
                     }
                     result.removeAllInternalProperties();
                     result.put(EBRAINSVocabulary.META_SPACE, resolveSpaceName(v.getInstanceInformation().getSpaceName(), userWithRoles.getPrivateSpace()));
-                    //TODO incoming links
+                    if (returnIncomingLinks){
+                        result.put(EBRAINSVocabulary.META_INCOMING_LINKS, incomingLinks.getOrDefault(v.getUuid(), null));
+                    }
                     return Result.ok(result);
                 }));
             }
@@ -713,8 +724,27 @@ public class PayloadService {
     }
 
 
+    private record IncomingLinkInformation(String propertyName, String type, String label, String space, UUID uuid, UUID sourceUUID){
+
+    }
+
+
+    private Map<UUID, List<IncomingLinkInformation>> fetchIncomingLinks(DataStage stage, Set<UUID> instances){
+        Class<? extends DocumentRelation> clazz = stage == DataStage.IN_PROGRESS ? DocumentRelation.InferredDocumentRelation.class : DocumentRelation.ReleasedDocumentRelation.class;
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<IncomingLinkInformation> query = criteriaBuilder.createQuery(IncomingLinkInformation.class);
+        Root<? extends DocumentRelation> root = query.from(clazz);
+        Join<Object, Object> sourcePayload = root.join("payload", JoinType.LEFT);
+        Join<Object, Object> types = sourcePayload.join("types");
+        Join<Object, Object> instanceInformation = sourcePayload.join("instanceInformation", JoinType.LEFT);
+        query.select(criteriaBuilder.construct(IncomingLinkInformation.class, root.get("compositeId").get("propertyName"), types, sourcePayload.get("label"), instanceInformation.get("spaceName"), root.get("resolvedTarget"), root.get("compositeId").get("uuid")));
+        query.where(root.get("resolvedTarget").in(instances));
+        return entityManager.createQuery(query).getResultStream().collect(Collectors.groupingBy(i -> i.uuid));
+    }
+
+
     @Transactional
-    public Optional<NormalizedJsonLd> getInstanceById(UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, UserWithRoles userWithRoles) {
+    public Optional<NormalizedJsonLd> getInstanceById(UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, UserWithRoles userWithRoles) {
         NormalizedJsonLd result = null;
         switch (stage) {
             case NATIVE ->
@@ -735,6 +765,10 @@ public class PayloadService {
                     if (returnAlternatives) {
                         result.put(EBRAINSVocabulary.META_ALTERNATIVE, jsonAdapter.fromJson(inferredPayload.getAlternative(), DynamicJson.class));
                     }
+                    if (returnIncomingLinks){
+                        result.put(EBRAINSVocabulary.META_INCOMING_LINKS, getIncomingLinks(Collections.singleton(id), stage).getOrDefault(id, null));
+                    }
+
                     result.removeAllInternalProperties();
                     result.put(EBRAINSVocabulary.META_SPACE, resolveSpaceName(inferredPayload.getInstanceInformation().getSpaceName(), userWithRoles.getPrivateSpace()));
 
@@ -752,11 +786,46 @@ public class PayloadService {
                     if (!returnEmbedded) {
                         result.removeEmbedded();
                     }
+                    result.removeAllInternalProperties();
                     result.put(EBRAINSVocabulary.META_SPACE, resolveSpaceName(releasedPayload.getInstanceInformation().getSpaceName(), userWithRoles.getPrivateSpace()));
                 }
             }
         }
         return Optional.ofNullable(result);
+    }
+
+    private Map<UUID, Map<String, Map<String, Map<?, ?>>>> getIncomingLinks(Set<UUID> ids, DataStage stage) {
+        Map<UUID, List<IncomingLinkInformation>> incomingLinkInformation = fetchIncomingLinks(stage, ids);
+        Map<UUID, Map<String, Map<String, Map<?, ?>>>> result = new HashMap<>();
+        incomingLinkInformation.forEach((uuid, incomingLinks)-> {
+            List<String> typesOfIncomingLinks = incomingLinks.stream().map(i -> i.type).distinct().toList();
+            Map<String, NormalizedJsonLd> genericTypeInformation = typesService.fetchGenericTypeInformation(stage, null, null, typesOfIncomingLinks).typeSpecification();
+            Map<String, List<IncomingLinkInformation>> incomingLinksByProperty = incomingLinks.stream().collect(Collectors.groupingBy(i -> i.propertyName));
+            Map<String, Map<String, Map<?, ?>>> incomingLinksResult = new HashMap<>();
+            incomingLinksByProperty.forEach((p, links) -> {
+                Map<String, Map<?, ?>> propertyResults = new HashMap<>();
+                Map<String, List<IncomingLinkInformation>> incomingLinksByType = links.stream().collect(Collectors.groupingBy(i -> i.type));
+                incomingLinksByType.forEach((k, v) -> {
+                    Paginated<NormalizedJsonLd> results =  new Paginated<>(v.stream().map(i -> {
+                        NormalizedJsonLd r = new NormalizedJsonLd();
+                        r.setId(i.sourceUUID.toString());
+                        r.put(EBRAINSVocabulary.META_SPACE, i.space);
+                        r.put(EBRAINSVocabulary.LABEL, i.label);
+                        return r;
+                    }).toList(), (long) v.size(), v.size(), 0);
+                    NormalizedJsonLd normalizedJsonLd = jsonAdapter.fromJson(jsonAdapter.toJson(results), NormalizedJsonLd.class);
+                    NormalizedJsonLd typeInformation = genericTypeInformation.get(k);
+                    if(typeInformation!=null) {
+                        normalizedJsonLd.putAll(typeInformation);
+                    }
+                    normalizedJsonLd.put(EBRAINSVocabulary.META_OCCURRENCES, 0); //TODO FIX
+                    propertyResults.put(k, normalizedJsonLd);
+                });
+                incomingLinksResult.put(p, propertyResults);
+            });
+            result.put(uuid, incomingLinksResult);
+        });
+        return result;
     }
 
     public Optional<Tuple<NormalizedJsonLd, String>> getNativeInstanceById(UUID id, String userId) {
