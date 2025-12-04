@@ -282,6 +282,89 @@ public class PayloadService {
         }).collect(Collectors.toSet());
     }
 
+    private record NeighborInformation(UUID uuid, String spaceName, String type, UUID inboundId, UUID outboundId){}
+
+    @Transactional
+    public GraphEntity getNeighbors(String space, UUID id, DataStage stage){
+        Optional<? extends Payload<?>> payload = stage == DataStage.IN_PROGRESS ? inferredPayloadRepository.findById(id) : releasedPayloadRepository.findById(id);
+        if(payload.isPresent()){
+            GraphEntity entity = new GraphEntity();
+            entity.setId(id.toString());
+            Payload<?> p = payload.get();
+            entity.setName(p.getLabel());
+            entity.setTypes(new ArrayList<>(p.getTypes()));
+            entity.setSpace(p.getInstanceInformation().getSpaceName());
+            if(!CollectionUtils.isEmpty(p.getIncomingRelations())) {
+                entity.setInbound(p.getIncomingRelations().stream().map(i -> {
+                    Payload<?> incomingPayload = i.getPayload();
+                    GraphEntity incoming = new GraphEntity();
+                    incoming.setId(incomingPayload.getUuid().toString());
+                    incoming.setName(incomingPayload.getLabel());
+                    incoming.setTypes(new ArrayList<>(incomingPayload.getTypes()));
+                    incoming.setSpace(incomingPayload.getInstanceInformation().getSpaceName());
+                    return incoming;
+                }).toList());
+            }
+            if(!CollectionUtils.isEmpty(p.getDocumentRelations())) {
+                entity.setOutbound(p.getDocumentRelations().stream().map(o -> {
+                    Payload<?> targetPayload = o.getTargetPayload();
+                    if (targetPayload != null) {
+                        GraphEntity outbound = new GraphEntity();
+                        outbound.setId(targetPayload.getUuid().toString());
+                        outbound.setName(targetPayload.getLabel());
+                        outbound.setTypes(new ArrayList<>(targetPayload.getTypes()));
+                        outbound.setSpace(targetPayload.getInstanceInformation().getSpaceName());
+                        if (CollectionUtils.isEmpty(targetPayload.getDocumentRelations())) {
+                            outbound.setOutbound(targetPayload.getDocumentRelations().stream().map(o2 -> {
+                                Payload<?> targetPayload2 = o2.getTargetPayload();
+                                GraphEntity outbound2 = new GraphEntity();
+                                outbound2.setId(targetPayload2.getUuid().toString());
+                                outbound2.setName(targetPayload2.getLabel());
+                                outbound2.setTypes(new ArrayList<>(targetPayload2.getTypes()));
+                                outbound2.setSpace(targetPayload2.getInstanceInformation().getSpaceName());
+                                return outbound2;
+                            }).toList());
+                        }
+                        return outbound;
+                    }
+                    return null;
+                }).filter(Objects::nonNull).toList());
+            }
+            return entity;
+        }
+        return null;
+
+
+//        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+//        Class<? extends Payload<?>> clazz = stage == DataStage.IN_PROGRESS ? Payload.InferredPayload.class : Payload.ReleasedPayload.class;
+//        CriteriaQuery<NeighborInformation> query = criteriaBuilder.createQuery(NeighborInformation.class);
+//        Root<? extends Payload<?>> root = query.from(clazz);
+//        Join<Object, Object> instanceInformation = root.join("instanceInformation", JoinType.LEFT);
+//        Join<Object, Object> types = root.join("types", JoinType.LEFT);
+//        Join<Object, Object> documentRelations = root.join("documentRelations", JoinType.LEFT);
+//        Join<Object, Object> incomingRelations = root.join("incomingRelations", JoinType.LEFT);
+//        query.select(criteriaBuilder.construct(NeighborInformation.class, root.get("uuid"), instanceInformation.get("spaceName"), types, documentRelations.get("resolvedTarget"), incomingRelations.get("compositeId").get("uuid")));
+//        query.where(criteriaBuilder.equal(root.get("uuid"), id));
+//        List<NeighborInformation> resultList = entityManager.createQuery(query).getResultList();
+//        GraphEntity result = new GraphEntity();
+//        Map<String, List<NeighborInformation>> byType = resultList.stream().collect(Collectors.groupingBy(r -> r.type));
+//        String type = byType.keySet().stream().findFirst().get();
+//
+//
+//
+//        return null;
+    }
+
+    public ScopeElement getScopeForInstance(String space, UUID id, DataStage stage, boolean applyRestrictions) {
+        Optional<? extends Payload<?>> instance = stage == DataStage.IN_PROGRESS ? inferredPayloadRepository.findById(id) : releasedPayloadRepository.findById(id);
+        if (instance.isPresent()) {
+            Payload<?> payload = instance.get();
+            NormalizedJsonLd normalizedJsonLd = jsonAdapter.fromJson(payload.getJsonPayload(), NormalizedJsonLd.class);
+            //TODO populate scope
+            return new ScopeElement(id, normalizedJsonLd.types(), Collections.emptyList(), id.toString(), payload.getInstanceInformation().getSpaceName(), payload.getLabel());
+        }
+        return null;
+    }
 
     public void applyCURIEPrefixes(QuerySpecification querySpecification) {
         Set<String> namespaces = querySpecification.extractPropertyAndTypeNamespaces();
@@ -362,9 +445,12 @@ public class PayloadService {
         }
         if (!CollectionUtils.isEmpty(searchableProperties)) {
             String concatenatedSearchableEntries = searchableProperties.stream().map(s -> payload.getAs(s, String.class)).filter(Objects::nonNull).collect(Collectors.joining(" ")).toLowerCase();
+            if (!searchString.isEmpty()) {
+                searchString.append(" ");
+            }
             searchString.append(concatenatedSearchableEntries);
         }
-        if(!searchString.isEmpty()){
+        if (!searchString.isEmpty()) {
             inferredPayload.setSearchable(searchString.toString());
         }
         if (query) {
@@ -586,7 +672,7 @@ public class PayloadService {
         entityManager.createQuery(criteriaUpdate).executeUpdate();
     }
 
-
+    @Transactional
     public void delete(UUID instanceId) {
         Optional<InstanceInformation> byId = instanceInformationRepository.findById(instanceId);
         if (byId.isPresent()) {
@@ -600,6 +686,7 @@ public class PayloadService {
     }
 
 
+    @Transactional
     public void unrelease(UUID instanceId) {
         InstanceInformation instanceInformation = getOrCreateGlobalInstanceInformation(instanceId);
         instanceInformation.setReleaseStatus(ReleaseStatus.UNRELEASED);
@@ -714,7 +801,7 @@ public class PayloadService {
                     }
                     result.removeAllInternalProperties();
                     result.put(EBRAINSVocabulary.META_SPACE, resolveSpaceName(v.getInstanceInformation().getSpaceName(), userWithRoles.getPrivateSpace()));
-                    if (returnIncomingLinks){
+                    if (returnIncomingLinks) {
                         result.put(EBRAINSVocabulary.META_INCOMING_LINKS, incomingLinks.getOrDefault(v.getUuid(), null));
                     }
                     return Result.ok(result);
@@ -724,12 +811,13 @@ public class PayloadService {
     }
 
 
-    private record IncomingLinkInformation(String propertyName, String type, String label, String space, UUID uuid, UUID sourceUUID){
+    private record IncomingLinkInformation(String propertyName, String type, String label, String space, UUID uuid,
+                                           UUID sourceUUID) {
 
     }
 
 
-    private Map<UUID, List<IncomingLinkInformation>> fetchIncomingLinks(DataStage stage, Set<UUID> instances){
+    private Map<UUID, List<IncomingLinkInformation>> fetchIncomingLinks(DataStage stage, Set<UUID> instances) {
         Class<? extends DocumentRelation> clazz = stage == DataStage.IN_PROGRESS ? DocumentRelation.InferredDocumentRelation.class : DocumentRelation.ReleasedDocumentRelation.class;
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         CriteriaQuery<IncomingLinkInformation> query = criteriaBuilder.createQuery(IncomingLinkInformation.class);
@@ -765,7 +853,7 @@ public class PayloadService {
                     if (returnAlternatives) {
                         result.put(EBRAINSVocabulary.META_ALTERNATIVE, jsonAdapter.fromJson(inferredPayload.getAlternative(), DynamicJson.class));
                     }
-                    if (returnIncomingLinks){
+                    if (returnIncomingLinks) {
                         result.put(EBRAINSVocabulary.META_INCOMING_LINKS, getIncomingLinks(Collections.singleton(id), stage).getOrDefault(id, null));
                     }
 
@@ -797,7 +885,7 @@ public class PayloadService {
     private Map<UUID, Map<String, Map<String, Map<?, ?>>>> getIncomingLinks(Set<UUID> ids, DataStage stage) {
         Map<UUID, List<IncomingLinkInformation>> incomingLinkInformation = fetchIncomingLinks(stage, ids);
         Map<UUID, Map<String, Map<String, Map<?, ?>>>> result = new HashMap<>();
-        incomingLinkInformation.forEach((uuid, incomingLinks)-> {
+        incomingLinkInformation.forEach((uuid, incomingLinks) -> {
             List<String> typesOfIncomingLinks = incomingLinks.stream().map(i -> i.type).distinct().toList();
             Map<String, NormalizedJsonLd> genericTypeInformation = typesService.fetchGenericTypeInformation(stage, null, null, typesOfIncomingLinks).typeSpecification();
             Map<String, List<IncomingLinkInformation>> incomingLinksByProperty = incomingLinks.stream().collect(Collectors.groupingBy(i -> i.propertyName));
@@ -806,7 +894,7 @@ public class PayloadService {
                 Map<String, Map<?, ?>> propertyResults = new HashMap<>();
                 Map<String, List<IncomingLinkInformation>> incomingLinksByType = links.stream().collect(Collectors.groupingBy(i -> i.type));
                 incomingLinksByType.forEach((k, v) -> {
-                    Paginated<NormalizedJsonLd> results =  new Paginated<>(v.stream().map(i -> {
+                    Paginated<NormalizedJsonLd> results = new Paginated<>(v.stream().map(i -> {
                         NormalizedJsonLd r = new NormalizedJsonLd();
                         r.setId(i.sourceUUID.toString());
                         r.put(EBRAINSVocabulary.META_SPACE, i.space);
@@ -815,7 +903,7 @@ public class PayloadService {
                     }).toList(), (long) v.size(), v.size(), 0);
                     NormalizedJsonLd normalizedJsonLd = jsonAdapter.fromJson(jsonAdapter.toJson(results), NormalizedJsonLd.class);
                     NormalizedJsonLd typeInformation = genericTypeInformation.get(k);
-                    if(typeInformation!=null) {
+                    if (typeInformation != null) {
                         normalizedJsonLd.putAll(typeInformation);
                     }
                     normalizedJsonLd.put(EBRAINSVocabulary.META_OCCURRENCES, 0); //TODO FIX

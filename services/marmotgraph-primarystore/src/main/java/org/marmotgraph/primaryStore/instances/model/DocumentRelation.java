@@ -33,7 +33,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @MappedSuperclass
-public abstract class DocumentRelation {
+public abstract class DocumentRelation<T extends Payload<?>> {
 
     @EmbeddedId
     private DocumentRelation.CompositeId compositeId;
@@ -50,11 +50,15 @@ public abstract class DocumentRelation {
         private String propertyName;
     }
 
+    public abstract T getPayload();
+    public abstract T getTargetPayload();
+
     private UUID resolvedTarget;
 
+    @Getter
     @Table(name = "instances.inferred.relation", indexes = {@Index(name="inferred_relations_byUUID", columnList = "uuid"), @Index(name="inferred_relations_byTargetReference", columnList = "target_reference")})
     @Entity
-    public static class InferredDocumentRelation extends DocumentRelation {
+    public static class InferredDocumentRelation extends DocumentRelation<Payload.InferredPayload> {
 
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "uuid", referencedColumnName = "uuid", insertable = false, updatable = false)
@@ -66,9 +70,10 @@ public abstract class DocumentRelation {
 
     }
 
+    @Getter
     @Entity
     @Table(name = "instances.released.relation", indexes = {@Index(name="released_relations_byUUID", columnList = "uuid"), @Index(name="released_relations_byTargetReference", columnList = "target_reference")})
-    public static class ReleasedDocumentRelation extends DocumentRelation {
+    public static class ReleasedDocumentRelation extends DocumentRelation<Payload.ReleasedPayload> {
 
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "uuid", referencedColumnName = "uuid", insertable = false, updatable = false)

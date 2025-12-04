@@ -234,7 +234,7 @@ public class InstancesAPI implements Instances.Client {
     @Override
     @ExposesMinimalData
     public GraphEntity getNeighbors(String space, UUID id, DataStage stage) {
-        throw new NotImplementedException();
+        return payloadService.getNeighbors(space, id, stage);
     }
 
     @Override
@@ -244,7 +244,7 @@ public class InstancesAPI implements Instances.Client {
 
     @Override
     public ScopeElement getScopeForInstance(String space, UUID id, DataStage stage, boolean applyRestrictions) {
-        return graphDB.getScopeForInstance(space, id, stage, applyRestrictions);
+       return payloadService.getScopeForInstance(space, id, stage, applyRestrictions);
     }
 
     @Override
