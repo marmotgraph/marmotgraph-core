@@ -62,6 +62,10 @@ public abstract class DocumentRelation<T extends Payload<?>> {
 
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "uuid", referencedColumnName = "uuid", insertable = false, updatable = false)
+        private Payload.InferredPayload payloadByEmbeddedId;
+
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "uuid", referencedColumnName = "uuid", insertable = false, updatable = false)
         private Payload.InferredPayload payload;
 
         @ManyToOne(fetch = FetchType.LAZY)

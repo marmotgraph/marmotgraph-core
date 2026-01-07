@@ -24,6 +24,7 @@
 
 package org.marmotgraph.commons;
 
+import lombok.Getter;
 import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +39,7 @@ import java.util.UUID;
  */
 @Component
 public class IdUtils {
+    @Getter
     private final String namespace;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());

@@ -50,6 +50,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @AllArgsConstructor
@@ -68,7 +69,7 @@ public class TypesService {
     private record TypePerSpaceInfo(Long instanceCount, String type, String space) {
     }
 
-    private record TargetTypeInformation(Long instanceCount, String sourceType, String propertyName, String targetType, String space) {
+    public record TargetTypeInformation(Long instanceCount, String sourceType, String propertyName, String targetType, String space) {
     }
 
     private record PropertyPerSpaceInfo(Long instanceCount, String type, String space, String propertyName) {
@@ -89,7 +90,7 @@ public class TypesService {
 
         //TODO space filter
         GenericTypeInformation genericTypeInformation = fetchGenericTypeInformation(stage, paginationParam, space, null);
-        List<TypeInformation> result = enrichTypeInformation(withProperties, withIncomingLinks, genericTypeInformation, space, criteriaBuilder, typeStructureClazz, embeddedTargetTypeClazz, clientId);
+        List<TypeInformation> result = enrichTypeInformation(withProperties, withIncomingLinks, genericTypeInformation, space, criteriaBuilder, typeStructureClazz, stage, clientId);
         result.sort(Comparator.comparing(TypeInformation::getIdentifier));
         Long total = null;
         if (paginationParam == null) {
@@ -102,13 +103,13 @@ public class TypesService {
     }
 
     @Transactional
-    public Map<String, Result<TypeInformation>> getByName(List<String> types, DataStage stage, String space, boolean withProperties, boolean withIncomingLinks, String clientId) {
+    public Map<String, Result<TypeInformation>> getByName(Collection<String> types, DataStage stage, String space, boolean withProperties, boolean withIncomingLinks, String clientId) {
         //TODO space filter
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         Class<? extends TypeStructure> typeInformationClazz = stage == DataStage.IN_PROGRESS ? TypeStructure.InferredTypeStructure.class : TypeStructure.ReleasedTypeStructure.class;
         Class<? extends EmbeddedTypeInformation> embeddedTargetTypeClazz = stage == DataStage.IN_PROGRESS ? EmbeddedTypeInformation.InferredEmbeddedTypeInformation.class : EmbeddedTypeInformation.ReleasedEmbeddedTypeInformation.class;
         GenericTypeInformation genericTypeInformation = fetchGenericTypeInformation(stage, null, space, types); //No pagination due to restriction by types filter
-        List<TypeInformation> result = enrichTypeInformation(withProperties, withIncomingLinks, genericTypeInformation, space, criteriaBuilder, typeInformationClazz, embeddedTargetTypeClazz, clientId);
+        List<TypeInformation> result = enrichTypeInformation(withProperties, withIncomingLinks, genericTypeInformation, space, criteriaBuilder, typeInformationClazz, stage, clientId);
         Map<String, Result<TypeInformation>> resultMap = result.stream().collect(Collectors.toMap(TypeInformation::getIdentifier, Result::ok));
         types.stream().filter(t -> !resultMap.containsKey(t)).forEach(t ->
                 resultMap.put(t, Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase()))
@@ -117,9 +118,9 @@ public class TypesService {
     }
 
 
-    private List<TypeInformation> enrichTypeInformation(boolean withProperties, boolean withIncomingLinks, GenericTypeInformation genericTypeInformation, String spaceRestriction, CriteriaBuilder criteriaBuilder, Class<? extends TypeStructure> typeStructureClazz, Class<? extends EmbeddedTypeInformation> embeddedTypeInfoClazz, String clientId) {
+    private List<TypeInformation> enrichTypeInformation(boolean withProperties, boolean withIncomingLinks, GenericTypeInformation genericTypeInformation, String spaceRestriction, CriteriaBuilder criteriaBuilder, Class<? extends TypeStructure> typeStructureClazz, DataStage stage, String clientId) {
         Map<String, List<PropertyPerSpaceInfo>> propertiesByType = fetchPropertiesByType(withProperties, spaceRestriction, criteriaBuilder, typeStructureClazz, genericTypeInformation.typePerSpaceInformation);
-        Map<String, List<TargetTypeInformation>> targetTypeInformation = withProperties ? fetchTargetTypeInformation(embeddedTypeInfoClazz, genericTypeInformation.typePerSpaceInformation.keySet()) : Collections.emptyMap();
+        Map<String, List<TargetTypeInformation>> targetTypeInformation = withProperties ? fetchTargetTypeInformation(stage, genericTypeInformation.typePerSpaceInformation.keySet()) : Collections.emptyMap();
 
         // TODO do we also need to restrict the incoming links to only those relevant for the filtered space?
         Map<String, List<IncomingLinksInfo>> incomingLinksByType = fetchIncomingLinks(withIncomingLinks, criteriaBuilder, typeStructureClazz, genericTypeInformation.typePerSpaceInformation);
@@ -133,7 +134,7 @@ public class TypesService {
                 typeInformation.putAll(typeSpecification);
                 searchableProperties = typeSpecification.getAsListOf(EBRAINSVocabulary.META_PROPERTY_SEARCHABLE, String.class);
             }
-            Map<String, List<TargetTypeInformation>> targetTypeInformationBySpace = targetTypeInformation.getOrDefault(k, Collections.<TargetTypeInformation>emptyList()).stream().collect(Collectors.groupingBy(t -> t.space));
+            Map<String, List<TargetTypeInformation>> targetTypeInformationBySpace = targetTypeInformation.getOrDefault(k, Collections.emptyList()).stream().collect(Collectors.groupingBy(t -> t.space));
             if(typeInformation.getName() == null) {
                 String[] nameSplit = k.split("/");
                 typeInformation.setName(nameSplit[nameSplit.length - 1]);
@@ -145,10 +146,10 @@ public class TypesService {
             }
             consolidateProperties(withProperties, typeInformation, searchableProperties);
             enrichProperties(typeInformation.getProperties(), typeInformation.getName(), clientId);
-            if(spaceRestriction!=null){
-                // The result is restricted to a single space - accordingly, the substructure of space information is redundant and removed
-                typeInformation.setSpaces(null);
-            }
+//            if(spaceRestriction!=null){
+//                // The result is restricted to a single space - accordingly, the substructure of space information is redundant and removed
+//                typeInformation.setSpaces(Collections.s);
+//            }
             result.add(typeInformation);
         });
         return result;
@@ -188,7 +189,7 @@ public class TypesService {
     }
 
 
-    public GenericTypeInformation fetchGenericTypeInformation(DataStage stage, PaginationParam paginationParam, String space, List<String> typeNameFilter) {
+    public GenericTypeInformation fetchGenericTypeInformation(DataStage stage, PaginationParam paginationParam, String space, Collection<String> typeNameFilter) {
         //Read in the generic types
         Class<? extends TypeStructure> clazz = stage == DataStage.IN_PROGRESS ? TypeStructure.InferredTypeStructure.class : TypeStructure.ReleasedTypeStructure.class;
         Long totalResults = null;
@@ -340,7 +341,36 @@ public class TypesService {
         typeInformation.setIncomingLinks(incomingLinks);
     }
 
-    private Map<String, List<TargetTypeInformation>> fetchTargetTypeInformation(Class<? extends EmbeddedTypeInformation> clazz, Set<String> types){
+
+    private Map<String, List<TargetTypeInformation>> fetchTargetTypeInformation(DataStage stage, Set<String> types){
+        Stream<TargetTypeInformation> targetTypeInformation = fetchGeneralTargetTypeInformation(stage == DataStage.IN_PROGRESS ? TypeStructure.InferredTypeStructure.class : TypeStructure.ReleasedTypeStructure.class, null, types);
+        Stream<TargetTypeInformation> embeddedTargetTypeInformation = fetchEmbeddedTargetTypeInformation(stage == DataStage.IN_PROGRESS ? EmbeddedTypeInformation.InferredEmbeddedTypeInformation.class : EmbeddedTypeInformation.ReleasedEmbeddedTypeInformation.class, types);
+        return Stream.concat(targetTypeInformation, embeddedTargetTypeInformation).collect(Collectors.groupingBy(k -> k.sourceType));
+    }
+
+    public Stream<TargetTypeInformation> fetchGeneralTargetTypeInformation(Class<? extends TypeStructure> clazz, String propertyName, Set<String> type){
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<TargetTypeInformation> targetTypeCriteriaQuery = criteriaBuilder.createQuery(TargetTypeInformation.class);
+        Root<? extends TypeStructure> typesRoot = targetTypeCriteriaQuery.from(clazz);
+        Join<Object, Object> payload = typesRoot.join("payload", JoinType.LEFT);
+        Join<Object, Object> documentRelations = payload.join("documentRelations", JoinType.LEFT);
+        Join<Object, Object> targetPayload = documentRelations.join("targetPayload", JoinType.LEFT);
+        Join<Object, Object> targetInformation = targetPayload.join("instanceInformation");
+        Join<Object, Object> types = targetPayload.join("types", JoinType.LEFT);
+        targetTypeCriteriaQuery.select(criteriaBuilder.construct(TargetTypeInformation.class, criteriaBuilder.countDistinct(typesRoot.get("compositeId").get("embeddedIdentifier")), typesRoot.get("compositeId").get("type"), documentRelations.get("compositeId").get("propertyName"), types, targetInformation.get("spaceName")));
+        targetTypeCriteriaQuery.groupBy(types, typesRoot.get("compositeId").get("type"), documentRelations.get("compositeId").get("propertyName"), targetInformation.get("spaceName"));
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(typesRoot.get("compositeId").get("type").in(type));
+        if(propertyName!=null){
+            predicates.add(criteriaBuilder.equal(documentRelations.get("compositeId").get("propertyName"), propertyName));
+        }
+        targetTypeCriteriaQuery.where(criteriaBuilder.and(predicates.toArray(new Predicate[0])));
+        return  entityManager.createQuery(targetTypeCriteriaQuery).getResultStream();
+    }
+
+
+
+    private Stream<TargetTypeInformation> fetchEmbeddedTargetTypeInformation(Class<? extends EmbeddedTypeInformation> clazz, Set<String> types){
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         CriteriaQuery<TargetTypeInformation> embeddedTargetTypesCriteriaQuery = criteriaBuilder.createQuery(TargetTypeInformation.class);
         Root<? extends EmbeddedTypeInformation> embeddedTypesRoot = embeddedTargetTypesCriteriaQuery.from(clazz);
@@ -349,7 +379,7 @@ public class TypesService {
         embeddedTargetTypesCriteriaQuery.select(criteriaBuilder.construct(TargetTypeInformation.class, criteriaBuilder.count(compositeId.get("uuid")), compositeId.get("sourceType"), compositeId.get("propertyName"), compositeId.get("targetType"), instanceInformation.get("spaceName")));
         embeddedTargetTypesCriteriaQuery.groupBy(compositeId.get("sourceType"), compositeId.get("propertyName"), compositeId.get("targetType"), instanceInformation.get("spaceName"));
         embeddedTargetTypesCriteriaQuery.where(compositeId.get("sourceType").in(types));
-        return  entityManager.createQuery(embeddedTargetTypesCriteriaQuery).getResultList().stream().collect(Collectors.groupingBy(k -> k.sourceType));
+        return entityManager.createQuery(embeddedTargetTypesCriteriaQuery).getResultStream();
     }
 
     private Map<String, List<PropertyPerSpaceInfo>> fetchPropertiesByType(boolean withProperties, String spaceRestriction, CriteriaBuilder criteriaBuilder, Class<? extends TypeStructure> clazz, Map<String, List<TypePerSpaceInfo>> byType) {

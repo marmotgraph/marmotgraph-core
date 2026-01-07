@@ -30,6 +30,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.AllArgsConstructor;
 import org.marmotgraph.commons.AuthContext;
+import org.marmotgraph.commons.IdUtils;
 import org.marmotgraph.commons.Version;
 import org.marmotgraph.commons.api.jsonld.JsonLd;
 import org.marmotgraph.commons.api.primaryStore.Instances;
@@ -37,6 +38,7 @@ import org.marmotgraph.commons.config.openApiGroups.Admin;
 import org.marmotgraph.commons.config.openApiGroups.Advanced;
 import org.marmotgraph.commons.config.openApiGroups.Extra;
 import org.marmotgraph.commons.config.openApiGroups.Simple;
+import org.marmotgraph.commons.exception.InstanceNotFoundException;
 import org.marmotgraph.commons.exception.InvalidRequestException;
 import org.marmotgraph.commons.jsonld.InstanceId;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
@@ -203,7 +205,10 @@ public class InstancesV3 {
             @ParameterObject ExtendedResponseConfiguration responseConfiguration
     ) {
         NormalizedJsonLd instanceById = instanceController.getInstanceById(id, stage.getStage(), responseConfiguration);
-        return instanceById != null ? ResultWithExecutionDetails.ok(instanceById) : null;
+        if(instanceById == null){
+            throw new InstanceNotFoundException(id);
+        }
+        return ResultWithExecutionDetails.ok(instanceById);
     }
 
     @Operation(summary = "Get incoming links for a specific instance (paginated)")

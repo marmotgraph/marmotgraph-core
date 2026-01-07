@@ -33,6 +33,8 @@ public class EBRAINSVocabulary {
     private EBRAINSVocabulary() {
     }
 
+
+    public static final String OLD_ID_NAMESPACE = "https://kg.ebrains.eu/api/instances/";
     public static final String ALIAS = "ebr";
     public static final String NAMESPACE = "https://core.kg.ebrains.eu/vocab/";
     public static final String LABEL = NAMESPACE+"label";

@@ -29,7 +29,6 @@ import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -55,6 +54,13 @@ public class JsonLdDoc extends DynamicJson {
                 final Object type = map.get(key);
                 if (type != null && !(type instanceof Collection)) {
                     map.put(JsonLdConsts.TYPE, Collections.singletonList(type));
+                }
+            }
+            else if(JsonLdConsts.ID.equals(key)){
+                // This is to fix legacy -> we want to treat the id as a UUID only and ignore the old id namespaces.
+                Object id = map.get(JsonLdConsts.ID);
+                if(id instanceof String && ((String) id).startsWith(EBRAINSVocabulary.OLD_ID_NAMESPACE)){
+                    map.put(JsonLdConsts.ID, ((String) id).substring(EBRAINSVocabulary.OLD_ID_NAMESPACE.length()));
                 }
             }
         });
@@ -103,7 +109,7 @@ public class JsonLdDoc extends DynamicJson {
     private boolean isValidType(Object type) {
         if (type instanceof List && !((List<?>) type).isEmpty()) {
             for (Object o : ((List<?>) type)) {
-                if (!isValidIRI(o)) {
+                if (isNeitherIRIOrUUID(o)) {
                     return false;
                 }
             }
@@ -144,7 +150,7 @@ public class JsonLdDoc extends DynamicJson {
             }
             switch (key) {
                 case JsonLdConsts.ID:
-                    if (!isValidIRI(value)) {
+                    if (isNeitherIRIOrUUID(value)) {
                         throw new InvalidRequestException(String.format("Payload contains at least one invalid @id: %s", value));
                     }
                     if (!rootLevel && map.keySet().size() > 1) {
@@ -159,7 +165,7 @@ public class JsonLdDoc extends DynamicJson {
                     break;
                 default:
                     if (!isInternalKey(key)) {
-                        if (!isValidIRI(key)) {
+                        if (isNeitherIRIOrUUID(key)) {
                             throw new InvalidRequestException(String.format("The property %s is not fully qualified", key));
                         }
                         if (isKgMetaProperty(key)) {
@@ -176,8 +182,17 @@ public class JsonLdDoc extends DynamicJson {
         return key != null && key.startsWith(EBRAINSVocabulary.META);
     }
 
-    private boolean isValidIRI(Object value) {
-        return value instanceof String && ((String) value).matches("http(s?)://.*");
+    private boolean isNeitherIRIOrUUID(Object value) {
+        if (!(value instanceof String)) return true;
+        if (!((String) value).matches("http(s?)://.*")) {
+            try {
+                UUID.fromString((String) value);
+            }
+            catch (IllegalArgumentException e) {
+                return true;
+            }
+        }
+        return false;
     }
 
 

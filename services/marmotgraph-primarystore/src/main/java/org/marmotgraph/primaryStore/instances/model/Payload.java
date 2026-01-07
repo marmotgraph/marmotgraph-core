@@ -29,7 +29,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 @MappedSuperclass
 @Getter
@@ -72,7 +71,7 @@ public abstract class Payload<T extends TypeStructure> {
         private List<TypeStructure.InferredTypeStructure> typeStructures;
 
         @OneToMany(targetEntity = EmbeddedTypeInformation.InferredEmbeddedTypeInformation.class, cascade = CascadeType.ALL, mappedBy = "payload", orphanRemoval = true)
-        private Set<EmbeddedTypeInformation.InferredEmbeddedTypeInformation> embeddedTypeInformation;
+        private List<EmbeddedTypeInformation.InferredEmbeddedTypeInformation> embeddedTypeInformation;
 
         @OneToMany(targetEntity = DocumentRelation.InferredDocumentRelation.class, mappedBy = "payload", fetch = FetchType.LAZY)
         private List<DocumentRelation.InferredDocumentRelation> documentRelations;

@@ -24,6 +24,7 @@
 
 package org.marmotgraph.primaryStore.instances.api;
 
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.NotImplementedException;
 import org.marmotgraph.commons.AuthContext;
@@ -41,6 +42,7 @@ import org.marmotgraph.commons.markers.ExposesData;
 import org.marmotgraph.commons.markers.ExposesMinimalData;
 import org.marmotgraph.commons.markers.ExposesQuery;
 import org.marmotgraph.commons.model.*;
+import org.marmotgraph.commons.model.external.types.TypeInformation;
 import org.marmotgraph.commons.model.query.QuerySpecification;
 import org.marmotgraph.commons.models.UserWithRoles;
 import org.marmotgraph.commons.params.ReleaseTreeScope;
@@ -48,14 +50,17 @@ import org.marmotgraph.commons.permission.Functionality;
 import org.marmotgraph.commons.permissions.controller.Permissions;
 import org.marmotgraph.commons.query.MarmotGraphQuery;
 import org.marmotgraph.commons.semantics.vocabularies.EBRAINSVocabulary;
+import org.marmotgraph.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import org.marmotgraph.graphdb.GraphDB;
 import org.marmotgraph.primaryStore.instances.model.InstanceInformation;
+import org.marmotgraph.primaryStore.instances.model.TypeStructure;
 import org.marmotgraph.primaryStore.instances.service.InstanceInformationRepository;
 import org.marmotgraph.primaryStore.instances.service.InstanceScopeService;
 import org.marmotgraph.primaryStore.instances.service.PayloadService;
 import org.marmotgraph.primaryStore.instances.service.SpaceService;
 import org.marmotgraph.primaryStore.queries.service.QueryPermissions;
 import org.marmotgraph.primaryStore.queries.service.SpecificationInterpreter;
+import org.marmotgraph.primaryStore.structures.service.TypesService;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -76,6 +81,7 @@ public class InstancesAPI implements Instances.Client {
     private final JsonAdapter jsonAdapter;
     private final QueryPermissions queryPermissions;
     private final SpaceService spaceService;
+    private final TypesService typesService;
 
 
     @Override
@@ -172,15 +178,50 @@ public class InstancesAPI implements Instances.Client {
     @Override
     @ExposesMinimalData
     public Map<UUID, String> getLabels(List<UUID> ids, DataStage stage) {
+
         throw new NotImplementedException();
     }
 
 
     @Override
     @ExposesMinimalData
+    @Transactional
     public SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, String space, UUID id, String propertyName, String sourceType, String targetType, String search, PaginationParam paginationParam) {
-        throw new NotImplementedException();
-
+        Set<String> sourceTypes = sourceType == null ? new HashSet<>(payload.types()) : Collections.singleton(sourceType);
+        Set<String> targetTypes;
+        if(targetType == null){
+            // Find target types for link in instance
+            targetTypes = typesService.fetchGeneralTargetTypeInformation(stage == DataStage.IN_PROGRESS ? TypeStructure.InferredTypeStructure.class : TypeStructure.ReleasedTypeStructure.class, propertyName, sourceTypes).map(TypesService.TargetTypeInformation::targetType).collect(Collectors.toSet());
+        }
+        else{
+            targetTypes = Collections.singleton(targetType);
+        }
+        Map<String, Result<TypeInformation>> typeInformation = typesService.getByName(targetTypes, stage, space, false, false, null);
+        Paginated<NormalizedJsonLd> instancesByType = payloadService.getInstancesByTypes(stage, targetTypes, space, search, null, null, true, false, false, paginationParam);
+        SuggestionResult result = new SuggestionResult();
+        Map<String, String> labelProperties = typeInformation.values().stream().collect(Collectors.toMap(k -> k.getData().getAs(SchemaOrgVocabulary.IDENTIFIER, String.class), t -> t.getData().getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class)));
+        List<SuggestedLink> suggestions = instancesByType.getData().stream().map(d -> {
+            SuggestedLink link = new SuggestedLink();
+            link.setId(d.idAsUUID());
+            String firstType = d.types().stream().findFirst().orElse(null);
+            if(firstType != null){
+                link.setType(firstType);
+                link.setAdditionalInformation("");
+                String labelProperty = labelProperties.get(firstType);
+                link.setSpace(d.getAs(EBRAINSVocabulary.META_SPACE, String.class));
+                if(labelProperty!=null){
+                    link.setLabel(d.getAs(labelProperty, String.class));
+                }
+            }
+            return link;
+        }).toList();
+        result.setSuggestions(new Paginated<>(suggestions, instancesByType.getTotalResults(), suggestions.size(), paginationParam != null ? paginationParam.getFrom() : 0));
+        Map<String, TypeInformation> resultTypeInformation = new HashMap<>();
+        typeInformation.forEach((k,v) -> {
+            resultTypeInformation.put(k, v.getData());
+        });
+        result.setTypes(resultTypeInformation);
+        return result;
     }
 
     @Override
@@ -215,7 +256,7 @@ public class InstancesAPI implements Instances.Client {
     @Override
     @ExposesData
     public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String typeName, String space, String searchByLabel, String filterProperty, String filterValue, boolean returnPayload, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam) {
-        return payloadService.getInstancesByType(stage, typeName, space, searchByLabel, filterProperty, filterValue, returnPayload, returnAlternatives, returnEmbedded, paginationParam);
+        return payloadService.getInstancesByTypes(stage, Collections.singleton(typeName), space, searchByLabel, filterProperty, filterValue, returnPayload, returnAlternatives, returnEmbedded, paginationParam);
     }
 
     @Override

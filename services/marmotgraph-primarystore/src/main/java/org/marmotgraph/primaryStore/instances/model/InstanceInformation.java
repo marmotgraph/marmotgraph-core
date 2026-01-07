@@ -51,7 +51,7 @@ public class InstanceInformation {
     private String spaceName;
 
     @Enumerated(EnumType.STRING)
-    private ReleaseStatus releaseStatus;
+    private ReleaseStatus releaseStatus = ReleaseStatus.UNRELEASED;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name="instances.information.alternative_ids", indexes = @Index(name="alternativeIdLookup", unique = true, columnList = "alternative_ids"))

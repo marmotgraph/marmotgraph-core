@@ -30,10 +30,7 @@ import jakarta.persistence.criteria.*;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
-import org.marmotgraph.commons.AuthContext;
-import org.marmotgraph.commons.JsonAdapter;
-import org.marmotgraph.commons.Tuple;
-import org.marmotgraph.commons.TypeUtils;
+import org.marmotgraph.commons.*;
 import org.marmotgraph.commons.exception.ForbiddenException;
 import org.marmotgraph.commons.exception.InstanceNotFoundException;
 import org.marmotgraph.commons.jsonld.*;
@@ -95,7 +92,7 @@ public class PayloadService {
         return spaceName;
     }
 
-    private <T> TypedQuery<T> populateInstanceByTypeQuery(Class<T> targetClass, Class<? extends Payload<?>> clazz, String space, String typeName, String search, Function<Tuple<CriteriaBuilder, Root<? extends Payload>>, Selection<? extends T>> selector, boolean fetchRelations) {
+    private <T> TypedQuery<T> populateInstanceByTypeQuery(Class<T> targetClass, Class<? extends Payload<?>> clazz, String space, Set<String> typeNames, String search, Function<Tuple<CriteriaBuilder, Root<? extends Payload>>, Selection<? extends T>> selector, boolean fetchRelations) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<T> cq = cb.createQuery(targetClass);
         Root<? extends Payload<?>> root = cq.from(clazz);
@@ -106,12 +103,12 @@ public class PayloadService {
             cq.orderBy(cb.asc(root.get("label")), cb.asc(root.get("uuid")));
         }
         List<Predicate> predicates = new ArrayList<>();
-        predicates.add(cb.equal(typesJoin, cb.parameter(String.class, "type")));
+        predicates.add(typesJoin.in(typeNames));
         if (targetClass != Long.class) {
             root.fetch("instanceInformation", JoinType.LEFT);
         }
         if (space != null) {
-            predicates.add(cb.equal(infoJoin.get("spaceName"), cb.parameter(String.class, "space")));
+            predicates.add(cb.equal(infoJoin.get("spaceName"), space));
         }
         cq = cq.select(selector.apply(new Tuple<>(cb, root)));
         if (StringUtils.isNotBlank(search)) {
@@ -119,16 +116,11 @@ public class PayloadService {
             predicates.add(cb.like(root.get("searchable"), searchString));
         }
         cq.where(predicates.toArray(new Predicate[0]));
-        TypedQuery<T> query = entityManager.createQuery(cq);
-        query.setParameter("type", typeName);
-        if (space != null) {
-            query.setParameter("space", space);
-        }
-        return query;
+        return entityManager.createQuery(cq);
     }
 
 
-    public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String typeName, String space, String search, String filterProperty, String filterValue, boolean returnPayload, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam) {
+    public Paginated<NormalizedJsonLd> getInstancesByTypes(DataStage stage, Set<String> typeNames, String space, String search, String filterProperty, String filterValue, boolean returnPayload, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam) {
         //FIXME take into account all the other attributes
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
         Class<? extends Payload<?>> clazz = stage == DataStage.IN_PROGRESS ? Payload.InferredPayload.class : Payload.ReleasedPayload.class;
@@ -136,14 +128,14 @@ public class PayloadService {
         List<NormalizedJsonLd> results = null;
         Long totalCount = null;
         if (countTotal) {
-            TypedQuery<Long> countQuery = populateInstanceByTypeQuery(Long.class, clazz, space, typeName, search, s -> s.getA().countDistinct(s.getB()), false);
+            TypedQuery<Long> countQuery = populateInstanceByTypeQuery(Long.class, clazz, space, typeNames, search, s -> s.getA().countDistinct(s.getB()), false);
             totalCount = countQuery.getSingleResult();
             if (totalCount == 0) {
                 results = Collections.emptyList();
             }
         }
         if (results == null) {
-            TypedQuery<? extends Payload> payloadQuery = populateInstanceByTypeQuery(Payload.class, clazz, space, typeName, search, Tuple::getB, true);
+            TypedQuery<? extends Payload> payloadQuery = populateInstanceByTypeQuery(Payload.class, clazz, space, typeNames, search, Tuple::getB, true);
             // Pagination
             if (paginationParam != null && paginationParam.getSize() != null) {
                 payloadQuery.setMaxResults(paginationParam.getSize().intValue());
@@ -175,7 +167,24 @@ public class PayloadService {
 
 
     public Map<UUID, InstanceId> resolveIds(List<IdWithAlternatives> idWithAlternatives, DataStage stage) {
-        Set<UUID> flatUUIDList = idWithAlternatives.stream().map(IdWithAlternatives::getId).collect(Collectors.toSet());
+        Map<UUID, UUID> directUUIDMap = new HashMap<>();
+        Set<UUID> flatUUIDList = new HashSet<>();
+        idWithAlternatives.forEach(i -> {
+            Optional<UUID> directUUID = i.getAlternatives().stream().map(a -> {
+                try {
+                    return UUID.fromString(a);
+                } catch (IllegalArgumentException e) {
+                    return null;
+                }
+            }).filter(Objects::nonNull).findFirst();
+            if(directUUID.isPresent()) {
+                directUUIDMap.put(directUUID.get(), i.getId());
+                flatUUIDList.add(directUUID.get());
+            }
+            else{
+                flatUUIDList.add(i.getId());
+            }
+        });
         List<InstanceInformation> allById = instanceInformationRepository.findAllById(flatUUIDList);
         Map<UUID, InstanceId> resultMap = new HashMap<>();
         Stream<InstanceInformation> allByIdStream = allById.stream();
@@ -184,31 +193,37 @@ public class PayloadService {
             allByIdStream = allByIdStream.filter(i -> acceptedStatusForReleasedStage.contains(i.getReleaseStatus()));
         }
         allByIdStream.forEach(i -> {
-            resultMap.put(i.getUuid(), new InstanceId(i.getUuid(), SpaceName.fromString(i.getSpaceName())));
+            if(directUUIDMap.containsKey(i.getUuid())){
+                resultMap.put(directUUIDMap.get(i.getUuid()), new InstanceId(i.getUuid(), SpaceName.fromString(i.getSpaceName())));
+            }
+            else{
+                resultMap.put(i.getUuid(), new InstanceId(i.getUuid(), SpaceName.fromString(i.getSpaceName())));
+            }
         });
         Set<String> flatListOfAlternatives = idWithAlternatives.stream().filter(i -> !resultMap.containsKey(i.getId())).map(IdWithAlternatives::getAlternatives).flatMap(Collection::stream).collect(Collectors.toSet());
-        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<InstanceResolutionResult> criteriaQuery = criteriaBuilder.createQuery(InstanceResolutionResult.class);
-        Root<InstanceInformation> root = criteriaQuery.from(InstanceInformation.class);
-        Join<InstanceInformation, String> alternativeIds = root.join("alternativeIds");
-        criteriaQuery.select(criteriaBuilder.construct(InstanceResolutionResult.class, root.get("uuid"), root.get("spaceName"), alternativeIds));
-        List<Predicate> predicates = new ArrayList<>();
-        if (stage == DataStage.RELEASED) {
-            // If we are looking for released information only, we should exclude those resolved ids which are unreleased.
-            predicates.add(root.get("releaseStatus").in(Arrays.asList(ReleaseStatus.RELEASED, ReleaseStatus.HAS_CHANGED)));
+        if(!flatListOfAlternatives.isEmpty()) {
+            CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+            CriteriaQuery<InstanceResolutionResult> criteriaQuery = criteriaBuilder.createQuery(InstanceResolutionResult.class);
+            Root<InstanceInformation> root = criteriaQuery.from(InstanceInformation.class);
+            Join<InstanceInformation, String> alternativeIds = root.join("alternativeIds");
+            criteriaQuery.select(criteriaBuilder.construct(InstanceResolutionResult.class, root.get("uuid"), root.get("spaceName"), alternativeIds));
+            List<Predicate> predicates = new ArrayList<>();
+            if (stage == DataStage.RELEASED) {
+                // If we are looking for released information only, we should exclude those resolved ids which are unreleased.
+                predicates.add(root.get("releaseStatus").in(Arrays.asList(ReleaseStatus.RELEASED, ReleaseStatus.HAS_CHANGED)));
+            }
+            predicates.add(alternativeIds.in(flatListOfAlternatives));
+            criteriaQuery.where(criteriaBuilder.and(predicates.toArray(new Predicate[0])));
+            Stream<InstanceResolutionResult> result = entityManager.createQuery(criteriaQuery).getResultList().stream();
+            if (result != null) {
+                Map<String, InstanceId> instanceIdsByAlternative = result.collect(Collectors.toMap(InstanceResolutionResult::alternative, v -> new InstanceId(v.uuid(), SpaceName.fromString(v.spaceName()))));
+                idWithAlternatives.forEach(id -> {
+                    Optional<String> alternative = id.getAlternatives().stream().filter(instanceIdsByAlternative::containsKey).findFirst();
+                    alternative.ifPresent(s -> resultMap.put(id.getId(), instanceIdsByAlternative.get(s)));
+                });
+            }
         }
-        predicates.add(alternativeIds.in(flatListOfAlternatives));
-        criteriaQuery.where(criteriaBuilder.and(predicates.toArray(new Predicate[0])));
-        Stream<InstanceResolutionResult> result = entityManager.createQuery(criteriaQuery).getResultList().stream();
-        if (result != null) {
-            Map<String, InstanceId> instanceIdsByAlternative = result.collect(Collectors.toMap(InstanceResolutionResult::alternative, v -> new InstanceId(v.uuid(), SpaceName.fromString(v.spaceName()))));
-            idWithAlternatives.forEach(id -> {
-                Optional<String> alternative = id.getAlternatives().stream().filter(instanceIdsByAlternative::containsKey).findFirst();
-                alternative.ifPresent(s -> resultMap.put(id.getId(), instanceIdsByAlternative.get(s)));
-            });
-            return resultMap;
-        }
-        return new HashMap<>();
+        return resultMap;
     }
 
 
@@ -427,14 +442,16 @@ public class PayloadService {
         inferredPayload.setAlternative(jsonAdapter.toJson(alternatives));
         inferredPayload.setJsonPayload(newPayload);
         inferredPayload.setTypes(payload.types());
-        Set<EmbeddedTypeInformation.InferredEmbeddedTypeInformation> embeddedTypeInformation = new HashSet<>();
+        List<EmbeddedTypeInformation.InferredEmbeddedTypeInformation> embeddedTypeInformation = new ArrayList<>();
         payload.walkMaps((key, map, parentMap) -> {
             if (map != payload && map.containsKey(JsonLdConsts.TYPE) && map.containsKey("_id")) {
                 String parentType = TypeUtils.concatenate(parentMap.get(JsonLdConsts.TYPE));
                 String embeddedType = TypeUtils.concatenate(map.get(JsonLdConsts.TYPE));
                 EmbeddedTypeInformation.InferredEmbeddedTypeInformation embeddedInfo = new EmbeddedTypeInformation.InferredEmbeddedTypeInformation();
                 embeddedInfo.setCompositeId(new EmbeddedTypeInformation.CompositeId(instanceId, (String) parentType, key, embeddedType));
-                embeddedTypeInformation.add(embeddedInfo);
+                if(!embeddedTypeInformation.contains(embeddedInfo)) {
+                    embeddedTypeInformation.add(embeddedInfo);
+                }
             }
         });
         inferredPayload.setEmbeddedTypeInformation(embeddedTypeInformation);
