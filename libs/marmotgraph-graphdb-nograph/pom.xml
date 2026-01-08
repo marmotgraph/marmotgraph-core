@@ -23,40 +23,41 @@
   ~  (Human Brain Project SGA1, SGA2 and SGA3).
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>marmotgraph-microservice</artifactId>
-        <groupId>org.marmotgraph</groupId>
-        <version>4.0</version>
-        <relativePath>../../config/marmotgraph-microservice</relativePath>
-    </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>marmotgraph-core-api</artifactId>
+    <parent>
+        <groupId>org.marmotgraph</groupId>
+        <artifactId>marmotgraph-library</artifactId>
+        <version>4.0</version>
+        <relativePath>../../config/marmotgraph-library</relativePath>
+    </parent>
+    <artifactId>marmotgraph-graphdb-nograph</artifactId>
     <version>4.0</version>
+    <name>marmotgraph-graphdb-nograph</name>
     <dependencies>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.32</version>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>6.2.11</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <version>2.1.1</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-graphdb-neo4j</artifactId>
+            <artifactId>marmotgraph-graphdb-commons</artifactId>
             <version>4.0</version>
         </dependency>
         <dependency>
-            <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-graphdb-nograph</artifactId>
-            <version>4.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.marmotgraph</groupId>
-            <artifactId>marmotgraph-graphdb-arango</artifactId>
-            <version>4.0</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.17</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
-
 </project>

@@ -38,6 +38,7 @@
         <module>libs/marmotgraph-graphdb-commons</module>
         <module>libs/marmotgraph-graphdb-arango</module>
         <module>libs/marmotgraph-graphdb-neo4j</module>
+        <module>libs/marmotgraph-graphdb-nograph</module>
         <module>libs-4-test/marmotgraph-spring-test-utils</module>
         <module>libs/marmotgraph-microservice-commons</module>
         <module>libs-4-test/marmotgraph-test-factory</module>

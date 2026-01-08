@@ -22,22 +22,21 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.graphdb.neo4j;
+package org.marmotgraph.graphdb.nograph;
 
 import jakarta.annotation.PostConstruct;
+import org.springframework.context.annotation.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Configuration;
 
-@Neo4J
+@NoGraph
 @Configuration
 public class Launcher {
-
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @PostConstruct
     public void init(){
-        logger.info("****************** Running with a Neo4j engine ******************");
+        logger.info("****************** Running without a graph engine (queries not available) ******************");
     }
 
 }

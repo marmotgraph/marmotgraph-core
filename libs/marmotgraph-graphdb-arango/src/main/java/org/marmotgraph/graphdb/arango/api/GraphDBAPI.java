@@ -87,9 +87,4 @@ public class GraphDBAPI implements org.marmotgraph.graphdb.GraphDB {
 //        }
     }
 
-    @Override
-    @ExposesMinimalData
-    public ScopeElement getScopeForInstance(String space, UUID id, DataStage stage, boolean applyRestrictions){
-        return this.scope.getScopeForInstance(new SpaceName(space), id, stage, applyRestrictions);
-    }
 }

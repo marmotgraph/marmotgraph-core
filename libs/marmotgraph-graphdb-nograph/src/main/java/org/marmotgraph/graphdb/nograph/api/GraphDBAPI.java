@@ -22,21 +22,40 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.graphdb;
+package org.marmotgraph.graphdb.nograph.api;
 
 import org.marmotgraph.commons.Tuple;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.model.*;
+import org.marmotgraph.commons.model.DataStage;
+import org.marmotgraph.commons.model.PaginationParam;
+import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.query.QuerySpecification;
 import org.marmotgraph.commons.model.relations.IncomingRelation;
+import org.marmotgraph.graphdb.GraphDB;
+import org.marmotgraph.graphdb.nograph.NoGraph;
+import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-public interface GraphDB {
-    void delete(UUID instanceId, SpaceName spaceName, DataStage dataStage);
-    void upsert(UUID instanceId, SpaceName spaceName, NormalizedJsonLd payload, DataStage stage, Set<IncomingRelation> incomingRelations);
-    Tuple<Collection<NormalizedJsonLd>, Long> executeQuery(QuerySpecification query, DataStage stage, Map<String, String> params, PaginationParam paginationParam, Tuple<Set<SpaceName>, Set<UUID>> accessFilter);
+@NoGraph
+@Service
+public class GraphDBAPI implements GraphDB {
+
+    @Override
+    public void delete(UUID instanceId, SpaceName spaceName, DataStage dataStage) {
+       // Stub - do nothing
+    }
+
+    @Override
+    public void upsert(UUID instanceId, SpaceName spaceName, NormalizedJsonLd payload, DataStage stage, Set<IncomingRelation> incomingRelations) {
+        // Stub - do nothing
+    }
+
+    @Override
+    public Tuple<Collection<NormalizedJsonLd>, Long> executeQuery(QuerySpecification query, DataStage stage, Map<String, String> params, PaginationParam paginationParam, Tuple<Set<SpaceName>, Set<UUID>> accessFilter) {
+        return null; // do nothing
+    }
 }

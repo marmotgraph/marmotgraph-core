@@ -1,7 +1,7 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
  * Copyright 2021 - 2024 EBRAINS AISBL
- * Copyright 2024 - 2025 ETH Zurich
+ * Copyright 2024 - 2026 ETH Zurich
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,22 +22,15 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.graphdb.neo4j;
+package org.marmotgraph.graphdb.nograph;
 
-import jakarta.annotation.PostConstruct;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
-@Neo4J
-@Configuration
-public class Launcher {
+import java.lang.annotation.*;
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-
-    @PostConstruct
-    public void init(){
-        logger.info("****************** Running with a Neo4j engine ******************");
-    }
-
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Profile("nograph")
+public @interface NoGraph {
 }

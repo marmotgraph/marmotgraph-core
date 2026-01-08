@@ -65,16 +65,18 @@ services:
       - ./postgres:/docker-entrypoint-initdb.d
       - marmotgraph_postgres:/var/lib/postgresql/data
 
-#  arango:
-#    image: arangodb:3.11
-#    ports:
-#      - "9003:8529"
-#    environment:
-#      - ARANGO_ROOT_PASSWORD=marmotgraph_arango_pwd
-#    volumes:
-#      - marmotgraph_arango:/var/lib/arangodb3
-#    command: >
-#      --server.maximal-threads=32 --query.global-memory-limit=6442450944 --query.memory-limit=4294967296
+  arango:
+    image: arangodb:3.11
+    ports:
+      - "9003:8529"
+    environment:
+      - ARANGO_ROOT_PASSWORD=marmotgraph_arango_pwd
+    volumes:
+      - marmotgraph_arango:/var/lib/arangodb3
+    command: >
+      --server.maximal-threads=32 --query.global-memory-limit=6442450944 --query.memory-limit=4294967296
+    profiles:
+      - arango
 
   neo4j:
     image: neo4j:5.26-community
@@ -89,7 +91,8 @@ services:
     volumes:
       - neo4j_data:/data
       - neo4j_logs:/logs
-
+    profiles:
+      - neo4j
 
 volumes:
   neo4j_data:

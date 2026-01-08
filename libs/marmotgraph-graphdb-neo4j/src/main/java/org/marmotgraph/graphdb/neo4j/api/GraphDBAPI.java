@@ -25,12 +25,12 @@
 package org.marmotgraph.graphdb.neo4j.api;
 
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.marmotgraph.commons.Tuple;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
-import org.marmotgraph.commons.markers.ExposesMinimalData;
-import org.marmotgraph.commons.model.*;
+import org.marmotgraph.commons.model.DataStage;
+import org.marmotgraph.commons.model.PaginationParam;
+import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.query.QuerySpecification;
 import org.marmotgraph.commons.model.relations.IncomingRelation;
 import org.marmotgraph.graphdb.GraphDB;
@@ -88,11 +88,5 @@ public class GraphDBAPI implements GraphDB {
             totalCount = service.queryCount(countQuery.query(), evaluateParameters(countQuery, params));
         }
         return new Tuple<>(dataQuery, totalCount);
-    }
-
-    @Override
-    @ExposesMinimalData
-    public ScopeElement getScopeForInstance(String space, UUID id, DataStage stage, boolean applyRestrictions){
-        throw new NotImplementedException();
     }
 }
