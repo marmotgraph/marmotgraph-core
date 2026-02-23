@@ -1,0 +1,116 @@
+/*
+ * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2024 EBRAINS AISBL
+ * Copyright 2024 - 2025 ETH Zurich
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0.
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *  This open source software code was developed in part or in whole in the
+ *  Human Brain Project, funded from the European Union's Horizon 2020
+ *  Framework Programme for Research and Innovation under
+ *  Specific Grant Agreements No. 720270, No. 785907, and No. 945539
+ *  (Human Brain Project SGA1, SGA2 and SGA3).
+ */
+
+package org.marmotgraph.primaryStore.instances.service;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
+import lombok.AllArgsConstructor;
+import org.marmotgraph.auth.api.Permissions;
+import org.marmotgraph.auth.models.FunctionalityInstance;
+import org.marmotgraph.auth.models.UserWithRoles;
+import org.marmotgraph.auth.service.AuthContext;
+import org.marmotgraph.commons.model.Paginated;
+import org.marmotgraph.commons.model.PaginationParam;
+import org.marmotgraph.commons.model.SpaceName;
+import org.marmotgraph.commons.model.auth.Functionality;
+import org.marmotgraph.commons.model.external.spaces.SpaceInformation;
+import org.marmotgraph.primaryStore.instances.model.Space;
+import org.marmotgraph.primaryStore.instances.repositories.SpaceRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@AllArgsConstructor
+@Service
+public class SpaceService {
+
+    private final SpaceRepository spaceRepository;
+
+    private final EntityManager entityManager;
+
+    private final Permissions permissions;
+
+    private final AuthContext authContext;
+
+    public Optional<Space> getSpace(SpaceName spaceName){
+        Optional<Space> byId = spaceRepository.findById(spaceName.getName());
+        Set<SpaceName> whitelistedSpaceReads = whitelistedSpaceReads(authContext.getUserWithRoles());
+        if(byId.isPresent() && (whitelistedSpaceReads == null || whitelistedSpaceReads.contains(SpaceName.fromString(byId.get().getName())))){
+            return byId;
+        }
+        return Optional.empty();
+    }
+
+    public boolean isAutoRelease(SpaceName spaceName){
+        Optional<Space> byId = spaceRepository.findById(spaceName.getName());
+        return byId.map(Space::isAutoRelease).orElse(false);
+    }
+
+    private Set<SpaceName> whitelistedSpaceReads(UserWithRoles userWithRoles){
+        if(!permissions.hasGlobalPermission(userWithRoles, Functionality.READ) && !permissions.hasGlobalPermission(userWithRoles, Functionality.READ_RELEASED) ){
+            //We only need to filter if there is no "global" read available...
+            return userWithRoles.getPermissions().stream().filter(p -> p.id() == null && (p.functionality() == Functionality.READ || p.functionality() == Functionality.READ_RELEASED)).map(FunctionalityInstance::space).filter(Objects::nonNull).collect(Collectors.toSet());
+        }
+        return null;
+    }
+
+
+    public Paginated<SpaceInformation> listSpaces(PaginationParam paginationParam) {
+        Set<SpaceName> whitelistedSpaceReads = whitelistedSpaceReads(authContext.getUserWithRoles());
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Space> criteriaQuery = criteriaBuilder.createQuery(Space.class);
+        Root<Space> root = criteriaQuery.from(Space.class);
+        criteriaQuery.select(criteriaQuery.from(Space.class));
+        criteriaQuery.orderBy(criteriaBuilder.asc(root.get("name")));
+        if(whitelistedSpaceReads != null){
+            criteriaQuery.where(root.get("name").in(whitelistedSpaceReads));
+        }
+        TypedQuery<Space> query = entityManager.createQuery(criteriaQuery);
+        if(paginationParam.getSize()!=null) {
+            query = query.setFirstResult((int) paginationParam.getFrom()).setMaxResults(paginationParam.getSize().intValue());
+        }
+        List<SpaceInformation> result = query.getResultList().stream().map(Space::toSpaceInformation).toList();
+        //FIXME we need to count the total results.
+        return new Paginated<>(result, null, result.size(), paginationParam.getFrom());
+
+    }
+
+
+    public Set<SpaceName> allSpaces(){
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<String> criteriaQuery = criteriaBuilder.createQuery(String.class);
+        Root<Space> root = criteriaQuery.from(Space.class);
+        criteriaQuery.select(root.get("name"));
+        criteriaQuery.orderBy(criteriaBuilder.asc(root.get("name")));
+        return entityManager.createQuery(criteriaQuery).getResultList().stream().map(SpaceName::fromString).collect(Collectors.toSet());
+    }
+}

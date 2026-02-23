@@ -1,0 +1,86 @@
+/*
+ * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2024 EBRAINS AISBL
+ * Copyright 2024 - 2025 ETH Zurich
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0.
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ *  This open source software code was developed in part or in whole in the
+ *  Human Brain Project, funded from the European Union's Horizon 2020
+ *  Framework Programme for Research and Innovation under
+ *  Specific Grant Agreements No. 720270, No. 785907, and No. 945539
+ *  (Human Brain Project SGA1, SGA2 and SGA3).
+ */
+
+package org.marmotgraph.commons.model;
+
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import org.marmotgraph.commons.model.auth.Functionality;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Stream;
+
+@EqualsAndHashCode
+@Getter
+public class ScopeElement {
+
+    private UUID id;
+    @Setter
+    private String label;
+    private String space;
+    private transient String internalId;
+    private List<String> types;
+    @Setter
+    private List<ScopeElement> children;
+    @Setter
+    private Set<Functionality> permissions;
+
+    public ScopeElement() {
+    }
+
+    public ScopeElement(UUID id, List<String> types, List<ScopeElement> children, String internalId, String space, String label) {
+        this.id = id;
+        this.children = children;
+        this.types = types;
+        this.internalId = internalId;
+        this.space = space;
+        this.label = label;
+    }
+
+    public void merge(ScopeElement el){
+        if(getLabel()==null && el.getLabel()!=null) {
+            setLabel(el.getLabel());
+        }
+        if(getId()==null && el.getId()!=null){
+            this.id = el.getId();
+        }
+        if(getInternalId()==null && el.getInternalId()!=null){
+            this.internalId = el.getInternalId();
+        }
+        if(getSpace()==null && el.getSpace()!=null){
+            this.space = el.getSpace();
+        }
+        if(el.getTypes()!=null && !el.getTypes().isEmpty()){
+            this.types = this.types == null ? el.getTypes() : Stream.concat(this.types.stream(), el.getTypes().stream()).distinct().toList();
+        }
+        if(el.getChildren()!=null && !el.getChildren().isEmpty()){
+            this.children = this.children == null ? el.getChildren() : Stream.concat(this.children.stream(), el.getChildren().stream()).toList();
+        }
+    }
+}
+

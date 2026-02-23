@@ -1,0 +1,101 @@
+---
+title: Order example
+---
+erDiagram
+
+    Type {
+        Long id PK
+        String name UK
+    }
+
+    Space {
+        Long id PK
+        String name UK
+        bool autoRelease
+        bool clientSpace
+        bool deferCache
+        bool scopeRelevant
+    }
+
+
+    Instance 1 to many Type: type
+    Instance 1 to 1 Space: space
+
+    Instance {
+        Long id PK
+        Uuid uuid UK
+        DateTime createdAt
+        String payload
+        String label
+        String alternative
+        String searchable
+    }
+
+    Instance 1 to zero or more Property: properties
+
+    Type 1 to zero or more Property: properties
+
+    InstanceScope {
+        Long id PK
+    }
+
+    Instance 1 to zero or one InstanceScope: scope
+    Instance 1 to zero or more InstanceScope: relatedInstances
+
+    Invitation {
+        Long id PK
+    }
+
+    Invitation 1 to 1 User: invitedUser
+    Invitation 1 to 1 Instance : invitationFor
+    Invitation 1 to 1 User: invitedByUser
+
+    ReleasedInstance {
+        Long id PK
+        Uuid uuid UK
+        String payload
+        String label
+        String searchable
+        DateTime first_release
+        DateTime last_release
+    }
+
+    Identifier {
+        Long id PK
+        String identifier UK
+    }
+
+    Instance 1 to one or more Identifier: identifiers
+    ReleasedInstance 1 to one or more Identifier: identifiers
+
+    User {
+        Long id PK
+        String userId UK
+        String userName
+    }
+
+    Contribution {
+        Long contributionId
+        Long userId
+        Long instanceId
+        String md5Hash
+        String propertyUpdates
+    }
+
+    Instance 1 to one or more Contribution: contributions
+    User 1 to zero or more Contribution: contributions
+
+    Property{
+        String propertyName
+    }
+
+    Contribution 1 to zero or more PropertyUpdate : properties
+
+
+    PropertyUpdate {
+        Long id
+        String propertyName
+        DateTime commitTime
+        Long userId
+        Long instanceId
+    }

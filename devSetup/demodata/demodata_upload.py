@@ -99,13 +99,16 @@ current_try = 0
 success = False
 while current_try<number_of_retries:
     try:
-        response = requests.get(endpoint_with_protocol)
+        response = requests.get(f"{endpoint_with_protocol}/v3/api-docs/v3")
         if response.status_code==200:
             print(f"I've found KG at {endpoint_with_protocol}! I'm going to upload the demo data now!", flush=True)
             upload()
             success = True
             break
+        else:
+            print(response.status_code)
     except ConnectionError as e:
+        print(e)
         pass
     current_try += 1
     print(f"Wasn't able to connect to KG yet. I'm expecting it at {endpoint_with_protocol}. Did you forget to start your local server? I'm waiting for {current_try*2} seconds...", flush=True)
