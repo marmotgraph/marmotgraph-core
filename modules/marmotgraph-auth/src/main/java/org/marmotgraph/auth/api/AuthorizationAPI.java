@@ -26,25 +26,17 @@ package org.marmotgraph.auth.api;
 
 import lombok.AllArgsConstructor;
 import org.marmotgraph.auth.models.Permission;
-import org.marmotgraph.auth.models.UserWithRoles;
 import org.marmotgraph.auth.models.roles.RoleMapping;
-import org.marmotgraph.auth.models.tokens.AuthTokens;
-import org.marmotgraph.auth.service.AuthTokenContext;
-import org.marmotgraph.auth.service.InvitationsService;
 import org.marmotgraph.auth.service.PermissionsService;
-import org.marmotgraph.auth.service.UserInfoService;
-import org.marmotgraph.commons.Tuple;
+import org.marmotgraph.commons.exceptions.UnauthorizedException;
 import org.marmotgraph.commons.jsonld.JsonLdDoc;
 import org.marmotgraph.commons.model.SpaceName;
-import org.marmotgraph.commons.model.User;
 import org.marmotgraph.commons.model.auth.Functionality;
 import org.marmotgraph.commons.services.JsonAdapter;
-import org.marmotgraph.commons.exceptions.UnauthorizedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -57,46 +49,12 @@ public class AuthorizationAPI {
 
     private final JsonAdapter jsonAdapter;
 
-    private final UserInfoService userInfoService;
-
-    private final AuthTokenContext authTokenContext;
-
-    private final InvitationsService invitationsService;
-
-    public User getMyUserInfo() {
-        AuthTokens authTokens = authTokenContext.getAuthTokens();
-        if(authTokens != null && authTokenContext.getAuthTokens().getUserAuthToken() != null) {
-            return userInfoService.getUserOrClientProfile(authTokenContext.getAuthTokens().getUserAuthToken().getBearerToken()).getA();
-        }
-        return null;
-    }
-
-    public UserWithRoles getRoles() {
-        AuthTokens authTokens = authTokenContext.getAuthTokens();
-        if(authTokens != null && authTokens.getUserAuthToken() != null) {
-            Tuple<User, List<String>> userProfile = userInfoService.getUserOrClientProfile(authTokens.getUserAuthToken().getBearerToken());
-            if (userProfile != null) {
-                Tuple<User, List<String>> clientProfile = null;
-                if(authTokens.getClientAuthToken() != null) {
-                    clientProfile = userInfoService.getUserOrClientProfile(authTokens.getClientAuthToken().getBearerToken());
-                    if (clientProfile != null && !clientProfile.getA().isServiceAccount()) {
-                        throw new UnauthorizedException("The client authorization credentials you've passed doesn't belong to a service account. This is not allowed!");
-                    }
-                }
-                //TODO we could skip the invitation roles if the user already has global permissions starting from REVIEWER role (since the user is allowed to read everything)
-                List<UUID> invitationRoles = invitationsService.getAllInvitationsForUserId(userProfile.getA().getNativeId());
-                return new UserWithRoles(userProfile.getA(), userProfile.getB(), clientProfile != null ? clientProfile.getB() : null, invitationRoles, clientProfile != null ? clientProfile.getA().getSimpleServiceAccountName().orElse(null) : null);
-            }
-        }
-        return null;
-    }
-
     /**
      * PERMISSIONS
      **/
     public JsonLdDoc updateClaimForRole(RoleMapping role, String space, Map<String, Object> claimPattern, boolean removeClaim) {
         if(removeClaim){
-            if(permissions.hasGlobalPermission(this.getRoles(), Functionality.DELETE_PERMISSION)) {
+            if(permissions.hasGlobalPermission(Functionality.DELETE_PERMISSION)) {
                 return permissionsService.removeClaimFromRole(role.toRole(SpaceName.fromString(space)), claimPattern);
             }
             else{
@@ -104,7 +62,7 @@ public class AuthorizationAPI {
             }
         }
         else{
-            if(permissions.hasGlobalPermission(this.getRoles(), Functionality.CREATE_PERMISSION)) {
+            if(permissions.hasGlobalPermission(Functionality.CREATE_PERMISSION)) {
                 return permissionsService.addClaimToRole(role.toRole(SpaceName.fromString(space)), claimPattern);
             }
             else{
@@ -123,12 +81,10 @@ public class AuthorizationAPI {
     }
 
     private boolean canShowPermissions(){
-        final UserWithRoles roles = this.getRoles();
-        return permissions.hasGlobalPermission(roles, Functionality.DELETE_PERMISSION) || permissions.hasGlobalPermission(roles, Functionality.CREATE_PERMISSION);
+        return permissions.hasGlobalPermission(Functionality.DELETE_PERMISSION) || permissions.hasGlobalPermission(Functionality.CREATE_PERMISSION);
     }
 
     public List<JsonLdDoc> getAllRoleDefinitions() {
-        this.getRoles();
         if(canShowPermissions()) {
             List<Permission> allRoleDefinitions = permissionsService.getAllRoleDefinitions();
             return allRoleDefinitions.stream().map(rd -> {

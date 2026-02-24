@@ -25,8 +25,6 @@
 package org.marmotgraph.auth.models;
 
 import org.junit.jupiter.api.Test;
-import org.marmotgraph.auth.models.FunctionalityInstance;
-import org.marmotgraph.auth.models.UserWithRoles;
 import org.marmotgraph.auth.models.roles.RoleMapping;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.User;
@@ -40,8 +38,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UserWithRolesTest {
 
-    List<String> adminClientRoles = Collections.singletonList(RoleMapping.ADMIN.toRole(null).name());
-
     List<String> adminRole = Collections.singletonList(RoleMapping.ADMIN.toRole(null).name());
     SpaceName space = new SpaceName("test");
     User user = new User("testUser", "Test", "test@test.xy", "Test", "User", null);
@@ -53,7 +49,7 @@ class UserWithRolesTest {
     @Test
     void testEvaluatePermissionsFullUserAccess(){
         //Given
-        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.ADMIN, null), adminClientRoles,  "testClient");
+        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.ADMIN, null));
 
         //when
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
@@ -68,7 +64,7 @@ class UserWithRolesTest {
     @Test
     void testEvaluatePermissionsFullServiceAccountAccess(){
         //Given
-        UserWithRoles userWithRoles = new UserWithRoles(user, adminRole, adminClientRoles, "testClient");
+        UserWithRoles userWithRoles = new UserWithRoles(user, adminRole);
 
         //when
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
@@ -83,7 +79,7 @@ class UserWithRolesTest {
     @Test
     void testEvaluatePermissionsSpaceUserAccess(){
         //Given
-        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.ADMIN, space), adminClientRoles,  "testClient");
+        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.ADMIN, space));
 
         //when
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
@@ -104,7 +100,7 @@ class UserWithRolesTest {
     @Test
     void testEvaluatePermissionsSpaceReviewUserAccess(){
         //Given
-        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.REVIEWER, space), adminClientRoles, "testClient");
+        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.REVIEWER, space));
 
         //when
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();

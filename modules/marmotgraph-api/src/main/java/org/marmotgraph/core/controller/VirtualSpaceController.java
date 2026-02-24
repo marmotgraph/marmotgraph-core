@@ -25,7 +25,7 @@
 package org.marmotgraph.core.controller;
 
 import lombok.AllArgsConstructor;
-import org.marmotgraph.auth.service.AuthContext;
+import org.marmotgraph.auth.api.AuthContext;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.*;
 import org.springframework.stereotype.Component;

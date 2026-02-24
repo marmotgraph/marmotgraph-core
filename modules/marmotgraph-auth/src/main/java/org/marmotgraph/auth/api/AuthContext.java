@@ -22,34 +22,26 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.auth.service;
+package org.marmotgraph.auth.api;
 
 import lombok.AllArgsConstructor;
-import org.marmotgraph.auth.api.AuthorizationAPI;
 import org.marmotgraph.auth.models.UserWithRoles;
-import org.marmotgraph.auth.models.tokens.AuthTokens;
+import org.marmotgraph.auth.service.AuthTokenContext;
 import org.marmotgraph.commons.model.SpaceName;
-import org.marmotgraph.commons.model.internal.spaces.Space;
 import org.springframework.stereotype.Component;
 
 @Component
 @AllArgsConstructor
 public class AuthContext {
-
     private final AuthTokenContext authTokenContext;
-    private final AuthorizationAPI authorization;
 
     public UserWithRoles getUserWithRoles() {
-        return authorization.getRoles();
-    }
-
-    public Space getClientSpace(){
-        return getUserWithRoles()!=null && getUserWithRoles().getClientId()!=null ? new Space(new SpaceName(getUserWithRoles().getClientId()),  false, true, false) : null;
+        return authTokenContext.getRoles(authTokenContext.getAuthToken().isPresent() ? authTokenContext.getAuthToken().get().getBearerToken() : null);
     }
 
     public String getUserId(){
         UserWithRoles userWithRoles = getUserWithRoles();
-        return userWithRoles == null || userWithRoles.getUser() ==null ? null : userWithRoles.getUser().getNativeId();
+        return userWithRoles == null || userWithRoles.getUser() == null ? null : userWithRoles.getUser().getNativeId();
     }
 
     public SpaceName resolveSpaceName(String spaceName){
@@ -59,9 +51,4 @@ public class AuthContext {
         }
         return null;
     }
-
-    public AuthTokens getAuthTokens(){
-        return this.authTokenContext.getAuthTokens();
-    }
-
 }

@@ -46,7 +46,6 @@ public class PropertyInTypeSpecification {
     public static class CompositeId implements Serializable {
         private String type;
         private String propertyName;
-        private String clientId;
     }
 
     @EmbeddedId

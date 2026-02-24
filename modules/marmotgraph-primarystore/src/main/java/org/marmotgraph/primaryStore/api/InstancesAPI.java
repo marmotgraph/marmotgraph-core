@@ -29,7 +29,7 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.NotImplementedException;
 import org.marmotgraph.auth.api.Permissions;
 import org.marmotgraph.auth.models.UserWithRoles;
-import org.marmotgraph.auth.service.AuthContext;
+import org.marmotgraph.auth.api.AuthContext;
 import org.marmotgraph.commons.Tuple;
 import org.marmotgraph.commons.exceptions.AmbiguousException;
 import org.marmotgraph.commons.exceptions.AmbiguousIdException;
@@ -72,11 +72,8 @@ public class InstancesAPI {
     private final AuthContext authContext;
     private final InstanceScopeService scopes;
     private final GraphDB graphDB;
-    private final IdUtils idUtils;
-    private final SpecificationInterpreter specificationInterpreter;
     private final JsonAdapter jsonAdapter;
     private final QueryPermissions queryPermissions;
-    private final SpaceService spaceService;
     private final TypesService typesService;
 
     public Map<UUID, InstanceId> resolveIds(List<IdWithAlternatives> idWithAlternatives, DataStage stage) throws AmbiguousIdException {
@@ -112,7 +109,7 @@ public class InstancesAPI {
     public ReleaseStatus getReleaseStatus(UUID id, ReleaseTreeScope releaseTreeScope){
         Optional<InstanceInformation> byId = globalInstanceInformationRepository.findById(id);
         if(byId.isPresent()) {
-            if(!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.RELEASE_STATUS, SpaceName.fromString(byId.get().getSpaceName()), id)){
+            if(!permissions.hasPermission(Functionality.RELEASE_STATUS, SpaceName.fromString(byId.get().getSpaceName()), id)){
                 throw new ForbiddenException();
             }
             ReleaseStatus topInstanceReleaseStatus = payloadService.getReleaseStatus(id);
@@ -146,11 +143,11 @@ public class InstancesAPI {
                 if (permittedSpaces.contains(k.getSpace())) {
                     return true;
                 } else {
-                    if (permissions.hasPermission(userWithRoles, Functionality.RELEASE_STATUS, k.getSpace())) {
+                    if (permissions.hasPermission(Functionality.RELEASE_STATUS, k.getSpace())) {
                         permittedSpaces.add(k.getSpace());
                         return true;
                     } else {
-                        return permissions.hasPermission(userWithRoles, Functionality.RELEASE_STATUS, k.getSpace(), k.getUuid());
+                        return permissions.hasPermission(Functionality.RELEASE_STATUS, k.getSpace(), k.getUuid());
                     }
                 }
             }).collect(Collectors.toMap(InstanceId::getUuid, releaseStatus::get));
@@ -177,7 +174,7 @@ public class InstancesAPI {
         else{
             targetTypes = Collections.singleton(targetType);
         }
-        Map<String, Result<TypeInformation>> typeInformation = typesService.getByName(targetTypes, stage, space, false, false, null);
+        Map<String, Result<TypeInformation>> typeInformation = typesService.getByName(targetTypes, stage, space, false, false);
         Paginated<NormalizedJsonLd> instancesByType = payloadService.getInstancesByTypes(stage, targetTypes, space, search, null, null, true, false, false, paginationParam);
         SuggestionResult result = new SuggestionResult();
         Map<String, String> labelProperties = typeInformation.values().stream().collect(Collectors.toMap(k -> k.getData().getAs(SchemaOrgVocabulary.IDENTIFIER, String.class), t -> t.getData().getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class)));

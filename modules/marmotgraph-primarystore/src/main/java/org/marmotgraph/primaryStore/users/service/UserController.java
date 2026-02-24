@@ -25,7 +25,7 @@
 package org.marmotgraph.primaryStore.users.service;
 
 import lombok.AllArgsConstructor;
-import org.marmotgraph.auth.service.AuthContext;
+import org.marmotgraph.auth.api.AuthContext;
 import org.marmotgraph.commons.exceptions.ForbiddenException;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
 import org.marmotgraph.commons.model.Paginated;
@@ -45,11 +45,10 @@ import java.util.stream.Collectors;
 public class UserController {
 
     private final Permissions permissions;
-    private final AuthContext authContext;
     private final UserService userService;
 
     public Map<String, ReducedUserInformation> getUsers(Set<UUID> uuids) {
-        if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.LIST_USERS_LIMITED, null)) {
+        if (!permissions.hasPermission(Functionality.LIST_USERS_LIMITED, null)) {
             throw new ForbiddenException("No right to list users");
         }
         return userService.getUsersByIds(uuids).stream().collect(Collectors.toMap(k -> k.getUuid().toString(), PrimaryStoreUser::toUserWithLimitedInformation));
@@ -64,7 +63,7 @@ public class UserController {
     }
 
     private Paginated<NormalizedJsonLd> doGetUsers(PaginationParam paginationParam, Optional<String> nativeId, Functionality functionality, Function<? super PrimaryStoreUser, ? extends NormalizedJsonLd> function){
-        if (!permissions.hasPermission(authContext.getUserWithRoles(), functionality, null)) {
+        if (!permissions.hasPermission(functionality, null)) {
             throw new ForbiddenException("No right to list users");
         }
         Paginated<PrimaryStoreUser> users = this.userService.getUsers(paginationParam, Optional.empty());

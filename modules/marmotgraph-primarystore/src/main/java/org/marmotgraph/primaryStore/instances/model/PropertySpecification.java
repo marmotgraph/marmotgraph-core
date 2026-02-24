@@ -34,20 +34,8 @@ import java.io.Serializable;
 @Setter
 @Table(name="propertySpecification")
 public class PropertySpecification {
-
-    @Embeddable
-    @Getter
-    @Setter
-    @EqualsAndHashCode
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class CompositeId implements Serializable {
-        private String property;
-        private String clientId;
-    }
-
-    @EmbeddedId
-    private CompositeId compositeId;
+    @Id
+    private String property;
 
     @Column(columnDefinition = "TEXT")
     private String payload;

@@ -25,7 +25,6 @@
 package org.marmotgraph.tenants.api;
 
 import org.marmotgraph.auth.api.Permissions;
-import org.marmotgraph.auth.service.AuthContext;
 import org.marmotgraph.commons.exceptions.UnauthorizedException;
 import org.marmotgraph.commons.model.auth.Functionality;
 import org.marmotgraph.tenants.model.*;
@@ -46,15 +45,13 @@ public class TenantsAPI {
 
     private final TenantService tenantService;
     private final Permissions permissions;
-    private final AuthContext authContext;
     private final String namespace;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public TenantsAPI(TenantService tenantService, Permissions permissions, AuthContext authContext, @Value("${org.marmotgraph.namespace}") String namespace) {
+    public TenantsAPI(TenantService tenantService, Permissions permissions, @Value("${org.marmotgraph.namespace}") String namespace) {
         this.tenantService = tenantService;
         this.permissions = permissions;
-        this.authContext = authContext;
         this.namespace = namespace;
     }
 
@@ -140,7 +137,7 @@ public class TenantsAPI {
         if (name.equals("default")) {
             throw new IllegalArgumentException("You can not update the \"default\" tenant");
         }
-        if (!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.TENANT_MANAGEMENT)) {
+        if (!permissions.hasGlobalPermission(Functionality.TENANT_MANAGEMENT)) {
             throw new UnauthorizedException("You don't have the right to manage tenants.");
         }
     }

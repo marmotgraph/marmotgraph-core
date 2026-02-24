@@ -25,54 +25,83 @@
 package org.marmotgraph.auth.service;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.marmotgraph.auth.models.tokens.AuthTokens;
-import org.marmotgraph.auth.models.tokens.ClientAuthToken;
-import org.marmotgraph.auth.models.tokens.UserAuthToken;
+import org.marmotgraph.auth.api.AuthContext;
+import org.marmotgraph.auth.models.UserAuthToken;
+import org.marmotgraph.auth.models.UserWithRoles;
 import org.marmotgraph.auth.utils.RequestHeadersHolder;
+import org.marmotgraph.commons.Tuple;
+import org.marmotgraph.commons.constants.CacheConstant;
+import org.marmotgraph.commons.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
- * This is the access point for getting the token of the current user and the client.
- * Usually, this bean is used indirectly from ({@link AuthContext}) but in some cases, this can cause a circular bean
- * reference. In these cases, this bean can be used directly.
+ * This is the access point for getting the token of the current user and the client. This bean is primarily used indirectly from ({@link AuthContext})
  */
 @Service
 public class AuthTokenContext {
-    private final HttpServletRequest request;
-    private final static Logger logger = LoggerFactory.getLogger(AuthTokenContext.class);
 
-    public static final String CLIENT_AUTHORIZATION_HEADER = "Client-Authorization";
-    public static final String AUTHORIZATION_HEADER = "Authorization";
-
-    // IntelliJ reports the injection of HttpServletRequest to be an error -> but it actually is not...
-    public AuthTokenContext(HttpServletRequest request) {
+    public AuthTokenContext(HttpServletRequest request, UserInfoService userInfoService, InvitationsService invitationsService, KeycloakClient keycloakClient) {
         this.request = request;
+        this.userInfoService = userInfoService;
+        this.invitationsService = invitationsService;
     }
 
-    public AuthTokens getAuthTokens() {
+    private final HttpServletRequest request;  // IntelliJ reports the injection of HttpServletRequest to be an error -> but it actually is not...
+    private final UserInfoService userInfoService;
+    private final InvitationsService invitationsService;
+
+    private final static Logger logger = LoggerFactory.getLogger(AuthTokenContext.class);
+
+    public static final String AUTHORIZATION_HEADER = "Authorization";
+
+    @Cacheable(CacheConstant.CACHE_KEYS_USER_ROLE_MAPPINGS)
+    public UserWithRoles getRoles(String bearerToken) {
+        if(bearerToken != null) {
+            Tuple<User, List<String>> userProfile = userInfoService.getUserProfile(bearerToken);
+            if (userProfile != null) {
+                //TODO we could skip the invitation roles if the user already has global permissions starting from REVIEWER role (since the user is allowed to read everything)
+                List<UUID> invitationRoles = invitationsService.getAllInvitationsForUserId(userProfile.getA().getNativeId());
+                return new UserWithRoles(userProfile.getA(), userProfile.getB(), invitationRoles);
+            }
+        }
+        return null;
+    }
+
+    @Scheduled(fixedRate = 1000 * 60 * 60)
+    //TODO this is a quickfix to make sure the cache is cleared regularly. Please replace with a proper cache implementation supporting a TTL on a per-entry level
+    @CacheEvict(value = CacheConstant.CACHE_KEYS_USER_ROLE_MAPPINGS, allEntries = true)
+    public void evictUserOrClientProfiles() {
+        logger.info("Wiping cached user role mappings");
+    }
+
+    public Optional<UserAuthToken> getAuthToken() {
         Map<String, String> headers = RequestHeadersHolder.get();
         if(headers==null){
             headers = RequestHeadersHolder.createHeadersMap(request);
         }
-        String clientAuthorization = headers.get(CLIENT_AUTHORIZATION_HEADER.toLowerCase());
         String userAuthorization = headers.get(AUTHORIZATION_HEADER.toLowerCase());
         String transactionId = headers.get("Transaction-Id".toLowerCase());
-        AuthTokens authTokens = new AuthTokens(
-                userAuthorization != null ? new UserAuthToken(userAuthorization) : null,
-                clientAuthorization != null ? new ClientAuthToken(clientAuthorization) : null
-        );
+        UUID transactionUUID = null;
+
         if (transactionId != null) {
             try {
-                authTokens.setTransactionId(UUID.fromString(transactionId));
+                transactionUUID = UUID.fromString(transactionId);
             } catch (IllegalArgumentException e) {
                 logger.warn(String.format("Was receiving an invalid (non-UUID) transaction-id: %s", transactionId));
             }
         }
-        return authTokens;
+        return Optional.ofNullable(userAuthorization != null ? new UserAuthToken(userAuthorization, transactionUUID) : null);
     }
+
+
 }

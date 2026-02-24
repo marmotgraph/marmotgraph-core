@@ -69,27 +69,23 @@ public class TypesV3Beta {
     @Operation(summary = "Get type specification")
     @GetMapping("/types/specification")
     @Admin
-    public DynamicJson getTypeSpecification(
-            @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")
-            @RequestParam(value = "global", required = false) boolean global,
-            @RequestParam("type") String type
-    ) {
-        return typesV3.getTypeSpecification(global, type);
+    public DynamicJson getTypeSpecification(@RequestParam("type") String type) {
+        return typesV3.getTypeSpecification(type);
     }
 
     @Operation(summary = "Specify a type")
     //In theory, this could also go into /types only. But since Swagger doesn't allow the discrimination of groups with the same path (there is already the same path registered as GET for simple), we want to discriminate it properly
     @PutMapping("/types/specification")
     @Admin
-    public void createTypeDefinition(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)") @RequestParam(value = "global", required = false) boolean global, @RequestParam("type") String type) {
-        typesV3.createTypeDefinition(payload, global, type);
+    public void createTypeSpecification(@RequestBody NormalizedJsonLd payload, @RequestParam("type") String type) {
+        typesV3.createTypeSpecification(payload, type);
     }
 
 
-    @Operation(summary = "Remove a type definition", description = "Allows to deprecate a type specification")
+    @Operation(summary = "Remove a type specification", description = "Allows to deprecate a type specification")
     @DeleteMapping("/types/specification")
     @Admin
-    public void removeTypeDefinition(@RequestParam(value = "type", required = false) String type,  @RequestParam(value = "global", required = false) boolean global) {
-        typesV3.removeTypeDefinition(type, global);
+    public void removeTypeDefinition(@RequestParam(value = "type", required = false) String type) {
+        typesV3.removeTypeSpecification(type);
     }
 }

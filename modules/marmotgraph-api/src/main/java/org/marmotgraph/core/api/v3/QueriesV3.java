@@ -27,7 +27,7 @@ package org.marmotgraph.core.api.v3;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.AllArgsConstructor;
-import org.marmotgraph.auth.service.AuthContext;
+import org.marmotgraph.auth.api.AuthContext;
 import org.marmotgraph.commons.constants.EBRAINSVocabulary;
 import org.marmotgraph.commons.exceptions.InstanceNotFoundException;
 import org.marmotgraph.commons.exceptions.ResultBasedException;

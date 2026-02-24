@@ -27,7 +27,7 @@ package org.marmotgraph.primaryStore.events.service;
 import lombok.AllArgsConstructor;
 import org.marmotgraph.auth.api.Permissions;
 import org.marmotgraph.auth.models.UserWithRoles;
-import org.marmotgraph.auth.service.AuthContext;
+import org.marmotgraph.auth.api.AuthContext;
 import org.marmotgraph.commons.Tuple;
 import org.marmotgraph.commons.exceptions.ForbiddenException;
 import org.marmotgraph.commons.exceptions.UnauthorizedException;
@@ -65,11 +65,9 @@ public class EventProcessor {
     private final AuthContext authContext;
     private final Reconcile reconcile;
     private final UserService userService;
-    private final IdUtils idUtils;
     private final EventService eventService;
     private final PayloadService payloadService;
     private final SpaceService spaceService;
-    private final JsonAdapter jsonAdapter;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -146,41 +144,40 @@ public class EventProcessor {
         }
         userService.save(userWithRoles.getUser());
         List<String> semantics = event.getData() != null && event.getData().types() != null ? event.getData().types() : Collections.emptyList();
-        logger.info("Received event of type {} for instance {} in space {} by user {} via client {}",
+        logger.info("Received event of type {} for instance {} in space {} by user {}",
                 event.getType().name(),
                 event.getInstanceId(),
                 space != null ? space.getName() : null,
-                userWithRoles.getUser().getUserName(),
-                userWithRoles.getClientId() != null ? userWithRoles.getClientId() : "direct access"
+                userWithRoles.getUser().getUserName()
         );
         Functionality functionality;
         switch (event.getType()) {
             case DELETE:
                 functionality = Functionality.withSemanticsForOperation(semantics, event.getType(), Functionality.DELETE);
-                if(permissions.hasPermission(userWithRoles, functionality, space, event.getInstanceId())){
+                if(permissions.hasPermission(functionality, space, event.getInstanceId())){
                     return new PersistedEvent(event, userWithRoles.getUser(), space);
                 }
                 break;
             case INSERT:
                 if(spaceInformation.isEmpty()){
                     //The space doesn't exist - this means the user has to have space creation rights to execute this insertion.
-                    boolean spaceCreationPermission = permissions.hasPermission(userWithRoles, Functionality.MANAGE_SPACE, space);
+                    boolean spaceCreationPermission = permissions.hasPermission(Functionality.MANAGE_SPACE, space);
                     if (!spaceCreationPermission) {
                         throw new ForbiddenException(String.format("The creation of this instance involves the creation of the non-existing space %s - you don't have the according rights to do so!", event.getSpaceName()));
                     }
                 }
                 functionality = Functionality.withSemanticsForOperation(semantics, event.getType(), Functionality.CREATE);
-                if(permissions.hasPermission(userWithRoles, functionality, space, event.getInstanceId())){
+                if(permissions.hasPermission(functionality, space, event.getInstanceId())){
                     return new PersistedEvent(event, userWithRoles.getUser(), space);
                 }
                 break;
             case UPDATE:
                 functionality = Functionality.withSemanticsForOperation(semantics, event.getType(), Functionality.WRITE);
-                if(permissions.hasPermission(userWithRoles, functionality, space, event.getInstanceId())){
+                if(permissions.hasPermission(functionality, space, event.getInstanceId())){
                     return new PersistedEvent(event, userWithRoles.getUser(), space);
                 }
                 else if(functionality == Functionality.WRITE){
-                    if(permissions.hasPermission(userWithRoles, Functionality.SUGGEST, space, event.getInstanceId())){
+                    if(permissions.hasPermission(Functionality.SUGGEST, space, event.getInstanceId())){
                         PersistedEvent persistedEvent = new PersistedEvent(event, userWithRoles.getUser(), space);
                         persistedEvent.setSuggestion(true);
                         return persistedEvent;
@@ -188,12 +185,12 @@ public class EventProcessor {
                 }
                 break;
             case RELEASE:
-                if(permissions.hasPermission(userWithRoles, Functionality.withSemanticsForOperation(semantics, event.getType(), Functionality.RELEASE), space, event.getInstanceId())){
+                if(permissions.hasPermission(Functionality.withSemanticsForOperation(semantics, event.getType(), Functionality.RELEASE), space, event.getInstanceId())){
                     return new PersistedEvent(event, userWithRoles.getUser(), space);
                 }
                 break;
             case UNRELEASE:
-                if(permissions.hasPermission(userWithRoles, Functionality.withSemanticsForOperation(semantics, event.getType(), Functionality.UNRELEASE), space, event.getInstanceId())){
+                if(permissions.hasPermission(Functionality.withSemanticsForOperation(semantics, event.getType(), Functionality.UNRELEASE), space, event.getInstanceId())){
                     return new PersistedEvent(event, userWithRoles.getUser(), space);
                 }
                 break;

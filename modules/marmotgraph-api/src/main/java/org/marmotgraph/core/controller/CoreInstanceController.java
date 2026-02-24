@@ -31,7 +31,7 @@ import org.marmotgraph.commons.exceptions.*;
 import org.marmotgraph.commons.model.auth.Functionality;
 import org.marmotgraph.auth.models.FunctionalityInstance;
 import org.marmotgraph.auth.models.UserWithRoles;
-import org.marmotgraph.auth.service.AuthContext;
+import org.marmotgraph.auth.api.AuthContext;
 import org.marmotgraph.commons.Tuple;
 import org.marmotgraph.commons.jsonld.InstanceId;
 import org.marmotgraph.commons.jsonld.JsonLdConsts;
@@ -133,7 +133,7 @@ public class CoreInstanceController {
     public void createInvitation(UUID instanceId, UUID userId) {
         //TODO move permission check to authentication module
         final InstanceId resolvedInstanceId = resolveIdOrThrowException(instanceId, DataStage.IN_PROGRESS);
-        if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)) {
+        if (!permissions.hasPermission(Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)) {
             throw new UnauthorizedException("You don't have the right to invite somebody to this instance.");
         }
         this.invitation.inviteUserForInstance(instanceId, userId);
@@ -151,7 +151,7 @@ public class CoreInstanceController {
     public void revokeInvitation(UUID instanceId, UUID userId) {
         //TODO move permission check to authentication module
         final InstanceId resolvedInstanceId = resolveIdOrThrowException(instanceId, DataStage.IN_PROGRESS);
-        if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)) {
+        if (!permissions.hasPermission(Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)) {
             throw new UnauthorizedException("You don't have the right to invite somebody to this instance.");
         }
         this.invitation.revokeUserInvitation(instanceId, userId);
@@ -160,14 +160,14 @@ public class CoreInstanceController {
     public List<String> listInvitedUserIds(UUID instanceId) {
         //TODO move permission check to authentication module
         final InstanceId resolvedInstanceId = resolveIdOrThrowException(instanceId, DataStage.IN_PROGRESS);
-        if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)) {
+        if (!permissions.hasPermission(Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)) {
             throw new UnauthorizedException("You don't have the right to list the invitations for this instance");
         }
         return this.invitation.listInvitedUserIds(instanceId);
     }
 
     public List<UUID> listInstancesWithInvitations() {
-        if (!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.LIST_INVITATIONS)) {
+        if (!permissions.hasGlobalPermission(Functionality.LIST_INVITATIONS)) {
             throw new UnauthorizedException("You don't have the right to list instances with invitations");
         }
         return this.invitation.listInstances();
@@ -175,7 +175,7 @@ public class CoreInstanceController {
 
     public void calculateInstanceInvitationScope(UUID instanceId) {
         final InstanceId resolvedInstanceId = resolveIdOrThrowException(instanceId, DataStage.IN_PROGRESS);
-        if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.UPDATE_INVITATIONS, resolvedInstanceId.getSpace(), instanceId)) {
+        if (!permissions.hasPermission(Functionality.UPDATE_INVITATIONS, resolvedInstanceId.getSpace(), instanceId)) {
             throw new UnauthorizedException("You don't have the right to recalculate the invitation scope for this instance");
         }
         this.scopes.calculateInstanceScope(instanceId);
@@ -251,7 +251,7 @@ public class CoreInstanceController {
         if (instance == null) {
             throw new InstanceNotFoundException(id);
         } else {
-            if (permissions.hasPermission(authContext.getUserWithRoles(), Functionality.CREATE, targetSpace)) {
+            if (permissions.hasPermission(Functionality.CREATE, targetSpace)) {
                 //FIXME make this transactional.
                 deleteInstance(id);
                 return createNewInstance(instance, id, targetSpace, false, false, responseConfiguration);
@@ -380,7 +380,7 @@ public class CoreInstanceController {
             //The user is invited for this instance
             final String space = normalizedJsonLd.getAs(EBRAINSVocabulary.META_SPACE, String.class, null);
             if (space != null) {
-                return !permissions.hasPermission(authContext.getUserWithRoles(), Functionality.READ, SpaceName.fromString(space));
+                return !permissions.hasPermission(Functionality.READ, SpaceName.fromString(space));
             }
         }
         return false;

@@ -26,7 +26,7 @@ package org.marmotgraph.core.controller;
 
 import org.marmotgraph.auth.api.Permissions;
 import org.marmotgraph.commons.model.auth.Functionality;
-import org.marmotgraph.auth.service.AuthContext;
+import org.marmotgraph.auth.api.AuthContext;
 import org.marmotgraph.commons.exceptions.UnauthorizedException;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
@@ -40,19 +40,17 @@ public class CoreCacheController {
 
     private static final String NO_RIGHTS_TO_FLUSH_CACHE = "You are not allowed to flush cache";
 
-    private final AuthContext authContext;
     private final Permissions permissions;
     private final CacheManager cacheManager;
 
-    public CoreCacheController(AuthContext authContext, Permissions permissions, CacheManager cacheManager) {
-        this.authContext = authContext;
+    public CoreCacheController(Permissions permissions, CacheManager cacheManager) {
         this.permissions = permissions;
         this.cacheManager = cacheManager;
     }
 
     public List<String> clearKeys(List<String> keys) {
 
-        if (!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.CACHE_FLUSH)) {
+        if (!permissions.hasGlobalPermission(Functionality.CACHE_FLUSH)) {
             throw new UnauthorizedException(CoreCacheController.NO_RIGHTS_TO_FLUSH_CACHE);
         }
 
@@ -70,7 +68,7 @@ public class CoreCacheController {
 
     public List<String> clearAllKeys() {
 
-        if (!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.CACHE_FLUSH)) {
+        if (!permissions.hasGlobalPermission(Functionality.CACHE_FLUSH)) {
             throw new UnauthorizedException(CoreCacheController.NO_RIGHTS_TO_FLUSH_CACHE);
         }
 
@@ -78,7 +76,7 @@ public class CoreCacheController {
     }
 
     public List<String> getKeys() {
-        if (!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.CACHE_FLUSH)) {
+        if (!permissions.hasGlobalPermission(Functionality.CACHE_FLUSH)) {
             throw new UnauthorizedException(CoreCacheController.NO_RIGHTS_TO_FLUSH_CACHE);
         }
         return cacheManager.getCacheNames().stream().toList();

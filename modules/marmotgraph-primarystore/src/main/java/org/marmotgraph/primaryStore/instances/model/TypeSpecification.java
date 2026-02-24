@@ -35,21 +35,8 @@ import java.io.Serializable;
 @Table(name="typeSpecification")
 public class TypeSpecification {
 
-    public static final String GLOBAL_CLIENT_ID = "";
-
-    @Embeddable
-    @Getter
-    @Setter
-    @EqualsAndHashCode
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class CompositeId implements Serializable {
-        private String type;
-        private String clientId;
-    }
-
-    @EmbeddedId
-    private CompositeId compositeId;
+    @Id
+    private String type;
 
     @Column(columnDefinition = "TEXT")
     private String payload;

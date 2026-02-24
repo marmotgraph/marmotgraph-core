@@ -25,15 +25,13 @@
 package org.marmotgraph.primaryStore.api;
 
 import lombok.AllArgsConstructor;
-import org.marmotgraph.auth.service.AuthContext;
+import org.marmotgraph.auth.api.AuthContext;
 import org.marmotgraph.commons.jsonld.InstanceId;
 import org.marmotgraph.commons.model.Event;
 import org.marmotgraph.commons.model.PersistedEvent;
 import org.marmotgraph.primaryStore.events.exceptions.FailedEventException;
 import org.marmotgraph.primaryStore.events.service.EventProcessor;
 import org.marmotgraph.primaryStore.events.service.EventService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @AllArgsConstructor

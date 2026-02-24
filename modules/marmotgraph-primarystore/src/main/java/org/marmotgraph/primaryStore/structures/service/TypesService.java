@@ -82,16 +82,16 @@ public class TypesService {
     public record GenericTypeInformation(Map<String, NormalizedJsonLd> typeSpecification, Map<String, List<TypePerSpaceInfo>> typePerSpaceInformation, Optional<Long> totalCount){}
 
     @Transactional
-    public Paginated<TypeInformation> listTypes(DataStage stage, String space, boolean withProperties,
-                                                boolean withIncomingLinks, PaginationParam paginationParam, String clientId) {
+    public Paginated<org.marmotgraph.commons.model.external.types.TypeInformation> listTypes(DataStage stage, String space, boolean withProperties,
+                                                                                             boolean withIncomingLinks, PaginationParam paginationParam) {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         Class<? extends TypeStructure> typeStructureClazz = stage == DataStage.IN_PROGRESS ? TypeStructure.InferredTypeStructure.class : TypeStructure.ReleasedTypeStructure.class;
         Class<? extends EmbeddedTypeInformation> embeddedTargetTypeClazz = stage == DataStage.IN_PROGRESS ? EmbeddedTypeInformation.InferredEmbeddedTypeInformation.class : EmbeddedTypeInformation.ReleasedEmbeddedTypeInformation.class;
 
         //TODO space filter
-        GenericTypeInformation genericTypeInformation = fetchGenericTypeInformation(stage, paginationParam, space, null);
-        List<TypeInformation> result = enrichTypeInformation(withProperties, withIncomingLinks, genericTypeInformation, space, criteriaBuilder, typeStructureClazz, stage, clientId);
-        result.sort(Comparator.comparing(TypeInformation::getIdentifier));
+        GenericTypeInformation genericTypeInformation = fetchTypeInformation(stage, paginationParam, space, null);
+        List<org.marmotgraph.commons.model.external.types.TypeInformation> result = enrichTypeInformation(withProperties, withIncomingLinks, genericTypeInformation, space, criteriaBuilder, typeStructureClazz, stage);
+        result.sort(Comparator.comparing(org.marmotgraph.commons.model.external.types.TypeInformation::getIdentifier));
         Long total = null;
         if (paginationParam == null) {
             total = (long) result.size();
@@ -103,14 +103,14 @@ public class TypesService {
     }
 
     @Transactional
-    public Map<String, Result<TypeInformation>> getByName(Collection<String> types, DataStage stage, String space, boolean withProperties, boolean withIncomingLinks, String clientId) {
+    public Map<String, Result<TypeInformation>> getByName(Collection<String> types, DataStage stage, String space, boolean withProperties, boolean withIncomingLinks) {
         //TODO space filter
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         Class<? extends TypeStructure> typeInformationClazz = stage == DataStage.IN_PROGRESS ? TypeStructure.InferredTypeStructure.class : TypeStructure.ReleasedTypeStructure.class;
         Class<? extends EmbeddedTypeInformation> embeddedTargetTypeClazz = stage == DataStage.IN_PROGRESS ? EmbeddedTypeInformation.InferredEmbeddedTypeInformation.class : EmbeddedTypeInformation.ReleasedEmbeddedTypeInformation.class;
-        GenericTypeInformation genericTypeInformation = fetchGenericTypeInformation(stage, null, space, types); //No pagination due to restriction by types filter
-        List<TypeInformation> result = enrichTypeInformation(withProperties, withIncomingLinks, genericTypeInformation, space, criteriaBuilder, typeInformationClazz, stage, clientId);
-        Map<String, Result<TypeInformation>> resultMap = result.stream().collect(Collectors.toMap(TypeInformation::getIdentifier, Result::ok));
+        GenericTypeInformation genericTypeInformation = fetchTypeInformation(stage, null, space, types); //No pagination due to restriction by types filter
+        List<TypeInformation> result = enrichTypeInformation(withProperties, withIncomingLinks, genericTypeInformation, space, criteriaBuilder, typeInformationClazz, stage);
+        Map<String, Result<TypeInformation>> resultMap = result.stream().collect(Collectors.toMap(org.marmotgraph.commons.model.external.types.TypeInformation::getIdentifier, Result::ok));
         types.stream().filter(t -> !resultMap.containsKey(t)).forEach(t ->
                 resultMap.put(t, Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase()))
         );
@@ -118,7 +118,7 @@ public class TypesService {
     }
 
 
-    private List<TypeInformation> enrichTypeInformation(boolean withProperties, boolean withIncomingLinks, GenericTypeInformation genericTypeInformation, String spaceRestriction, CriteriaBuilder criteriaBuilder, Class<? extends TypeStructure> typeStructureClazz, DataStage stage, String clientId) {
+    private List<TypeInformation> enrichTypeInformation(boolean withProperties, boolean withIncomingLinks, GenericTypeInformation genericTypeInformation, String spaceRestriction, CriteriaBuilder criteriaBuilder, Class<? extends TypeStructure> typeStructureClazz, DataStage stage) {
         Map<String, List<PropertyPerSpaceInfo>> propertiesByType = fetchPropertiesByType(withProperties, spaceRestriction, criteriaBuilder, typeStructureClazz, genericTypeInformation.typePerSpaceInformation);
         Map<String, List<TargetTypeInformation>> targetTypeInformation = withProperties ? fetchTargetTypeInformation(stage, genericTypeInformation.typePerSpaceInformation.keySet()) : Collections.emptyMap();
 
@@ -145,7 +145,7 @@ public class TypesService {
                 evaluateIncomingLinks(k, incomingLinksByType, typeInformation);
             }
             consolidateProperties(withProperties, typeInformation, searchableProperties);
-            enrichProperties(typeInformation.getProperties(), typeInformation.getName(), clientId);
+            enrichProperties(typeInformation.getProperties(), typeInformation.getName());
 //            if(spaceRestriction!=null){
 //                // The result is restricted to a single space - accordingly, the substructure of space information is redundant and removed
 //                typeInformation.setSpaces(Collections.s);
@@ -155,41 +155,24 @@ public class TypesService {
         return result;
     }
 
-    private void enrichProperties(List<Property> properties, String typeName, String clientId){
+    private void enrichProperties(List<Property> properties, String typeName){
         Set<String> propertyNames = properties.stream().map(Property::getIdentifier).collect(Collectors.toSet());
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         CriteriaQuery<PropertySpecification> propertyCriteriaQuery = criteriaBuilder.createQuery(PropertySpecification.class);
         Root<PropertySpecification> root = propertyCriteriaQuery.from(PropertySpecification.class);
-        Predicate clientIdPredicate;
-        Path<Object> clientIdPath = root.get("compositeId").get("clientId");
-        if(clientId != null && !clientId.equals(TypeSpecification.GLOBAL_CLIENT_ID)){
-            clientIdPredicate = criteriaBuilder.or(criteriaBuilder.equal(clientIdPath, TypeSpecification.GLOBAL_CLIENT_ID), criteriaBuilder.equal(clientIdPath, clientId));
-        }
-        else{
-            clientIdPredicate = criteriaBuilder.equal(clientIdPath, TypeSpecification.GLOBAL_CLIENT_ID);
-        }
-        propertyCriteriaQuery.where(criteriaBuilder.and(root.get("compositeId").get("property").in(propertyNames), clientIdPredicate));
+        propertyCriteriaQuery.where(root.get("property").in(propertyNames));
         List<PropertySpecification> resultList = entityManager.createQuery(propertyCriteriaQuery).getResultList();
-        Map<String, List<PropertySpecification>> propertySpecs = resultList.stream().collect(Collectors.groupingBy(k -> k.getCompositeId().getProperty()));
+        Map<String, List<PropertySpecification>> propertySpecs = resultList.stream().collect(Collectors.groupingBy(PropertySpecification::getProperty));
         properties.forEach(p -> {
             List<PropertySpecification> propertySpecifications = propertySpecs.get(p.getIdentifier());
             if(propertySpecifications!=null){
-                //First, we apply the global elements
-                Map<Boolean, NormalizedJsonLd> propSpecs = propertySpecifications.stream().collect(Collectors.toMap(k -> k.getCompositeId().getClientId().equals(TypeSpecification.GLOBAL_CLIENT_ID), v -> jsonAdapter.fromJson(v.getPayload(), NormalizedJsonLd.class)));
-                NormalizedJsonLd globalSpec = propSpecs.get(true);
-                if(globalSpec!=null){
-                    p.putAll(globalSpec);
-                }
-                NormalizedJsonLd clientSpec = propSpecs.get(false);
-                if(clientSpec!=null){
-                    p.putAll(clientSpec);
-                }
+                propertySpecifications.stream().map(v -> jsonAdapter.fromJson(v.getPayload(), NormalizedJsonLd.class)).forEach(p::putAll);
             }
         });
     }
 
 
-    public GenericTypeInformation fetchGenericTypeInformation(DataStage stage, PaginationParam paginationParam, String space, Collection<String> typeNameFilter) {
+    public GenericTypeInformation fetchTypeInformation(DataStage stage, PaginationParam paginationParam, String space, Collection<String> typeNameFilter) {
         //Read in the generic types
         Class<? extends TypeStructure> clazz = stage == DataStage.IN_PROGRESS ? TypeStructure.InferredTypeStructure.class : TypeStructure.ReleasedTypeStructure.class;
         Long totalResults = null;
@@ -198,20 +181,18 @@ public class TypesService {
         Root<TypeSpecification> simpleTypeRoot = simpleTypeCriteriaQuery.from(TypeSpecification.class);
         simpleTypeCriteriaQuery.select(simpleTypeRoot);
         Set<Predicate> simpleTypePredicates = new HashSet<>();
-        simpleTypePredicates.add(criteriaBuilder.equal(simpleTypeRoot.get("compositeId").get("clientId"), TypeSpecification.GLOBAL_CLIENT_ID));
         if(typeNameFilter!=null){
-            simpleTypePredicates.add(simpleTypeRoot.get("compositeId").get("type").in(typeNameFilter));
+            simpleTypePredicates.add(simpleTypeRoot.get("type").in(typeNameFilter));
         }
         //TODO filter by space in the first query to make sure the pagination works as expected
         simpleTypeCriteriaQuery.where(criteriaBuilder.and(simpleTypePredicates.toArray(new Predicate[0])));
-        simpleTypeCriteriaQuery.orderBy(criteriaBuilder.asc(simpleTypeRoot.get("compositeId").get("type")));
+        simpleTypeCriteriaQuery.orderBy(criteriaBuilder.asc(simpleTypeRoot.get("type")));
         TypedQuery<TypeSpecification> simpleTypeQuery = entityManager.createQuery(simpleTypeCriteriaQuery);
         if (paginationParam != null) {
             if (paginationParam.isReturnTotalResults()) {
                 CriteriaQuery<Long> totalCountQuery = criteriaBuilder.createQuery(Long.class);
                 Root<TypeSpecification> totalCountQueryRoot = totalCountQuery.from(TypeSpecification.class);
-                totalCountQuery.select(criteriaBuilder.countDistinct(totalCountQueryRoot.get("compositeId").get("type")));
-                totalCountQuery.where(criteriaBuilder.equal(totalCountQueryRoot.get("compositeId").get("clientId"), TypeSpecification.GLOBAL_CLIENT_ID));
+                totalCountQuery.select(criteriaBuilder.countDistinct(totalCountQueryRoot.get("type")));
                 totalResults = entityManager.createQuery(totalCountQuery).getSingleResult();
             }
             simpleTypeQuery.setFirstResult((int) paginationParam.getFrom());
@@ -220,8 +201,8 @@ public class TypesService {
             }
         }
         List<TypeSpecification> resultList = simpleTypeQuery.getResultList();
-        Map<String, NormalizedJsonLd> typeSpecifications =resultList.isEmpty() ? Collections.emptyMap() : resultList.stream().filter(r -> r.getPayload() != null).collect(Collectors.toMap(k -> k.getCompositeId().getType(), v -> jsonAdapter.fromJson(v.getPayload(), NormalizedJsonLd.class)));
-        List<String> filteredTypeNames = resultList.stream().map(r -> r.getCompositeId().getType()).toList();
+        Map<String, NormalizedJsonLd> typeSpecifications =resultList.isEmpty() ? Collections.emptyMap() : resultList.stream().filter(r -> r.getPayload() != null).collect(Collectors.toMap(TypeSpecification::getType, v -> jsonAdapter.fromJson(v.getPayload(), NormalizedJsonLd.class)));
+        List<String> filteredTypeNames = resultList.stream().map(TypeSpecification::getType).toList();
 
         // The second query reads in the reflected information
         CriteriaQuery<TypePerSpaceInfo> query = criteriaBuilder.createQuery(TypePerSpaceInfo.class);
@@ -430,55 +411,55 @@ public class TypesService {
         return incomingLinksByType;
     }
 
-    public DynamicJson getTypeSpecification(String type, String clientId){
-        Optional<TypeSpecification> byId = typeSpecificationRepository.findById(new TypeSpecification.CompositeId(type, clientId));
+    public DynamicJson getTypeSpecification(String type){
+        Optional<TypeSpecification> byId = typeSpecificationRepository.findById(type);
         return byId.map(typeSpecification -> jsonAdapter.fromJson(typeSpecification.getPayload(), DynamicJson.class)).orElse(null);
     }
 
     @Transactional
-    public void specifyType(JsonLdId typeName, NormalizedJsonLd normalizedJsonLd, String clientId){
+    public void specifyType(JsonLdId typeName, NormalizedJsonLd normalizedJsonLd){
         TypeSpecification entity = new TypeSpecification();
-        entity.setCompositeId(new TypeSpecification.CompositeId(typeName.getId(), clientId));
+        entity.setType(typeName.getId());
         entity.setPayload(jsonAdapter.toJson(normalizedJsonLd));
         typeSpecificationRepository.save(entity);
     }
 
     @Transactional
-    public void removeType(JsonLdId typeName, String clientId){
-        typeSpecificationRepository.deleteById(new TypeSpecification.CompositeId(typeName.getId(), clientId));
+    public void removeType(JsonLdId typeName){
+        typeSpecificationRepository.deleteById(typeName.getId());
     }
 
-    public DynamicJson getPropertySpecification(String propertyName, String clientId) {
-        Optional<PropertySpecification> byId = propertySpecificationRepository.findById(new PropertySpecification.CompositeId(propertyName, clientId));
+    public DynamicJson getPropertySpecification(String propertyName) {
+        Optional<PropertySpecification> byId = propertySpecificationRepository.findById(propertyName);
         return byId.map(specification -> jsonAdapter.fromJson(specification.getPayload(), DynamicJson.class)).orElse(null);
     }
 
-    public void specifyProperty(JsonLdId propertyName, NormalizedJsonLd normalizedJsonLd, String clientId) {
+    public void specifyProperty(JsonLdId propertyName, NormalizedJsonLd normalizedJsonLd) {
         PropertySpecification entity = new PropertySpecification();
-        entity.setCompositeId(new PropertySpecification.CompositeId(propertyName.getId(), clientId));
+        entity.setProperty(propertyName.getId());
         entity.setPayload(jsonAdapter.toJson(normalizedJsonLd));
         propertySpecificationRepository.save(entity);
     }
 
-    public void removePropertySpecification(JsonLdId propertyName, String clientId) {
-        propertySpecificationRepository.deleteById(new PropertySpecification.CompositeId(propertyName.getId(), clientId));
+    public void removePropertySpecification(JsonLdId propertyName) {
+        propertySpecificationRepository.deleteById(propertyName.getId());
     }
 
 
-    public DynamicJson getPropertyInTypeSpecification(String type, String propertyName, String clientId) {
-        Optional<PropertyInTypeSpecification> byId = propertyInTypeSpecificationRepository.findById(new PropertyInTypeSpecification.CompositeId(type, propertyName, clientId));
+    public DynamicJson getPropertyInTypeSpecification(String type, String propertyName) {
+        Optional<PropertyInTypeSpecification> byId = propertyInTypeSpecificationRepository.findById(new PropertyInTypeSpecification.CompositeId(type, propertyName));
         return byId.map(specification -> jsonAdapter.fromJson(specification.getPayload(), DynamicJson.class)).orElse(null);
     }
 
-    public void specifyPropertyInType(String typeName, String propertyName, NormalizedJsonLd normalizedJsonLd, String clientId) {
+    public void specifyPropertyInType(String typeName, String propertyName, NormalizedJsonLd normalizedJsonLd) {
         PropertyInTypeSpecification entity = new PropertyInTypeSpecification();
-        entity.setCompositeId(new PropertyInTypeSpecification.CompositeId(typeName, propertyName, clientId));
+        entity.setCompositeId(new PropertyInTypeSpecification.CompositeId(typeName, propertyName));
         entity.setPayload(jsonAdapter.toJson(normalizedJsonLd));
         propertyInTypeSpecificationRepository.save(entity);
     }
 
-    public void removePropertyInTypeSpecification(String typeName, String propertyName, String clientId) {
-        propertyInTypeSpecificationRepository.deleteById(new PropertyInTypeSpecification.CompositeId(typeName, propertyName, clientId));
+    public void removePropertyInTypeSpecification(String typeName, String propertyName) {
+        propertyInTypeSpecificationRepository.deleteById(new PropertyInTypeSpecification.CompositeId(typeName, propertyName));
     }
 
 }

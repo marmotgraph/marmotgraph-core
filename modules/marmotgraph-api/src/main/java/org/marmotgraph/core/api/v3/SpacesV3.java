@@ -31,7 +31,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.AllArgsConstructor;
-import org.marmotgraph.auth.service.AuthContext;
+import org.marmotgraph.auth.api.AuthContext;
 import org.marmotgraph.commons.exceptions.InstanceNotFoundException;
 import org.marmotgraph.commons.exceptions.InvalidRequestException;
 import org.marmotgraph.commons.exceptions.NoContentException;

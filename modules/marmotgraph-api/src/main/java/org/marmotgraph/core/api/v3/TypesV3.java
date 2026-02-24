@@ -75,15 +75,10 @@ public class TypesV3 {
     @Operation(summary = "Get type specification")
     @GetMapping("/types/specification")
     @Admin
-    public DynamicJson getTypeSpecification(
-            @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")
-            @RequestParam(value = "global", required = false) boolean global,
-            @RequestParam("type") String type
-    ) {
-        DynamicJson informations = graphDBTypes.getSpecifyType(type, global);
-
-        if (informations != null) {
-            return informations;
+    public DynamicJson getTypeSpecification(@RequestParam("type") String type) {
+        DynamicJson typeSpecification = graphDBTypes.getTypeSpecification(type);
+        if (typeSpecification != null) {
+            return typeSpecification;
         }
         throw new InstanceNotFoundException(String.format("Type %s was not found", type));
     }
@@ -92,21 +87,21 @@ public class TypesV3 {
     //In theory, this could also go into /types only. But since Swagger doesn't allow the discrimination of groups with the same path (there is already the same path registered as GET for simple), we want to discriminate it properly
     @PutMapping("/types/specification")
     @Admin
-    public void createTypeDefinition(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)") @RequestParam(value = "global", required = false) boolean global, @RequestParam("type") String type) {
+    public void createTypeSpecification(@RequestBody NormalizedJsonLd payload, @RequestParam("type") String type) {
         JsonLdId typeFromPayload = payload.getAs(EBRAINSVocabulary.META_TYPE, JsonLdId.class);
         String decodedType = URLDecoder.decode(type, StandardCharsets.UTF_8);
         if (typeFromPayload != null) {
             throw new IllegalArgumentException("You are not supposed to provide a @type in the payload of the type specifications to avoid ambiguity");
         }
-        graphDBTypes.specifyType(new JsonLdId(decodedType), payload, global);
+        graphDBTypes.specifyType(new JsonLdId(decodedType), payload);
     }
 
 
-    @Operation(summary = "Remove a type definition", description = "Allows to deprecate a type specification")
+    @Operation(summary = "Remove a type specification", description = "Allows to deprecate a type specification")
     @DeleteMapping("/types/specification")
     @Admin
-    public void removeTypeDefinition(@RequestParam(value = "type", required = false) String type, @RequestParam(value = "global", required = false) boolean global) {
+    public void removeTypeSpecification(@RequestParam(value = "type", required = false) String type) {
         String decodedType = URLDecoder.decode(type, StandardCharsets.UTF_8);
-        graphDBTypes.removeTypeSpecification(new JsonLdId(decodedType), global);
+        graphDBTypes.removeTypeSpecification(new JsonLdId(decodedType));
     }
 }

@@ -25,18 +25,12 @@
 package org.marmotgraph.auth.service;
 
 import lombok.AllArgsConstructor;
-import org.marmotgraph.auth.api.AuthenticationAPI;
+import org.jspecify.annotations.NonNull;
 import org.marmotgraph.auth.models.Permission;
 import org.marmotgraph.commons.Tuple;
-import org.marmotgraph.commons.constants.CacheConstant;
 import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.model.User;
 import org.marmotgraph.commons.services.JsonAdapter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -46,17 +40,12 @@ import java.util.stream.Collectors;
 @Component
 public class UserInfoService {
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-
-    private final AuthenticationAPI authentication;
-
     private final PermissionsService permissionsService;
-
     private final JsonAdapter jsonAdapter;
+    private final KeycloakClient keycloakClient;
 
-    @Cacheable(CacheConstant.CACHE_KEYS_USER_ROLE_MAPPINGS)
-    public Tuple<User, List<String>> getUserOrClientProfile(String token) {
-        Map<String, Object> userInfo = authentication.getUserInfo(token);
+    public Tuple<User, List<String>> getUserProfile(@NonNull String token) {
+        Map<String, Object> userInfo = keycloakClient.getUserInfo(token);
         return new Tuple<>(buildUserFromClaims(userInfo), getRolesFromUserInfo(userInfo));
     }
 
@@ -68,13 +57,6 @@ public class UserInfoService {
         Object familyName = claims.get("family_name");
         Object email = claims.get("email");
         return new User(userName instanceof String ? (String) userName : null, name instanceof String ? (String) name : null, email instanceof String ? (String) email : null, givenName instanceof String ? (String) givenName : null, familyName instanceof String ? (String) familyName : null, nativeId instanceof String ? (String) nativeId : null);
-    }
-
-    @Scheduled(fixedRate = 1000 * 60 * 60)
-    //TODO this is a quickfix to make sure the cache is cleared regularly. Please replace with a proper cache implementation supporting a TTL on a per-entry level
-    @CacheEvict(value = CacheConstant.CACHE_KEYS_USER_ROLE_MAPPINGS, allEntries = true)
-    public void evictUserOrClientProfiles() {
-        logger.info("Wiping cached user role mappings");
     }
 
     public List<String> getRolesFromUserInfo(Map<String, Object> userInfo) {

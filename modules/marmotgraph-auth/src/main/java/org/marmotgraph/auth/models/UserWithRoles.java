@@ -26,11 +26,9 @@ package org.marmotgraph.auth.models;
 
 import lombok.Getter;
 import org.marmotgraph.auth.models.roles.RoleMapping;
-import org.marmotgraph.commons.model.auth.Functionality;
 import org.marmotgraph.commons.model.SpaceName;
 import org.marmotgraph.commons.model.User;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.marmotgraph.commons.model.auth.Functionality;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
@@ -42,38 +40,27 @@ import java.util.stream.Stream;
  */
 public class UserWithRoles {
     @Getter
-    private User user;
-    private List<String> clientRoles;
-    private List<String> userRoles;
+    private final User user;
+    private final List<String> userRoles;
     @Getter
-    private List<UUID> invitations;
+    private final List<UUID> invitations;
     @Getter
-    private String clientId;
-    @Getter
-    private List<FunctionalityInstance> permissions;
-    private transient final Logger logger = LoggerFactory.getLogger(getClass());
+    private final List<FunctionalityInstance> permissions;
 
-    // For serialization
-    @SuppressWarnings("unused")
-    private UserWithRoles() {
+    public UserWithRoles(User user, List<String> userRoles){
+        this(user, userRoles, Collections.emptyList());
     }
 
-    public UserWithRoles(User user, List<String> userRoles, List<String> clientRoles, String clientId){
-        this(user, userRoles, clientRoles, Collections.emptyList(), clientId);
-    }
-
-    public UserWithRoles(User user, List<String> userRoles, List<String> clientRoles, List<UUID> invitations, String clientId) {
+    public UserWithRoles(User user, List<String> userRoles, List<UUID> invitations) {
         this.user = user;
         this.userRoles = userRoles == null ? null : Collections.unmodifiableList(userRoles);
-        this.clientRoles = clientRoles == null ? null : Collections.unmodifiableList(clientRoles);
-        this.clientId = clientId;
         this.invitations = invitations == null ? null : Collections.unmodifiableList(invitations);
         this.permissions = calculatePermissions();
     }
 
     private List<FunctionalityInstance> calculatePermissions(){
         //Invitation permissions are added after permission evaluation (of global and space)
-        final List<FunctionalityInstance> functionalityInstances = evaluatePermissions(userRoles, clientRoles);
+        final List<FunctionalityInstance> functionalityInstances = evaluatePermissions(userRoles);
         if(!CollectionUtils.isEmpty(invitations)){
             return Stream.concat(functionalityInstances.stream(),
                     invitations.stream().map(i -> new FunctionalityInstance(Functionality.READ, null, i)))
@@ -114,90 +101,20 @@ public class UserWithRoles {
         return reducedList;
     }
 
-
     /**
-     * Evaluates the roles of a user in the context of a client by combining the roles of both
-     *
-     * @return the list of permissions applicable for the user using this client.
+     * Evaluates the roles of a user
+     * @return the list of permissions applicable for the user
      */
-    List<FunctionalityInstance> evaluatePermissions(List<String> userRoleNames, List<String> clientRoleNames) {
+    List<FunctionalityInstance> evaluatePermissions(List<String> userRoleNames) {
         if (userRoleNames == null) {
             //We're lacking of authentication information -> we default to "no permissions"
             return Collections.emptyList();
         }
-        List<FunctionalityInstance> userFunctionalities = reduceFunctionalities(userRoleNames.stream().map(RoleMapping::fromRole).flatMap(Collection::stream).distinct().collect(Collectors.groupingBy(FunctionalityInstance::functionality)));
-        Set<FunctionalityInstance> result = new HashSet<>();
-        if(clientRoleNames != null) {
-            Map<Functionality, List<FunctionalityInstance>> clientFunctionalities = clientRoleNames.stream().map(RoleMapping::fromRole).flatMap(Collection::stream).distinct().collect(Collectors.groupingBy(FunctionalityInstance::functionality));
-            //Filter the user roles by the client permissions (only those user permissions are guaranteed which are also allowed by the client)
-            for (FunctionalityInstance userRole : userFunctionalities) {
-                Functionality functionality = userRole.functionality();
-                if (clientFunctionalities.containsKey(functionality)) {
-                    for (FunctionalityInstance clientFunctionality : clientFunctionalities.get(functionality)) {
-                        FunctionalityInstance global = null;
-                        FunctionalityInstance space = null;
-                        FunctionalityInstance instance = null;
-                        if (clientFunctionality.space() == null && clientFunctionality.id() == null) {
-                            //The client provides this functionality on a global permission layer, so the user role can be accepted
-                            global = userRole;
-                        }
-                        if (clientFunctionality.space() != null && clientFunctionality.id() == null) {
-                            //This is a space-limited functionality for this client...
-                            if (userRole.space() == null && userRole.getInstanceId() == null) {
-                                // ... the user has a global permission, so we restrict it to the client space
-                                space = clientFunctionality;
-                            }
-                            if (userRole.space() != null && userRole.space().equals(clientFunctionality.space())) {
-                                //... the client has permission for the space so we can provide access to the user role
-                                // (regardless if it is a space or instance permission since both are valid)
-                                space = userRole;
-                            }
-                        }
-                        if (clientFunctionality.space() != null && clientFunctionality.getInstanceId() != null) {
-                            //This is an instance-limited functionality for this client...
-                            if (userRole.space() == null && userRole.getInstanceId() == null) {
-                                // ... the user has a global permission, so we restrict it to the instance of the client
-                                instance = clientFunctionality;
-                            }
-                            if (userRole.space() != null && userRole.getInstanceId() == null && userRole.space().equals(clientFunctionality.space())) {
-                                //... the user has a permission for the space so we restrict it to the instance of the client
-                                instance = clientFunctionality;
-                            }
-                            if (userRole.space() != null && userRole.getInstanceId() != null && userRole.space().equals(clientFunctionality.space()) && userRole.getInstanceId().equals(clientFunctionality.getInstanceId())) {
-                                //... the user has a permission for the same instance
-                                instance = userRole;
-                            }
-                        }
-                        if (global != null) {
-                            result.add(global);
-                        } else if (space != null) {
-                            result.add(space);
-                        } else if (instance != null) {
-                            result.add(instance);
-                        }
-                    }
-                }
-            }
-        }
-        else{
-           return userFunctionalities;
-        }
-        if(logger.isTraceEnabled()) {
-            logger.trace(String.format("Available roles for user %s in client %s: %s", user != null ? user.getUserName() : "anonymous", clientId, String.join(", ", result.stream().map(Object::toString).collect(Collectors.toSet()))));
-        }
-        return new ArrayList<>(result);
+        return reduceFunctionalities(userRoleNames.stream().map(RoleMapping::fromRole).flatMap(Collection::stream).distinct().collect(Collectors.groupingBy(FunctionalityInstance::functionality)));
     }
 
     public boolean hasInvitations(){
         return this.invitations!=null && !this.invitations.isEmpty();
     }
-
-    public final static UserWithRoles INTERNAL_ADMIN = createInternalAdminUser();
-
-    private static UserWithRoles createInternalAdminUser(){
-        User user = new User("marmotGraphInternalAdmin", "MarmotGraph Internal admin user", "support@marmotgraph.org", "MarmotGraph Internal", "Admin", "marmotGraphInternalAdmin");
-        return new UserWithRoles(user, Collections.singletonList(RoleMapping.ADMIN.toRole(null).name()), null, null);
-    }
-
 
 }

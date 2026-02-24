@@ -33,7 +33,7 @@ import lombok.AllArgsConstructor;
 import org.marmotgraph.auth.api.Permissions;
 import org.marmotgraph.auth.models.FunctionalityInstance;
 import org.marmotgraph.auth.models.UserWithRoles;
-import org.marmotgraph.auth.service.AuthContext;
+import org.marmotgraph.auth.api.AuthContext;
 import org.marmotgraph.commons.model.Paginated;
 import org.marmotgraph.commons.model.PaginationParam;
 import org.marmotgraph.commons.model.SpaceName;
@@ -76,7 +76,7 @@ public class SpaceService {
     }
 
     private Set<SpaceName> whitelistedSpaceReads(UserWithRoles userWithRoles){
-        if(!permissions.hasGlobalPermission(userWithRoles, Functionality.READ) && !permissions.hasGlobalPermission(userWithRoles, Functionality.READ_RELEASED) ){
+        if(!permissions.hasGlobalPermission(Functionality.READ) && !permissions.hasGlobalPermission(Functionality.READ_RELEASED) ){
             //We only need to filter if there is no "global" read available...
             return userWithRoles.getPermissions().stream().filter(p -> p.id() == null && (p.functionality() == Functionality.READ || p.functionality() == Functionality.READ_RELEASED)).map(FunctionalityInstance::space).filter(Objects::nonNull).collect(Collectors.toSet());
         }

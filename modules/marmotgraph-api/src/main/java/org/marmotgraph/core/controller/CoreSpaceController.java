@@ -25,7 +25,7 @@
 package org.marmotgraph.core.controller;
 
 import lombok.AllArgsConstructor;
-import org.marmotgraph.auth.service.AuthContext;
+import org.marmotgraph.auth.api.AuthContext;
 import org.marmotgraph.commons.model.Paginated;
 import org.marmotgraph.commons.model.PaginationParam;
 import org.marmotgraph.commons.model.SpaceName;

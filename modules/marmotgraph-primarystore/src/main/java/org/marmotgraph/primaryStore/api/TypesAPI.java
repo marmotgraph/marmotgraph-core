@@ -25,7 +25,6 @@
 package org.marmotgraph.primaryStore.api;
 
 import lombok.AllArgsConstructor;
-import org.marmotgraph.auth.service.AuthContext;
 import org.marmotgraph.commons.exceptions.ForbiddenException;
 import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.jsonld.JsonLdId;
@@ -37,7 +36,6 @@ import org.marmotgraph.commons.model.Result;
 import org.marmotgraph.commons.model.auth.Functionality;
 import org.marmotgraph.commons.model.external.types.TypeInformation;
 import org.marmotgraph.auth.api.Permissions;
-import org.marmotgraph.primaryStore.instances.model.TypeSpecification;
 import org.marmotgraph.primaryStore.structures.service.TypesService;
 import org.springframework.stereotype.Component;
 
@@ -52,84 +50,69 @@ public class TypesAPI {
 
     private final TypesService typesService;
     private final Permissions permissions;
-    private final AuthContext authContext;
-
 
     public Paginated<TypeInformation> listTypes(DataStage stage, String space, boolean withProperties,
                                                 boolean withIncomingLinks, PaginationParam paginationParam) {
-        return typesService.listTypes(stage, space, withProperties, withIncomingLinks, paginationParam, authContext.getUserWithRoles().getClientId());
+        return typesService.listTypes(stage, space, withProperties, withIncomingLinks, paginationParam);
 
     }
 
     public Map<String, Result<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space,
                                                                boolean withProperties, boolean withIncomingLinks) {
-        return typesService.getByName(types, stage, space, withProperties, withIncomingLinks, authContext.getUserWithRoles().getClientId());
+        return typesService.getByName(types, stage, space, withProperties, withIncomingLinks);
     }
 
     private void canManageTypesAndPropertiesOrThrow(){
-        if(!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.DEFINE_TYPES_AND_PROPERTIES)){
+        if(!permissions.hasGlobalPermission(Functionality.DEFINE_TYPES_AND_PROPERTIES)){
             throw new ForbiddenException(NO_RIGHTS_TO_DEFINE_TYPES);
         }
     }
 
 
-    public DynamicJson getSpecifyType(String type, boolean global) {
+    public DynamicJson getTypeSpecification(String type) {
         canManageTypesAndPropertiesOrThrow();
-        return typesService.getTypeSpecification(type, getClientId(global));
+        return typesService.getTypeSpecification(type);
     }
 
 
-    private String getClientId(boolean global) {
-        String clientId = TypeSpecification.GLOBAL_CLIENT_ID;
-        if (!global) {
-            clientId = authContext.getUserWithRoles().getClientId();
-            if (clientId == null) {
-                throw new IllegalArgumentException("You need to be logged in with a client for non-global specifications");
-            }
-        }
-        return clientId;
+    public void specifyType(JsonLdId typeName, NormalizedJsonLd normalizedJsonLd) {
+        canManageTypesAndPropertiesOrThrow();
+        typesService.specifyType(typeName, normalizedJsonLd);
     }
 
-
-    public void specifyType(JsonLdId typeName, NormalizedJsonLd normalizedJsonLd, boolean global) {
+    public void removeTypeSpecification(JsonLdId typeName) {
         canManageTypesAndPropertiesOrThrow();
-        typesService.specifyType(typeName, normalizedJsonLd, getClientId(global));
+        typesService.removeType(typeName);
     }
 
-    public void removeTypeSpecification(JsonLdId typeName, boolean global) {
+    public DynamicJson getPropertySpecification(String propertyName) {
         canManageTypesAndPropertiesOrThrow();
-        typesService.removeType(typeName, getClientId(global));
+        return typesService.getPropertySpecification(propertyName);
     }
 
-    public DynamicJson getPropertySpecification(String propertyName, boolean global) {
+    public void specifyProperty(JsonLdId propertyName, NormalizedJsonLd normalizedJsonLd) {
         canManageTypesAndPropertiesOrThrow();
-        return typesService.getPropertySpecification(propertyName, getClientId(global));
+        typesService.specifyProperty(propertyName, normalizedJsonLd);
     }
 
-    public void specifyProperty(JsonLdId propertyName, NormalizedJsonLd normalizedJsonLd, boolean global) {
+    public void removePropertySpecification(JsonLdId propertyName) {
         canManageTypesAndPropertiesOrThrow();
-        typesService.specifyProperty(propertyName, normalizedJsonLd, getClientId(global));
+        typesService.removePropertySpecification(propertyName);
     }
 
-    public void removePropertySpecification(JsonLdId propertyName, boolean global) {
+    public boolean checkPropertyInType(String typeName, String propertyName) {
         canManageTypesAndPropertiesOrThrow();
-        typesService.removePropertySpecification(propertyName, getClientId(global));
-    }
-
-    public boolean checkPropertyInType(String typeName, String propertyName, boolean global) {
-        canManageTypesAndPropertiesOrThrow();
-        DynamicJson propertyInTypeSpecification = typesService.getPropertyInTypeSpecification(typeName, propertyName, getClientId(global));
+        DynamicJson propertyInTypeSpecification = typesService.getPropertyInTypeSpecification(typeName, propertyName);
         return propertyInTypeSpecification != null;
     }
 
-    public void addOrUpdatePropertyToType(String typeName, String propertyName, NormalizedJsonLd payload,
-                                          boolean global) {
+    public void addOrUpdatePropertyToType(String typeName, String propertyName, NormalizedJsonLd payload) {
         canManageTypesAndPropertiesOrThrow();
-        typesService.specifyPropertyInType(typeName, propertyName, payload, getClientId(global));
+        typesService.specifyPropertyInType(typeName, propertyName, payload);
     }
 
-    public void removePropertyFromType(String typeName, String propertyName, boolean global) {
+    public void removePropertyFromType(String typeName, String propertyName) {
         canManageTypesAndPropertiesOrThrow();
-        typesService.removePropertyInTypeSpecification(typeName, propertyName, getClientId(global));
+        typesService.removePropertyInTypeSpecification(typeName, propertyName);
     }
 }

@@ -30,7 +30,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import net.logstash.logback.argument.StructuredArguments;
 import org.marmotgraph.auth.models.UserWithRoles;
-import org.marmotgraph.auth.service.AuthContext;
+import org.marmotgraph.auth.api.AuthContext;
 import org.marmotgraph.core.api.Version;
 import org.marmotgraph.commons.exceptions.NotAcceptedTermsOfUseException;
 import org.marmotgraph.commons.exceptions.UnauthorizedException;
@@ -63,25 +63,23 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             } catch (UnauthorizedException | NotAcceptedTermsOfUseException ex) {
                 userWithRoles = null;
             }
-            requestLogger.info("{}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("action", "API request"),
+            requestLogger.info("{}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("action", "API request"),
                     StructuredArguments.keyValue("id", apiRequestId),
                     StructuredArguments.keyValue("method", request.getMethod()),
                     StructuredArguments.keyValue("path", request.getRequestURI()),
                     StructuredArguments.keyValue("query", request.getQueryString()),
-                    StructuredArguments.keyValue("authenticatedUser", userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous"),
-                    StructuredArguments.keyValue("authenticatedClient", userWithRoles != null && userWithRoles.getClientId()!=null ? userWithRoles.getClientId() : "direct access"));
+                    StructuredArguments.keyValue("authenticatedUser", userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous"));
             Date start = new Date();
             filterChain.doFilter(request, response);
             Date end = new Date();
-            	requestLogger.info("{}, {}, {}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("action", "API response"),
+            	requestLogger.info("{}, {}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("action", "API response"),
                     StructuredArguments.keyValue("id", apiRequestId),
                     StructuredArguments.keyValue("method", request.getMethod()),
                     StructuredArguments.keyValue("path", request.getRequestURI()),
                     StructuredArguments.keyValue("query", request.getQueryString()),
                     StructuredArguments.keyValue("statusCode", response.getStatus()),
                     StructuredArguments.keyValue("executionDuration", String.format("%d ms", end.getTime()-start.getTime())),
-                    StructuredArguments.keyValue("authenticatedUser", userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous"),
-                    StructuredArguments.keyValue("authenticatedClient", userWithRoles != null && userWithRoles.getClientId()!=null ? userWithRoles.getClientId() : "direct access"));
+                    StructuredArguments.keyValue("authenticatedUser", userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous"));
         } else {
             filterChain.doFilter(request, response);
         }

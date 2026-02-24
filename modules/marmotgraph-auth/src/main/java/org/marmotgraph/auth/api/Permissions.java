@@ -24,6 +24,7 @@
 
 package org.marmotgraph.auth.api;
 
+import lombok.AllArgsConstructor;
 import org.marmotgraph.auth.models.FunctionalityInstance;
 import org.marmotgraph.auth.models.UserWithRoles;
 import org.marmotgraph.commons.model.SpaceName;
@@ -39,7 +40,11 @@ import java.util.stream.Stream;
  * The permission service allows to evaluate if a user has the permissions to execute a specific action or not.
  */
 @Service
+@AllArgsConstructor
 public class Permissions {
+
+    private final AuthContext authContext;
+
 
     private Set<FunctionalityInstance> getExpectedFunctionalityList(Functionality functionality, SpaceName space, UUID id) {
         Set<FunctionalityInstance> instances = new HashSet<>();
@@ -55,8 +60,8 @@ public class Permissions {
         return instances;
     }
 
-    public boolean hasPermission(UserWithRoles userWithRoles, Functionality functionality, SpaceName space) {
-        return hasPermission(userWithRoles, functionality, space, null);
+    public boolean hasPermission(Functionality functionality, SpaceName space) {
+        return hasPermission(functionality, space, null);
     }
 
     private boolean checkFunctionalities(Functionality functionality, SpaceName space, UUID id, List<FunctionalityInstance> permissions) {
@@ -69,20 +74,22 @@ public class Permissions {
         return applicableWildcardRoles.stream().anyMatch(wildcardRole -> expectedRoles.stream().anyMatch(wildcardRole::matchesWildcard));
     }
 
-    public boolean hasPermission(UserWithRoles userWithRoles, Functionality functionality, SpaceName space, UUID id) {
+    public boolean hasPermission(Functionality functionality, SpaceName space, UUID id) {
+        UserWithRoles userWithRoles = authContext.getUserWithRoles();
         if (userWithRoles == null || functionality == null) {
             return false;
         }
         return checkFunctionalities(functionality, space, id, userWithRoles.getPermissions());
     }
 
-    public boolean hasGlobalPermission(UserWithRoles userWithRoles, Functionality functionality) {
-        return hasPermission(userWithRoles, functionality, null, null);
+    public boolean hasGlobalPermission(Functionality functionality) {
+        return hasPermission(functionality, null, null);
     }
 
-    public Set<SpaceName> getSpacesForPermission(Collection<SpaceName> spaces, UserWithRoles userWithRoles, Functionality functionality) {
+    public Set<SpaceName> getSpacesForPermission(Collection<SpaceName> spaces, Functionality functionality) {
+        UserWithRoles userWithRoles = authContext.getUserWithRoles();
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
-        if (functionality == null || hasGlobalPermission(userWithRoles, functionality)) {
+        if (functionality == null || hasGlobalPermission(functionality)) {
             return Collections.emptySet();
         }
         final Set<FunctionalityInstance> applicableWildcardRoles = permissions.stream().filter(i -> i.id() == null && i.space() != null && i.space().isWildcard() && i.functionality() == functionality).collect(Collectors.toSet());

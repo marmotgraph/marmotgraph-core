@@ -25,7 +25,6 @@
 package org.marmotgraph.core.api.v3beta;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -53,49 +52,43 @@ public class PropertiesV3Beta {
     @Operation(summary = "Get a property specification")
     @GetMapping("/properties")
     @Admin
-    public DynamicJson properties(
-            @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)") @RequestParam(value = "global", required = false) boolean global,
-            @RequestParam(value = "property", required = false) String property) {
-        return propertiesV3.properties(global, property);
+    public DynamicJson getPropertySpecification(@RequestParam(value = "property", required = false) String property) {
+        return propertiesV3.getPropertySpecification(property);
 
     }
 
-    @Operation(summary = "Upload a property specification either globally or for the requesting client")
+    @Operation(summary = "Upload a property specification")
     @PutMapping("/properties")
-    public void defineProperty(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property) {
-        propertiesV3.defineProperty(payload, global, property);
+    public void specifyProperty(@RequestBody NormalizedJsonLd payload, @RequestParam("property") String property) {
+        propertiesV3.specifyProperty(payload, property);
     }
 
-    @Operation(summary = "Upload a property specification either globally or for the requesting client")
+    @Operation(summary = "Deprecates a property specification")
     @DeleteMapping("/properties")
-    public void deprecateProperty(@Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property) {
-        propertiesV3.deprecateProperty(global, property);
+    public void deprecateProperty(@RequestParam("property") String property) {
+        propertiesV3.deprecateProperty(property);
     }
 
-    @Operation(summary = "Check type for a specific property either globally for the requesting client")
+    @Operation(summary = "Check type for a specific property")
     @GetMapping("/propertiesForType")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Relation between type and property", content = { @Content(mediaType = "application/json", schema = @Schema(implementation = PropertyInType.class)) }),
             @ApiResponse(responseCode = "404", description = "Type not found", content = @Content),
             @ApiResponse(responseCode = "204", description = "No relation", content = @Content)})
-    public PropertyInType getPropertyForType(
-            @Parameter(description = "")
-            @RequestParam(value = "global", required = false) boolean global,
-            @RequestParam("property") String property,
-            @RequestParam("type") String type) {
-        return propertiesV3.getPropertyForType(global, property, type);
+    public PropertyInType getPropertyForType(@RequestParam("property") String property, @RequestParam("type") String type) {
+        return propertiesV3.getPropertyForType(property, type);
     }
 
-    @Operation(summary = "Define a property specification either globally for the requesting client")
+    @Operation(summary = "Define a property specification for a specific type")
     @PutMapping("/propertiesForType")
-    public void definePropertyForType(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property, @RequestParam("type") String type) {
-        propertiesV3.getPropertyForType(global, property, type);
+    public void definePropertyForType(@RequestBody NormalizedJsonLd payload, @RequestParam("property") String property, @RequestParam("type") String type) {
+        propertiesV3.getPropertyForType(property, type);
     }
 
-    @Operation(summary = "Deprecate a property specification for a specific type either globally or for the requesting client")
+    @Operation(summary = "Deprecate a property specification for a specific type")
     @DeleteMapping("/propertiesForType")
-    public void deprecatePropertyForType(@Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property, @RequestParam("type") String type) {
-        propertiesV3.deprecatePropertyForType(global, property, type);
+    public void deprecatePropertyForType( @RequestParam("property") String property, @RequestParam("type") String type) {
+        propertiesV3.deprecatePropertyForType(property, type);
     }
 
 }

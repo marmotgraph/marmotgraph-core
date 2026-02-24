@@ -37,14 +37,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Arrays;
+import java.util.Collections;
 
 @Configuration
 public class OpenAPIv3 {
-
     private static final String AUTHORIZATION_HEADER = "Authorization";
-    private static final String CLIENT_AUTHORIZATION_HEADER = "Client-Authorization";
-
 
     @Bean
     public GroupedOpenApi v3Beta() {
@@ -64,27 +61,18 @@ public class OpenAPIv3 {
 
     @Bean
     public OpenAPI genericOpenAPI(@Value("${org.marmotgraph.login.endpoint}") String loginEndpoint, @Value("${org.marmotgraph.login.tokenEndpoint}") String tokenEndpoint, @Value("${org.marmotgraph.commit}") String commit, @Value("${org.marmotgraph.login.client}") String client) {
-        SecurityScheme clientToken = new SecurityScheme().type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name(CLIENT_AUTHORIZATION_HEADER).description("The bearer token for the service account to contextualize the authentication to this client. If you don't know what this is about and just want to test the API, just leave it blank. :)");
-
         OAuthFlow oAuthFlow = new OAuthFlow();
         oAuthFlow.refreshUrl(tokenEndpoint);
         oAuthFlow.tokenUrl(tokenEndpoint);
         oAuthFlow.authorizationUrl(loginEndpoint);
         oAuthFlow.addExtension("client_id", client);
-        SecurityScheme userToken = new SecurityScheme().name("Authorization").type(SecurityScheme.Type.OAUTH2).flows(new OAuthFlows().authorizationCode(oAuthFlow)).description("The user authentication");
-
-        SecurityRequirement userWithoutClientReq = new SecurityRequirement().addList(AUTHORIZATION_HEADER);
-        SecurityRequirement userWithClientByToken = new SecurityRequirement().addList(CLIENT_AUTHORIZATION_HEADER).addList(AUTHORIZATION_HEADER);
-        SecurityRequirement userWithClientByClientSecret = new SecurityRequirement().addList("Client-Id").addList("Client-Secret").addList(AUTHORIZATION_HEADER);
-        SecurityRequirement serviceAccountByClientSecret = new SecurityRequirement().addList("Client-Id").addList("Client-SA-Secret");
-
-
+        SecurityScheme authToken = new SecurityScheme().name("Authorization").type(SecurityScheme.Type.OAUTH2).flows(new OAuthFlows().authorizationCode(oAuthFlow)).description("The user authentication");
         OpenAPI openapi = new OpenAPI().openapi("3.0.3");
         String description = String.format("This is the API of the MarmotGraph (commit %s).", commit);
         return openapi.tags(APINaming.orderedTags()).info(new Info().title("This is the MarmotGraph API").description(description)
                         .license(new License().name("Apache 2.0").url("https://www.apache.org/licenses/LICENSE-2.0.html"))
                         .termsOfService("https://kg.ebrains.eu/search-terms-of-use.html")).components(new Components())
-                .schemaRequirement(AUTHORIZATION_HEADER, userToken).schemaRequirement(CLIENT_AUTHORIZATION_HEADER, clientToken)
-                .security(Arrays.asList(userWithoutClientReq, userWithClientByToken,  userWithClientByClientSecret, serviceAccountByClientSecret));
+                .schemaRequirement(AUTHORIZATION_HEADER, authToken)
+                .security(Collections.singletonList(new SecurityRequirement().addList(AUTHORIZATION_HEADER)));
     }
 }

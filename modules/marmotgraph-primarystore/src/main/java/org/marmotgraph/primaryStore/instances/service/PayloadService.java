@@ -32,7 +32,7 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.marmotgraph.auth.api.Permissions;
 import org.marmotgraph.auth.models.UserWithRoles;
-import org.marmotgraph.auth.service.AuthContext;
+import org.marmotgraph.auth.api.AuthContext;
 import org.marmotgraph.commons.Tuple;
 import org.marmotgraph.commons.constants.EBRAINSVocabulary;
 import org.marmotgraph.commons.exceptions.ForbiddenException;
@@ -432,7 +432,7 @@ public class PayloadService {
             }
         }
         String firstType = payload.types().getFirst();
-        Optional<TypeSpecification> globalTypeSpec = typeSpecificationRepository.findById(new TypeSpecification.CompositeId(firstType, TypeSpecification.GLOBAL_CLIENT_ID));
+        Optional<TypeSpecification> globalTypeSpec = typeSpecificationRepository.findById(firstType);
         String labelProperty = null;
         List<String> searchableProperties = Collections.emptyList();
         if (globalTypeSpec.isPresent()) {
@@ -480,9 +480,9 @@ public class PayloadService {
             inferredPayload.setQuery(q);
         }
         payload.types().forEach(t -> {
-            if (!typeSpecificationRepository.existsById(new TypeSpecification.CompositeId(t, TypeSpecification.GLOBAL_CLIENT_ID))) {
+            if (!typeSpecificationRepository.existsById(t)) {
                 TypeSpecification typeSpecification = new TypeSpecification();
-                typeSpecification.setCompositeId(new TypeSpecification.CompositeId(t, TypeSpecification.GLOBAL_CLIENT_ID));
+                typeSpecification.setType(t);
                 typeSpecificationRepository.save(typeSpecification);
             }
         });
@@ -862,7 +862,7 @@ public class PayloadService {
                 Optional<Payload.InferredPayload> byId = inferredPayloadRepository.findById(id);
                 if (byId.isPresent()) {
                     Payload.InferredPayload inferredPayload = byId.get();
-                    if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.READ, SpaceName.fromString(inferredPayload.getInstanceInformation().getSpaceName()), inferredPayload.getUuid())) {
+                    if (!permissions.hasPermission(Functionality.READ, SpaceName.fromString(inferredPayload.getInstanceInformation().getSpaceName()), inferredPayload.getUuid())) {
                         throw new ForbiddenException();
                     }
                     result = jsonAdapter.fromJson(inferredPayload.getJsonPayload(), NormalizedJsonLd.class);
@@ -887,7 +887,7 @@ public class PayloadService {
                 Optional<Payload.ReleasedPayload> byId = releasedPayloadRepository.findById(id);
                 if (byId.isPresent()) {
                     Payload.ReleasedPayload releasedPayload = byId.get();
-                    if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.READ_RELEASED, SpaceName.fromString(releasedPayload.getInstanceInformation().getSpaceName()), releasedPayload.getUuid())) {
+                    if (!permissions.hasPermission(Functionality.READ_RELEASED, SpaceName.fromString(releasedPayload.getInstanceInformation().getSpaceName()), releasedPayload.getUuid())) {
                         throw new ForbiddenException();
                     }
                     result = jsonAdapter.fromJson(releasedPayload.getJsonPayload(), NormalizedJsonLd.class);
@@ -908,7 +908,7 @@ public class PayloadService {
         Map<UUID, Map<String, Map<String, Map<?, ?>>>> result = new HashMap<>();
         incomingLinkInformation.forEach((uuid, incomingLinks) -> {
             List<String> typesOfIncomingLinks = incomingLinks.stream().map(i -> i.type).distinct().toList();
-            Map<String, NormalizedJsonLd> genericTypeInformation = typesService.fetchGenericTypeInformation(stage, null, null, typesOfIncomingLinks).typeSpecification();
+            Map<String, NormalizedJsonLd> genericTypeInformation = typesService.fetchTypeInformation(stage, null, null, typesOfIncomingLinks).typeSpecification();
             Map<String, List<IncomingLinkInformation>> incomingLinksByProperty = incomingLinks.stream().collect(Collectors.groupingBy(i -> i.propertyName));
             Map<String, Map<String, Map<?, ?>>> incomingLinksResult = new HashMap<>();
             incomingLinksByProperty.forEach((p, links) -> {

@@ -26,6 +26,7 @@ package org.marmotgraph.core.api.v3;
 
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.AllArgsConstructor;
+import org.marmotgraph.auth.api.AuthContext;
 import org.marmotgraph.auth.api.AuthorizationAPI;
 import org.marmotgraph.auth.models.UserWithRoles;
 import org.marmotgraph.commons.model.ResultWithExecutionDetails;
@@ -46,22 +47,22 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(Version.V3 +"/users")
 @AllArgsConstructor
 public class UsersV3 {
-    private final AuthorizationAPI authorization;
 
+    private final AuthContext authContext;
 
     @Operation(summary = "Retrieve user information from the passed token (including detailed information such as e-mail address)")
     @GetMapping("/me")
     @Simple
     public ResponseEntity<ResultWithExecutionDetails<User>> myUserInfo() {
-        User myUserInfo = authorization.getMyUserInfo();
-        return myUserInfo!=null ? ResponseEntity.ok(ResultWithExecutionDetails.ok(myUserInfo)) : ResponseEntity.notFound().build();
+        final UserWithRoles roles = authContext.getUserWithRoles();
+        return roles!=null && roles.getUser() != null ? ResponseEntity.ok(ResultWithExecutionDetails.ok(roles.getUser())) : ResponseEntity.notFound().build();
     }
 
     @Operation(summary = "Retrieve the roles for the current user")
     @GetMapping("/me/roles")
     @Extra
     public ResponseEntity<ResultWithExecutionDetails<UserWithRoles>> myRoles() {
-        final UserWithRoles roles = authorization.getRoles();
+        final UserWithRoles roles = authContext.getUserWithRoles();
         return roles!=null ? ResponseEntity.ok(ResultWithExecutionDetails.ok(roles)) : ResponseEntity.notFound().build();
     }
 

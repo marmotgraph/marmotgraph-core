@@ -112,7 +112,7 @@ public class KeycloakClient {
         }
     }
 
-    JWTVerifier getJWTVerifier() {
+    public JWTVerifier getJWTVerifier() {
         return JWT.require(getAlgorithmFromKeycloakConfig(issuerInfo.getPublicKey())).withIssuer(openIdConfig.getIssuer()).build();
     }
 
@@ -138,7 +138,6 @@ public class KeycloakClient {
             throw new RuntimeException(e);
         }
     }
-
 
     public Map<String, Object> getUserInfo(String token){
         try {

@@ -28,5 +28,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface TypeSpecificationRepository extends JpaRepository<TypeSpecification, TypeSpecification.CompositeId> {
+public interface TypeSpecificationRepository extends JpaRepository<TypeSpecification, String> {
 }

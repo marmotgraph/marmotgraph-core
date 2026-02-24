@@ -24,29 +24,42 @@
 
 package org.marmotgraph.core.api.config.aspects;
 
-import lombok.AllArgsConstructor;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
-import org.marmotgraph.auth.api.AuthenticationAPI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.marmotgraph.auth.models.UserAuthToken;
+import org.marmotgraph.auth.service.AuthTokenContext;
+import org.marmotgraph.auth.service.KeycloakClient;
+import org.marmotgraph.commons.exceptions.UnauthorizedException;
 import org.springframework.stereotype.Component;
-import org.marmotgraph.core.api.NoAuthentication;
+
+import java.util.Optional;
 
 @Aspect
 @Component
-@AllArgsConstructor
 public class AuthenticationAspect {
 
-    private final AuthenticationAPI authentication;
+    public AuthenticationAspect(KeycloakClient keycloakClient, AuthTokenContext authTokenContext) {
+        this.jwtVerifier = keycloakClient.getJWTVerifier();
+        this.authTokenContext = authTokenContext;
+    }
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private final JWTVerifier jwtVerifier;
+    private final AuthTokenContext authTokenContext;
 
     @Before("within(@org.springframework.web.bind.annotation.RestController *) && execution(public * org.marmotgraph..*.*(..)) && !@annotation(NoAuthentication)")
     public void authenticate(JoinPoint joinPoint) {
         // ✅ Your custom authentication logic
-        authentication.validateAuthentication();
+        Optional<UserAuthToken> authToken = authTokenContext.getAuthToken();
+        if (authToken.isEmpty()) {
+            throw new UnauthorizedException("You haven't provided the required credentials! Please define an Authorization header with your bearer token!");
+        }
+        try {
+            jwtVerifier.verify(authToken.get().getRawToken());
+        } catch (JWTVerificationException ex) {
+            throw new UnauthorizedException(ex);
+        }
     }
-
 }

@@ -25,13 +25,9 @@
 package org.marmotgraph.auth.api;
 
 import lombok.AllArgsConstructor;
-import org.marmotgraph.auth.service.AuthenticationService;
 import org.marmotgraph.auth.service.KeycloakClient;
 import org.marmotgraph.auth.utils.KeycloakConfig;
-import org.marmotgraph.commons.exceptions.UnauthorizedException;
 import org.springframework.stereotype.Service;
-
-import java.util.Map;
 
 @AllArgsConstructor
 @Service
@@ -41,7 +37,6 @@ public class AuthenticationAPI {
 
     private final KeycloakClient keycloakClient;
 
-    private final AuthenticationService keycloakController;
     /**
      * USERS
      **/
@@ -59,14 +54,6 @@ public class AuthenticationAPI {
 
     public String tokenEndpoint() {
         return keycloakClient.getTokenEndpoint();
-    }
-
-    public Map<String, Object> getUserInfo(String token){
-        return this.keycloakClient.getUserInfo(token);
-    }
-
-    public void validateAuthentication() throws UnauthorizedException {
-        keycloakController.validateAuthentication();
     }
 
 }

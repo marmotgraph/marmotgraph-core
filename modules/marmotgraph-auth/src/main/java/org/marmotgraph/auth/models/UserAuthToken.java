@@ -22,43 +22,30 @@
  *  (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package org.marmotgraph.auth.models.tokens;
+package org.marmotgraph.auth.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.io.Serializable;
-import java.util.Objects;
 import java.util.UUID;
 
-/**
- * This is a DTO carrying the token information
- */
-@Setter
-@Getter
 @AllArgsConstructor
-public class AuthTokens implements Serializable {
+public class UserAuthToken implements Serializable {
 
-    protected UserAuthToken userAuthToken;
-    protected ClientAuthToken clientAuthToken;
-    protected UUID transactionId;
+    private final String userToken;
+    @Getter
+    private final UUID transactionId;
 
-    public AuthTokens(UserAuthToken userAuthToken, ClientAuthToken clientAuthToken) {
-        this.userAuthToken = userAuthToken;
-        this.clientAuthToken = clientAuthToken;
+    public String getBearerToken(){
+        if(userToken!=null){
+            return userToken.toLowerCase().startsWith("bearer ") ? userToken : "Bearer "+userToken;
+        }
+        return null;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        AuthTokens that = (AuthTokens) o;
-        return Objects.equals(userAuthToken, that.userAuthToken) && Objects.equals(clientAuthToken, that.clientAuthToken);
+    public String getRawToken() {
+        return userToken != null && userToken.toLowerCase().startsWith("bearer ") ? userToken.substring(7) : userToken;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(userAuthToken, clientAuthToken);
-    }
 }

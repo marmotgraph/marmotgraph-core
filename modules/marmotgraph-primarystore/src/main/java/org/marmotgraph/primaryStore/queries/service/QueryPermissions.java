@@ -54,8 +54,8 @@ public class QueryPermissions {
      */
     public Tuple<Set<SpaceName>, Set<UUID>> queryFilter(Collection<SpaceName> restrictedSpaces, UserWithRoles userWithRoles, DataStage stage) {
         Functionality readFunctionality = getReadFunctionality(stage);
-        if (!permissions.hasGlobalPermission(userWithRoles, readFunctionality)){
-            Set<SpaceName> spacesWithReadPermission = permissions.getSpacesForPermission(restrictedSpaces != null ? restrictedSpaces : spaceService.allSpaces(), userWithRoles, readFunctionality);
+        if (!permissions.hasGlobalPermission(readFunctionality)){
+            Set<SpaceName> spacesWithReadPermission = permissions.getSpacesForPermission(restrictedSpaces != null ? restrictedSpaces : spaceService.allSpaces(), readFunctionality);
             Set<UUID> instancesWithReadPermissions = getInstancesWithExplicitPermission(userWithRoles, stage);
             return new Tuple<>(spacesWithReadPermission, instancesWithReadPermissions);
         }

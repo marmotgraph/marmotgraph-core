@@ -29,7 +29,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.marmotgraph.auth.api.Permissions;
 import org.marmotgraph.auth.models.FunctionalityInstance;
 import org.marmotgraph.auth.models.UserWithRoles;
-import org.marmotgraph.auth.service.AuthContext;
+import org.marmotgraph.auth.api.AuthContext;
 import org.marmotgraph.commons.exceptions.ForbiddenException;
 import org.marmotgraph.commons.exceptions.InvalidRequestException;
 import org.marmotgraph.commons.model.Paginated;
@@ -123,19 +123,19 @@ public class SpacesAPI {
 //        }
     }
 
-    private boolean canDefineScopeSpace(UserWithRoles userWithRoles) {
-        return permissions.hasGlobalPermission(userWithRoles, Functionality.DEFINE_SCOPE_RELEVANT_SPACE);
+    private boolean canDefineScopeSpace() {
+        return permissions.hasGlobalPermission(Functionality.DEFINE_SCOPE_RELEVANT_SPACE);
     }
 
-    private boolean canManageSpaces(UserWithRoles userWithRoles, SpaceName spaceName){
-        return permissions.hasPermission(userWithRoles, Functionality.MANAGE_SPACE, spaceName);
+    private boolean canManageSpaces(SpaceName spaceName){
+        return permissions.hasPermission(Functionality.MANAGE_SPACE, spaceName);
     }
 
     public void specifySpace(SpaceSpecification spaceSpecification) {
-        if (spaceSpecification.getScopeRelevant() != null && spaceSpecification.getScopeRelevant() && !canDefineScopeSpace(authContext.getUserWithRoles())) {
+        if (spaceSpecification.getScopeRelevant() != null && spaceSpecification.getScopeRelevant() && !canDefineScopeSpace()) {
             throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
         }
-        if (canManageSpaces(authContext.getUserWithRoles(), SpaceName.fromString(spaceSpecification.getName()))) {
+        if (canManageSpaces(SpaceName.fromString(spaceSpecification.getName()))) {
             switch (spaceSpecification.getName()) {
                 case SpaceName.PRIVATE_SPACE:
                     throw new InvalidRequestException("You can't provide a definition for your private space");
@@ -151,7 +151,7 @@ public class SpacesAPI {
     }
 
     public void removeSpaceSpecification(SpaceName spaceName) {
-        if (canManageSpaces(authContext.getUserWithRoles(), spaceName)) {
+        if (canManageSpaces(spaceName)) {
             switch (spaceName.getName()) {
                 case SpaceName.PRIVATE_SPACE:
                     throw new InvalidRequestException("You can't remove your private space");
@@ -196,7 +196,7 @@ public class SpacesAPI {
     }
 
     private void checkOnSpaceSpecificationAdminOperations(SpaceName spaceName) {
-        if (!canManageSpaces(authContext.getUserWithRoles(), spaceName)) {
+        if (!canManageSpaces(spaceName)) {
             throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
         }
         switch (spaceName.getName()) {
