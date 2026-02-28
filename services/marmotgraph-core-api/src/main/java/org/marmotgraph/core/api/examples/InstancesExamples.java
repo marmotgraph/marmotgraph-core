@@ -31,7 +31,7 @@ public class InstancesExamples {
 
     public static final String PAYLOAD_MINIMAL = """
             {
-              "@type": "https://openminds.ebrains.eu/core/Person"
+              "@type": "https://openminds.om-i.org/types/Person"
             }
             """;
 
@@ -41,8 +41,8 @@ public class InstancesExamples {
 
     public static final String PAYLOAD_WITH_PROPERTY = """
             {
-              "@type": "https://openminds.ebrains.eu/core/Person",
-              "https://openminds.ebrains.eu/vocab/givenName": "Bob"
+              "@type": "https://openminds.om-i.org/types/Person",
+              "https://openminds.om-i.org/props/givenName": "Bob"
             }
             """;
 
@@ -51,8 +51,8 @@ public class InstancesExamples {
     public static final String PAYLOAD_WITH_PROPERTY_NAME = "with property";
     public static final String PAYLOAD_WITH_LINK = """
             {
-              "@type": "https://openminds.ebrains.eu/core/Person",
-              "https://openminds.ebrains.eu/vocab/affiliation": [
+              "@type": "https://openminds.om-i.org/types/Person",
+              "https://openminds.om-i.org/props/affiliation": [
                 { "@id": "http://someQualifiedIdentifier/ACME_orporation" }
               ]
             }

@@ -418,6 +418,7 @@ public class StructureRepository {
     }
 
     private List<DynamicJson> doGetPropertiesInTypeBySpecification(String type, ArangoCollectionReference collectionReference) {
+        logger.info("Fetching properties for {}", type);
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
         if (structureDB.collection(collectionReference.getCollectionName()).exists()) {
             final UUID typeUUID = typeSpecificationRef(type);
