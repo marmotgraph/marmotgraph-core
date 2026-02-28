@@ -81,6 +81,7 @@ public class EBRAINSVocabulary {
     public static final String META_INTERNAL_SPACE = META_SPACE + "/internalSpace";
     public static final String META_CLIENT_SPACE = META_SPACE + "/clientSpace";
     public static final String META_AUTORELEASE_SPACE = META_SPACE + "/autorelease";
+    public static final String META_SKIP_REFLECTION_SPACE = META_SPACE + "/skipReflection";
     public static final String META_DEFER_CACHE_SPACE = META_SPACE + "/deferCache";
     public static final String META_SCOPE_RELEVANT_SPACE = META_SPACE + "/scopeRelevant";
     public static final String META_IGNORE_INCOMING_LINKS=META+"ignoreIncomingLinks";

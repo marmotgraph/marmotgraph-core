@@ -27,6 +27,7 @@ package org.marmotgraph.graphdb.structure.api;
 import org.marmotgraph.commons.AuthContext;
 import org.marmotgraph.commons.api.GraphDBTypes;
 import org.marmotgraph.commons.exception.ForbiddenException;
+import org.marmotgraph.commons.exception.ServiceNotAvailableException;
 import org.marmotgraph.commons.jsonld.DynamicJson;
 import org.marmotgraph.commons.jsonld.JsonLdId;
 import org.marmotgraph.commons.jsonld.NormalizedJsonLd;
@@ -64,6 +65,9 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
     @Override
     public Paginated<TypeInformation> listTypes(DataStage stage, String space, boolean withProperties,
                                                 boolean withIncomingLinks, PaginationParam paginationParam, boolean doReflect) {
+        if(metaDataController.isInitialCachePopulationInProgress()){
+            throw new ServiceNotAvailableException("The service is not yet available due to ongoing initialization processes.");
+        }
         return PaginationParam.paginate(metaDataController.readMetaDataStructure(stage, space, null, withProperties, withIncomingLinks, authContext.getUserWithRoles(), authContext.getClientSpace() != null ? authContext.getClientSpace().getName() : null, authContext.getUserWithRolesWithoutTermsCheck().getPrivateSpace(), documents.getInvitationDocuments(), doReflect), paginationParam);
     }
 

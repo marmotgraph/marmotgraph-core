@@ -24,6 +24,7 @@
 package org.marmotgraph.graphdb.structure.controller;
 
 import com.arangodb.ArangoCollection;
+import com.arangodb.ArangoCursor;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.CollectionEntity;
 import com.arangodb.entity.CollectionType;
@@ -62,6 +63,7 @@ import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -96,19 +98,19 @@ public class StructureRepository {
 
     @Cacheable(value = CacheConstant.CACHE_KEYS_REFLECTED_SPACES, sync = true)
     public List<SpaceName> reflectSpaces(DataStage stage) {
-        logger.debug("Missing cache hit: Fetching space reflection from database");
+        logger.info("Missing cache hit: Reflecting spaces from database");
         return doReflectSpaces(stage);
     }
 
     @CachePut(CacheConstant.CACHE_KEYS_REFLECTED_SPACES)
     public List<SpaceName> refreshReflectedSpacesCache(DataStage stage) {
-        logger.debug("Change of data - refresh cache for reflected spaces");
+        logger.info("Change of data - refresh cache for reflected spaces");
         return doReflectSpaces(stage);
     }
 
     @CacheEvict(CacheConstant.CACHE_KEYS_REFLECTED_SPACES)
     public void evictReflectedSpacesCache(DataStage stage) {
-        logger.debug("Cache evict: clearing cache for reflected spaces");
+        logger.info("Cache evict: clearing cache for reflected spaces");
     }
 
 
@@ -157,19 +159,19 @@ public class StructureRepository {
 
     @Cacheable(value = CacheConstant.CACHE_KEYS_SPACES, sync = true)
     public List<Space> getSpaces() {
-        logger.debug("Missing cache hit: Fetching spaces from database");
+        logger.info("Missing cache hit: Fetching spaces from database");
         return doGetSpaces();
     }
 
     @CachePut(CacheConstant.CACHE_KEYS_SPACES)
     public List<Space> refreshSpacesCache(){
-        logger.debug("Change of data: Fetching spaces from database");
+        logger.info("Change of data: Fetching spaces from database");
         return doGetSpaces();
     }
 
     @CacheEvict(CacheConstant.CACHE_KEYS_SPACES)
     public void evictSpacesCache() {
-        logger.debug("Cache evict: clearing cache for spaces");
+        logger.info("Cache evict: clearing cache for spaces");
     }
 
     private List<Space> doGetSpaces(){
@@ -188,19 +190,19 @@ public class StructureRepository {
 
     @Cacheable(value = CacheConstant.CACHE_KEYS_SPACE_SPECIFICATIONS, sync = true)
     public List<SpaceSpecification> getSpaceSpecifications() {
-        logger.debug("Missing cache hit: Fetching space specifications from database");
+        logger.info("Missing cache hit: Fetching space specifications from database");
         return doGetSpaceSpecifications();
     }
 
     @CachePut(CacheConstant.CACHE_KEYS_SPACE_SPECIFICATIONS)
     public List<SpaceSpecification> refreshSpaceSpecificationsCache(){
-        logger.debug("Change of data: Fetching space specifications from database");
+        logger.info("Change of data: Fetching space specifications from database");
         return doGetSpaceSpecifications();
     }
 
     @CacheEvict(CacheConstant.CACHE_KEYS_SPACE_SPECIFICATIONS)
     public void evictSpaceSpecificationsCache() {
-        logger.debug("Cache evict: clearing cache for space specifications");
+        logger.info("Cache evict: clearing cache for space specifications");
     }
 
     private List<SpaceSpecification> doGetSpaceSpecifications(){
@@ -220,36 +222,36 @@ public class StructureRepository {
 
     @Cacheable(value = CacheConstant.CACHE_KEYS_TYPES_IN_SPACE_BY_SPEC, sync = true)
     public List<String> getTypesInSpaceBySpecification(SpaceName spaceName) {
-        logger.debug(String.format("Missing cache hit: Fetching types in space %s specifications from database", spaceName.getName()));
+        logger.info("Missing cache hit: Fetching types in space {} specifications from database", spaceName.getName());
         return doGetTypesInSpaceBySpecification(spaceName);
     }
 
     @CachePut(CacheConstant.CACHE_KEYS_TYPES_IN_SPACE_BY_SPEC)
     public List<String> refreshTypesInSpaceBySpecification(SpaceName spaceName) {
-        logger.debug(String.format("Change of data: Fetching types in space %s specifications from database", spaceName.getName()));
+        logger.info("Change of data: Fetching types in space {} specifications from database", spaceName.getName());
         return doGetTypesInSpaceBySpecification(spaceName);
     }
 
     @CacheEvict(CacheConstant.CACHE_KEYS_TYPES_IN_SPACE_BY_SPEC)
     public void evictTypesInSpaceBySpecification(SpaceName spaceName) {
-        logger.debug("Cache evict: clearing cache for type in space specifications");
+        logger.info("Cache evict: clearing cache for type in space specifications");
     }
 
     @Cacheable(value = CacheConstant.CACHE_KEYS_TYPE_SPECIFICATION, sync = true)
     public DynamicJson getTypeSpecification(String typeName) {
-        logger.debug(String.format("Missing cache hit: Fetching type specification for %s from database", typeName));
+        logger.info("Missing cache hit: Fetching type specification for {} from database", typeName);
         return doGetTypeSpecification(typeName, TYPES);
     }
 
     @CachePut(CacheConstant.CACHE_KEYS_TYPE_SPECIFICATION)
     public DynamicJson refreshTypeSpecification(String typeName) {
-        logger.debug(String.format("Change of data: Fetching type specification for %s from database", typeName));
+        logger.info("Change of data: Fetching type specification for {} from database", typeName);
         return doGetTypeSpecification(typeName, TYPES);
     }
 
     @CacheEvict(CacheConstant.CACHE_KEYS_TYPE_SPECIFICATION)
     public void evictTypeSpecification(String typeName) {
-        logger.debug(String.format("Cache evict: clearing cache for type specification %s", typeName));
+        logger.info("Cache evict: clearing cache for type specification {}", typeName);
     }
 
     private List<String> doGetTypesInSpaceBySpecification(SpaceName spaceName){
@@ -269,19 +271,19 @@ public class StructureRepository {
 
     @Cacheable(value = CacheConstant.CACHE_KEYS_CLIENT_SPECIFIC_TYPE_SPECIFICATION, sync = true)
     public  DynamicJson getClientSpecificTypeSpecification(String typeName, SpaceName clientSpaceName) {
-        logger.debug(String.format("Missing cache hit: Fetching type specification for %s from database (client: %s)", typeName, clientSpaceName.getName()));
+        logger.info("Missing cache hit: Fetching type specification for {} from database (client: {})", typeName, clientSpaceName.getName());
         return doGetTypeSpecification(typeName, clientTypesCollection(clientSpaceName.getName()));
     }
 
     @CachePut(CacheConstant.CACHE_KEYS_CLIENT_SPECIFIC_TYPE_SPECIFICATION)
     public DynamicJson refreshClientSpecificTypeSpecification(String typeName, SpaceName clientSpaceName) {
-        logger.debug(String.format("Change of data: Fetching type specification for %s from database (client: %s)", typeName, clientSpaceName.getName()));
+        logger.info("Change of data: Fetching type specification for {} from database (client: {})", typeName, clientSpaceName.getName());
         return doGetTypeSpecification(typeName, clientTypesCollection(clientSpaceName.getName()));
     }
 
     @CacheEvict(CacheConstant.CACHE_KEYS_CLIENT_SPECIFIC_TYPE_SPECIFICATION)
     public void evictClientSpecificTypeSpecification(String typeName, SpaceName clientSpaceName) {
-        logger.debug(String.format("Cache evict: clearing cache for type specification %s (client: %s)", typeName, clientSpaceName.getName()));
+        logger.info("Cache evict: clearing cache for type specification {} (client: {})", typeName, clientSpaceName.getName());
     }
 
     private DynamicJson doGetTypeSpecification(String typeName, ArangoCollectionReference collectionReference) {
@@ -303,19 +305,19 @@ public class StructureRepository {
 
     @Cacheable(value = CacheConstant.CACHE_KEYS_TYPES_IN_SPACE, sync = true)
     public List<TypeWithInstanceCountReflection> reflectTypesInSpace(DataStage stage, SpaceName name) {
-        logger.debug(String.format("Missing cache hit: Reflecting types in space %s (stage %s)", name, stage.name()));
+        logger.info("Missing cache hit: Reflecting types in space {} (stage {})", name, stage.name());
         return doReflectTypesInSpace(stage, name);
     }
 
     @CachePut(CacheConstant.CACHE_KEYS_TYPES_IN_SPACE)
     public List<TypeWithInstanceCountReflection> refreshTypesInSpaceCache(DataStage stage, SpaceName name) {
-        logger.debug(String.format("Change of data: Reflecting types in space %s (stage %s)", name, stage.name()));
+        logger.info("Change of data: Reflecting types in space {} (stage {})", name, stage.name());
         return doReflectTypesInSpace(stage, name);
     }
 
     @CacheEvict(CacheConstant.CACHE_KEYS_TYPES_IN_SPACE)
     public void evictTypesInSpaceCache(DataStage stage, SpaceName name) {
-        logger.debug(String.format("Cache evict: clearing cache for types in space %s (stage %s)", name, stage.name()));
+        logger.info("Cache evict: clearing cache for types in space {} (stage {})", name, stage.name());
     }
 
     private List<TypeWithInstanceCountReflection> doReflectTypesInSpace(DataStage stage, SpaceName name){
@@ -336,36 +338,36 @@ public class StructureRepository {
 
     @Cacheable(value = CacheConstant.CACHE_KEYS_PROPERTY_SPECIFICATION, sync = true)
     public DynamicJson getPropertyBySpecification(String propertyName) {
-        logger.debug(String.format("Missing cache hit: Reflecting property specification %s", propertyName));
+        logger.info("Missing cache hit: Fetching property specification {}", propertyName);
         return doGetPropertyBySpecification(propertyName, PROPERTIES);
     }
 
     @CachePut(CacheConstant.CACHE_KEYS_PROPERTY_SPECIFICATION)
     public DynamicJson refreshPropertySpecificationCache(String propertyName) {
-        logger.debug(String.format("Change of data: Reflecting property specification %s", propertyName));
+        logger.info("Change of data: Reflecting property specification {}", propertyName);
         return doGetPropertyBySpecification(propertyName, PROPERTIES);
     }
 
     @CacheEvict(CacheConstant.CACHE_KEYS_PROPERTY_SPECIFICATION)
     public void evictPropertySpecificationCache(String propertyName) {
-        logger.debug(String.format("Cache evict: clearing cache for property %s", propertyName));
+        logger.info("Cache evict: clearing cache for property {}", propertyName);
     }
 
     @Cacheable(value = CacheConstant.CACHE_KEYS_CLIENT_SPECIFIC_PROPERTY_SPECIFICATION, sync = true)
     public DynamicJson getClientSpecificPropertyBySpecification(String propertyName, SpaceName clientSpaceName) {
-        logger.debug(String.format("Missing cache hit: Reflecting property specification %s (client: %s)", propertyName, clientSpaceName.getName()));
+        logger.info("Missing cache hit: Fetching property specification {} (client: {})", propertyName, clientSpaceName.getName());
         return doGetPropertyBySpecification(propertyName, clientTypesCollection(clientSpaceName.getName()));
     }
 
     @CachePut(CacheConstant.CACHE_KEYS_CLIENT_SPECIFIC_PROPERTY_SPECIFICATION)
     public DynamicJson refreshClientSpecificPropertySpecificationCache(String propertyName, SpaceName clientSpaceName) {
-        logger.debug(String.format("Change of data: Reflecting property specification %s (client: %s)", propertyName, clientSpaceName.getName()));
+        logger.info("Change of data: Reflecting property specification {} (client: {})", propertyName, clientSpaceName.getName());
         return doGetPropertyBySpecification(propertyName, clientTypesCollection(clientSpaceName.getName()));
     }
 
     @CacheEvict(CacheConstant.CACHE_KEYS_CLIENT_SPECIFIC_PROPERTY_SPECIFICATION)
     public void evictClientSpecificPropertySpecificationCache(String propertyName, SpaceName clientSpaceName) {
-        logger.debug(String.format("Cache evict: clearing cache for property %s (client: %s)", propertyName, clientSpaceName.getName()));
+        logger.info("Cache evict: clearing cache for property {} (client: {})", propertyName, clientSpaceName.getName());
     }
 
     private DynamicJson doGetPropertyBySpecification(String propertyName, ArangoCollectionReference collectionReference) {
@@ -385,40 +387,39 @@ public class StructureRepository {
 
     @Cacheable(value = CacheConstant.CACHE_KEYS_PROPERTIES_IN_TYPE_SPECIFICATION, sync = true)
     public List<DynamicJson> getPropertiesInTypeBySpecification(String type) {
-        logger.debug(String.format("Missing cache hit: Reflecting properties for type %s", type));
+        logger.info("Missing cache hit: Fetching properties for type {}", type);
         return doGetPropertiesInTypeBySpecification(type, PROPERTY_IN_TYPE);
     }
 
     @CachePut(CacheConstant.CACHE_KEYS_PROPERTIES_IN_TYPE_SPECIFICATION)
     public List<DynamicJson> refreshPropertiesInTypeBySpecificationCache(String type) {
-        logger.debug(String.format("Change of data: Reflecting properties for type %s", type));
+        logger.info("Change of data: Reflecting properties for type {}", type);
         return doGetPropertiesInTypeBySpecification(type, PROPERTY_IN_TYPE);
     }
 
     @CacheEvict(CacheConstant.CACHE_KEYS_PROPERTIES_IN_TYPE_SPECIFICATION)
     public void evictPropertiesInTypeBySpecificationCache(String type) {
-        logger.debug(String.format("Cache evict: clearing cache for properties in type %s", type));
+        logger.info("Cache evict: clearing cache for properties in type {}", type);
     }
 
     @Cacheable(value = CacheConstant.CACHE_KEYS_CLIENT_SPECIFIC_PROPERTIES_IN_TYPE_SPECIFICATION, sync = true)
     public List<DynamicJson> getClientSpecificPropertiesInTypeBySpecification(String type, SpaceName clientSpaceName) {
-        logger.debug(String.format("Missing cache hit: Reflecting properties for type %s (client: %s)", type, clientSpaceName.getName()));
+        logger.info("Missing cache hit: Fetching properties for type {} (client: {})", type, clientSpaceName.getName());
         return doGetPropertiesInTypeBySpecification(type, clientPropertyInTypeCollection(clientSpaceName.getName()));
     }
 
     @CachePut(CacheConstant.CACHE_KEYS_CLIENT_SPECIFIC_PROPERTIES_IN_TYPE_SPECIFICATION)
     public List<DynamicJson> refreshClientSpecificPropertiesInTypeBySpecificationCache(String type, SpaceName clientSpaceName) {
-        logger.debug(String.format("Change of data: Reflecting properties for type %s (client: %s)", type, clientSpaceName.getName()));
+        logger.info("Change of data: Reflecting properties for type {} (client: {})", type, clientSpaceName.getName());
         return doGetPropertiesInTypeBySpecification(type, clientPropertyInTypeCollection(clientSpaceName.getName()));
     }
 
     @CacheEvict(CacheConstant.CACHE_KEYS_CLIENT_SPECIFIC_PROPERTIES_IN_TYPE_SPECIFICATION)
     public void evictClientSpecificPropertiesInTypeBySpecificationCache(String type, SpaceName clientSpaceName) {
-        logger.debug(String.format("Cache evict: clearing cache for properties in type %s (client: %s)", type, clientSpaceName.getName()));
+        logger.info("Cache evict: clearing cache for properties in type {} (client: {})", type, clientSpaceName.getName());
     }
 
     private List<DynamicJson> doGetPropertiesInTypeBySpecification(String type, ArangoCollectionReference collectionReference) {
-        logger.info("Fetching properties for {}", type);
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
         if (structureDB.collection(collectionReference.getCollectionName()).exists()) {
             final UUID typeUUID = typeSpecificationRef(type);
@@ -437,19 +438,19 @@ public class StructureRepository {
 
     @Cacheable(value = CacheConstant.CACHE_KEYS_PROPERTIES_OF_TYPE_IN_SPACE, sync = true)
     public List<PropertyOfTypeInSpaceReflection> reflectPropertiesOfTypeInSpace(DataStage stage, SpaceName spaceName, String type) {
-        logger.debug(String.format("Missing cache hit: Reflecting properties of type %s in space %s (stage %s)", type, spaceName, stage.name()));
+        logger.info("Missing cache hit: Reflecting properties of type {} in space {} (stage {})", type, spaceName, stage.name());
         return doReflectPropertiesOfTypeInSpace(stage, spaceName, type);
     }
 
     @CachePut(CacheConstant.CACHE_KEYS_PROPERTIES_OF_TYPE_IN_SPACE)
     public List<PropertyOfTypeInSpaceReflection> refreshPropertiesOfTypeInSpaceCache(DataStage stage, SpaceName spaceName, String type) {
-        logger.debug(String.format("Change of data: Reflecting properties of type %s in space %s (stage %s)", type, spaceName, stage.name()));
+        logger.info("Change of data: Reflecting properties of type {} in space {} (stage {})", type, spaceName, stage.name());
         return doReflectPropertiesOfTypeInSpace(stage, spaceName, type);
     }
 
     @CacheEvict(CacheConstant.CACHE_KEYS_PROPERTIES_OF_TYPE_IN_SPACE)
     public void evictPropertiesOfTypeInSpaceCache(DataStage stage, SpaceName spaceName, String type) {
-        logger.debug(String.format("Cache evict: clearing cache for properties of type %s in space %s (stage %s)", type, spaceName, stage.name()));
+        logger.info("Cache evict: clearing cache for properties of type {} in space {} (stage {})", type, spaceName, stage.name());
     }
 
     private List<PropertyOfTypeInSpaceReflection> doReflectPropertiesOfTypeInSpace(DataStage stage, SpaceName spaceName, String type){
@@ -470,19 +471,19 @@ public class StructureRepository {
 
     @Cacheable(value = CacheConstant.CACHE_KEYS_TARGET_TYPES, sync = true)
     public List<TargetTypeReflection> reflectTargetTypes(DataStage stage, SpaceName spaceName, String type, String property) {
-        logger.debug(String.format("Missing cache hit: Reflecting target type of property %s of type %s in space %s (stage %s)", property, type, spaceName, stage.name()));
+        logger.info("Missing cache hit: Reflecting target type of property {} of type {} in space {} (stage {})", property, type, spaceName, stage.name());
         return doReflectTargetTypes(stage, spaceName, type, property);
     }
 
     @CachePut(CacheConstant.CACHE_KEYS_TARGET_TYPES)
     public List<TargetTypeReflection> refreshTargetTypesCache(DataStage stage, SpaceName spaceName, String type, String property) {
-        logger.debug(String.format("Change of data:  Reflecting target type of property %s of type %s in space %s (stage %s)", property, type, spaceName, stage.name()));
+        logger.info("Change of data:  Reflecting target type of property {} of type {} in space {} (stage {})", property, type, spaceName, stage.name());
         return doReflectTargetTypes(stage, spaceName, type, property);
     }
 
     @CacheEvict(CacheConstant.CACHE_KEYS_TARGET_TYPES)
     public void evictTargetTypesCache(DataStage stage, SpaceName spaceName, String type, String property) {
-        logger.debug(String.format("Cache evict: clearing cache for target type of property %s of type %s in space %s (stage %s)", property, type, spaceName, stage.name()));
+        logger.info("Cache evict: clearing cache for target type of property {} of type {} in space {} (stage {})", property, type, spaceName, stage.name());
     }
 
     private List<TargetTypeReflection> doReflectTargetTypes(DataStage stage, SpaceName spaceName, String type, String property){
@@ -513,7 +514,13 @@ public class StructureRepository {
         aql.addLine(AQL.trust("\"space\": space,"));
         aql.addLine(AQL.trust("\"occurrences\": count"));
         aql.addLine(AQL.trust("}"));
-        return Collections.unmodifiableList(arangoDatabases.getByStage(stage).query(aql.build().getValue(), TargetTypeReflection.class, bindVars).asListRemaining());
+        try(ArangoCursor<TargetTypeReflection> query = arangoDatabases.getByStage(stage).query(aql.build().getValue(), TargetTypeReflection.class, bindVars)){
+            return Collections.unmodifiableList(query.asListRemaining());
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+            return null;
+        }
+        //return Collections.emptyList();
     }
 
     private final List<String> EDGE_BLACKLIST = Arrays.asList(
