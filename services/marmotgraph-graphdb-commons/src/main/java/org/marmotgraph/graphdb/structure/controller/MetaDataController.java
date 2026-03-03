@@ -89,7 +89,7 @@ public class MetaDataController {
         if (stage == DataStage.IN_PROGRESS) {
             invitations.forEach(i -> {
                 i.types().stream().distinct().filter(t -> CollectionUtils.isEmpty(typeRestriction) || typeRestriction.contains(t)).forEach(t -> {
-                    final List<SpaceTypeInformation> spaceTypeInformations = spaceTypeInformationLookup.computeIfAbsent(t, k -> new ArrayList<>(Collections.singletonList(new SpaceTypeInformation())));
+                    final List<SpaceTypeInformation> spaceTypeInformations = spaceTypeInformationLookup.computeIfAbsent(t, k -> Collections.synchronizedList(new ArrayList<>(List.of(new SpaceTypeInformation()))));
                     final SpaceTypeInformation spaceTypeInformation = spaceTypeInformations.get(0);
                     spaceTypeInformation.setSpace(SpaceName.REVIEW_SPACE);
                     spaceTypeInformation.setOccurrences(spaceTypeInformation.getOccurrences() == null ? 1 : spaceTypeInformation.getOccurrences() + 1);
@@ -346,7 +346,7 @@ public class MetaDataController {
                     }
                 });
             }
-            List<SpaceTypeInformation> spaceTypeInformations = spaceTypeInformationLookup.computeIfAbsent(type.getName(), t -> new ArrayList<>());
+            List<SpaceTypeInformation> spaceTypeInformations = spaceTypeInformationLookup.computeIfAbsent(type.getName(), t -> Collections.synchronizedList(new ArrayList<>()));
             SpaceTypeInformation spaceTypeInformation = new SpaceTypeInformation();
             spaceTypeInformations.add(spaceTypeInformation);
             typeInformation.setSpaces(spaceTypeInformations);
