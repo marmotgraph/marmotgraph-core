@@ -1,0 +1,6 @@
+[codespell]
+# Ref: https://github.com/codespell-project/codespell#using-a-config-file
+skip = .git*,*.svg,.codespellrc
+check-hidden = true
+ignore-regex = \b(specField|AfterAll|Joe Cant Do)\b
+ignore-words-list = marge,informations,specfield,ser
